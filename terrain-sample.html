@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>CozyFrontier 地形样张 — 按 S2 规则构建</title>
+<style>
+  body { margin:0; background:#1a1d24; color:#d8d4c8; font-family:"Segoe UI",sans-serif; }
+  h1 { font-size:18px; padding:12px 20px 2px; }
+  .sub { padding:0 20px 8px; color:#8a8778; font-size:13px; line-height:1.6; }
+  canvas { display:block; }
+  .legend { display:flex; gap:14px; flex-wrap:wrap; padding:8px 20px 4px; font-size:12px; }
+  .legend span { display:inline-flex; align-items:center; gap:5px; }
+  .sw { width:14px; height:14px; border-radius:3px; display:inline-block; }
+</style>
+</head>
+<body>
+<h1>地形样张 — 按 S2 规则程序化构建的 32×32 Tile 世界（开局形态）</h1>
+<div class="sub">这不是插画，是用引擎逻辑搭的：网格地形 + 六种地形类型（各带玩法属性）+ 有储量的资源点（ADR-010：营地50格内保底1不可再生+1可再生+1适农平地）+ 开局营地建筑（篝火/简易庇护所/采集小屋/水井）+ 4名村民。渲染为锚点风格（渐变低模+暖色板）。</div>
+<div class="legend" id="legend"></div>
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const N = 32, TILE = 1;
+// 地形类型（DATA_DICTIONARY §7.1）：色彩+属性
+const TERRAIN = {
+  fertile:  { c:0x8a6a3f, name:'肥沃土壤(高肥力/中型建筑)' },
+  grass:    { c:0x7cb45b, name:'普通土壤(可建重型)' },
+  marsh:    { c:0x5f7a4a, name:'沼泽(移速60%/不可建)' },
+  sand:     { c:0xd8c288, name:'沙地(肥力极低/轻型建筑)' },
+  shallow:  { c:0x6fb3d6, name:'浅水(仅架桥/可钓鱼)' },
+  rock:     { c:0x8f8c85, name:'岩石地面(不可建/可采石)' },
+};
+
+// ---- 程序化生成 32x32 地图（简化版生成器：噪声+河流+规则）----
+function genMap(){
+  const map = [];
+  for (let x=0; x<N; x++){ map[x]=[]; for (let z=0; z<N; z++){
+    // 基础：普通草地
+    map[x][z] = 'grass';
+  }}
+  // 河流：从北到南的蜿蜒浅水带
+  let rx = 20;
+  for (let z=0; z<N; z++){
+    rx += Math.sin(z*0.35)*0.7 + (Math.random()-0.5)*0.5;
+    for (let w=-1; w<=1; w++){
+      const x = Math.round(rx)+w;
+      if (x>=0 && x<N) map[x][z] = 'shallow';
+    }
+  }
+  // 岩石地面：东北角一片（不可建/可采石）
+  for (let x=24; x<N; x++) for (let z=0; z<9; z++){
+    if (Math.random() < 0.85 && map[x][z]!=='shallow') map[x][z] = 'rock';
+  }
+  // 沼泽：河边低地西南角
+  for (let x=2; x<9; x++) for (let z=20; z<28; z++){
+    if (Math.random() < 0.6 && map[x][z]!=='shallow') map[x][z] = 'marsh';
+  }
+  // 沙地：河南岸一条
+  for (let z=8; z<15; z++) for (let x=14; x<24; x++){
+    if (map[x][z]!=='shallow' && Math.random()<0.5) map[x][z]='sand';
+  }
+  // 肥沃土壤：西北角一小片（适农平地——ADR-010 保底）
+  for (let x=4; x<10; x++) for (let z=4; z<10; z++){
+    if (map[x][z]==='grass') map[x][z]='fertile';
+  }
+  return map;
+}
+const map = genMap();
+
+// 营地位置：地图中央的普通草地
+const CAMP = { x: 15, z: 16 };
+
+// ---- 渲染 ----
+const renderer = new THREE.WebGLRenderer({ antialias:true, preserveDrawingBuffer:true });
+renderer.setSize(innerWidth, innerHeight-90);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.NeutralToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xa8d8e8);
+scene.fog = new THREE.Fog(0xa8d8e8, 45, 90);
+const camera = new THREE.PerspectiveCamera(40, innerWidth/(innerHeight-90), 0.1, 300);
+camera.position.set(N*0.5-2, 19, N*0.5+15); camera.lookAt(N*0.5-2, 0, N*0.5-1);
+
+const sun = new THREE.DirectionalLight(0xfff2dd, 2.4);
+sun.position.set(20, 30, 15); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+const dd = 26; Object.assign(sun.shadow.camera, {left:-dd, right:dd, top:dd, bottom:-dd, far:80});
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xa8d8e8, 0x5e9145, 1.1));
+
+const mat = new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.95 });
+function grad(g, hex, s=0.25){
+  const gg = g.toNonIndexed(); gg.computeVertexNormals();
+  const c = new THREE.Color(hex), n = gg.attributes.position.count, cols = new Float32Array(n*3);
+  const lo = c.clone().multiplyScalar(1-s), hi = c.clone().lerp(new THREE.Color(0xffffff), s*0.5);
+  for (let i=0;i<n;i++){
+    const t = THREE.MathUtils.clamp(gg.attributes.normal.getY(i)*0.5+0.5, 0, 1);
+    const cc = lo.clone().lerp(hi, t);
+    cols[i*3]=cc.r; cols[i*3+1]=cc.g; cols[i*3+2]=cc.b;
+  }
+  gg.setAttribute('color', new THREE.BufferAttribute(cols,3));
+  return gg;
+}
+function addM(geo, x,y,z, ry=0){
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x,y,z); m.rotation.y = ry;
+  m.castShadow = m.receiveShadow = true;
+  scene.add(m); return m;
+}
+
+// ---- 地形网格 ----
+const world = new THREE.Group(); scene.add(world);
+for (let x=0; x<N; x++) for (let z=0; z<N; z++){
+  const t = map[x][z];
+  const g = new THREE.BoxGeometry(TILE, 0.2, TILE);
+  world.add((()=>{ const m = new THREE.Mesh(grad(g, TERRAIN[t].c, 0.15), mat);
+    m.position.set(x+0.5, 0, z+0.5); m.receiveShadow = true; return m; })());
+}
+
+// ---- 资源点（deposit，有储量）----
+// 伐木区：营地西侧森林（可再生）——密集种植，贴近营地
+for (let i=0;i<46;i++){
+  const x = 7+Math.random()*7, z = 11+Math.random()*11;
+  if (map[Math.floor(x)][Math.floor(z)] !== 'grass') continue;
+  const sc = 0.9+Math.random()*0.5;
+  addM(grad(new THREE.CylinderGeometry(0.12,0.18,0.9,5), 0x7d5430), x, 0.65, z);
+  addM(grad(new THREE.IcosahedronGeometry(0.75,0), 0x4f9e4f), x, 1.7*sc*0.9, z);
+  addM(grad(new THREE.IcosahedronGeometry(0.5,0), 0x3d7d3f), x+0.3, 2.2*sc*0.85, z+0.2);
+}
+// 采石点：岩石地面上（不可再生，储量上限）
+for (let i=0;i<8;i++){
+  const x = 25+Math.random()*6, z = 2+Math.random()*5;
+  if (map[Math.floor(x)]?.[Math.floor(z)] !== 'rock') continue;
+  addM(grad(new THREE.DodecahedronGeometry(0.5+Math.random()*0.4,0), 0x9d9a90), x, 0.5, z);
+}
+// 浆果丛（可再生，营地50格内保底）
+for (let i=0;i<8;i++){
+  const x = 11+Math.random()*3, z = 13+Math.random()*4;
+  addM(grad(new THREE.IcosahedronGeometry(0.5,0), 0x3d7d3f), x, 0.55, z);
+  for (let k=0;k<4;k++) addM(grad(new THREE.SphereGeometry(0.09,6,5), 0xc73a3a), x+(Math.random()-0.5)*0.5, 0.75, z+(Math.random()-0.5)*0.5);
+}
+// 黏土坑：河南岸沙地（不可再生）
+addM(grad(new THREE.CylinderGeometry(1.2,1.5,0.3,8), 0xa05a3a), 18, 0.15, 11);
+// 适农田：肥沃土壤上留一块已开垦标识（栅栏+田垄）
+for (let i=0;i<4;i++) for (let j=0;j<3;j++){
+  addM(grad(new THREE.BoxGeometry(0.8, 0.12, 0.25), 0x6b4a2a), 5.5+i*0.9, 0.25, 6.5+j*0.9);
+}
+
+// ---- 营地建筑（V1 切片清单）----
+const cx = CAMP.x, cz = CAMP.z;
+// 篝火
+addM(grad(new THREE.CylinderGeometry(0.5,0.6,0.15,7), 0x8f8c85), cx+0.5, 0.25, cz+0.5);
+addM(grad(new THREE.ConeGeometry(0.25,0.5,6), 0xc7563e), cx+0.5, 0.55, cz+0.5);
+// 简易庇护所 ×2（木架+斜顶）
+for (const [ox,oz] of [[-2.5,0],[1.5,-2]]){
+  addM(grad(new THREE.BoxGeometry(1.8, 1.1, 1.6), 0x8a6a3f), cx+ox, 0.75, cz+oz);
+  const roof = new THREE.CylinderGeometry(0.01, 1.55, 1.0, 4, 1);
+  addM(grad(roof, 0xa4713f), cx+ox, 1.8, cz+oz);
+}
+// 采集小屋（小木棚）
+addM(grad(new THREE.BoxGeometry(1.4, 1.0, 1.4), 0x7d5430), cx+3, 0.7, cz+1.5);
+addM(grad(new THREE.ConeGeometry(1.1, 0.8, 4), 0x8f8c85), cx+3, 1.55, cz+1.5);
+// 水井（河边）
+addM(grad(new THREE.CylinderGeometry(0.45,0.5,0.5,7), 0x8f8c85), cx-1.5, 0.45, cz+3);
+
+// ---- 4 名村民（在营地附近，各自的工作位置）----
+const VCOLORS = [0xe8b04b, 0xc7563e, 0x5aa7c7, 0x93b57e];
+const VJOBS = ['前往浆果丛采集','伐木（西侧森林）','建造庇护所','取水（水井）'];
+[[1.5,2.5,'浆果采集'],[-3,3,'伐木途中'],[0.5,-1,'建造'],[-1.5,3.5,'取水']].forEach(([ox,oz,job],i)=>{
+  const x = cx+ox, z = cz+oz;
+  const g = new THREE.Group();
+  g.add(addM(grad(new THREE.CylinderGeometry(0.2,0.28,0.75,6), VCOLORS[i]), x, 0.55, z));
+  g.add(addM(grad(new THREE.SphereGeometry(0.24,7,6), 0xe8c39a), x, 1.15, z));
+  // 头顶工作标记（黄色气泡=当前工作）
+  const tag = addM(grad(new THREE.SphereGeometry(0.1,5,4), 0xf2b53c), x, 1.6, z);
+  g.userData = { job };
+});
+
+// 图例
+const lg = document.getElementById('legend');
+const items = Object.entries(TERRAIN).map(([k,v])=>`<span><i class="sw" style="background:#${v.c.toString(16).padStart(6,'0')}"></i>${v.name}</span>`);
+items.push('<span>🌲 西侧=伐木区(可再生) · 🪨 东北=采石deposit(有限储量) · 🍓 浆果丛 · 🟤 黏土坑 · ⛺ 中央=开局营地+4村民(头顶工作标记)</span>');
+lg.innerHTML = items.join('');
+
+// 渲染两帧保证贴图/阴影稳定
+renderer.render(scene, camera);
+renderer.render(scene, camera);
+window.__done = true;
+document.title = '地形样张 渲染完成';
+</script>
+</body>
+</html>

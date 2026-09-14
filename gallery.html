@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>CozyFrontier 资产图鉴 — 全量模型预览</title>
+<style>
+  body { margin:0; background:#1a1d24; color:#d8d4c8; font-family:"Segoe UI",sans-serif; }
+  h1 { font-size:20px; padding:14px 20px 4px; }
+  .sub { padding:0 20px 10px; color:#8a8778; font-size:13px; }
+  #status { padding:0 20px 10px; font-size:13px; color:#e8b84b; }
+  h2 { font-size:16px; padding:14px 20px 6px; color:#e8b84b; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:10px; padding:0 20px; }
+  .card { background:#22262f; border-radius:8px; overflow:hidden; cursor:zoom-in; }
+  .card img { width:100%; display:block; background:#31363f; }
+  .card .name { font-size:11px; padding:6px 8px; color:#a8a494; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:9; align-items:center; justify-content:center; flex-direction:column; }
+  #modal img { max-width:92vw; max-height:86vh; border-radius:8px; }
+  #modal .name { padding:10px; font-size:14px; color:#e8b84b; }
+</style>
+</head>
+<body>
+<h1>资产图鉴 — 全量模型预览</h1>
+<div class="sub">每个模型自动摆正、自动取景渲染（统一柔和光照）。点击任意卡片放大查看。</div>
+<div id="status">准备中…</div>
+<div id="content"></div>
+<div id="modal"><img><div class="name"></div></div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
+
+const PACKS = [
+  { name:'Fantasy Town Kit（建筑模块 · 160件）', path:'assets/Models/GLB format/', ext:'.glb', dir:'' },
+  { name:'Food Kit（作物与食物 · 200件）', path:'assets/food-kit/Models/GLB%20format/', ext:'.glb', dir:'' },
+];
+
+const statusEl = document.getElementById('status');
+const content = document.getElementById('content');
+const modal = document.getElementById('modal');
+
+const loader = new GLTFLoader();
+const objLoader = new OBJLoader();
+const mtlLoader = new MTLLoader();
+
+async function loadModel(pack, file){
+  if (file.endsWith('.glb') || file.endsWith('.gltf')) {
+    const g = await loader.loadAsync(pack.base + file.split('/').map(encodeURIComponent).join('/'));
+    return g.scene;
+  }
+  const base = file.slice(0, -4);
+  try {
+    const mtl = await mtlLoader.loadAsync(pack.base + encodeURIComponent(base + '.mtl'));
+    mtl.preload();
+    objLoader.setMaterials(mtl);
+  } catch(e) { objLoader.setMaterials(new THREE.MeshStandardMaterial()); }
+  return await objLoader.loadAsync(pack.base + file.split('/').map(encodeURIComponent).join('/'));
+}
+const TILE = 260;
+function createRenderer(){
+  const r = new THREE.WebGLRenderer({ antialias:true, preserveDrawingBuffer:true, alpha:false });
+  r.setSize(TILE, TILE);
+  r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+  r.toneMapping = THREE.NeutralToneMapping; r.outputColorSpace = THREE.SRGBColorSpace;
+  return r;
+}
+let renderer = createRenderer();
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x31363f);
+const sun = new THREE.DirectionalLight(0xfff2dd, 2.4);
+sun.position.set(3,5,4); sun.castShadow = true;
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xbcd9dd, 0x555b44, 1.2));
+const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 100);
+const pedGeo = new THREE.CylinderGeometry(0.62,0.7,0.08,24);
+const pedMat = new THREE.MeshStandardMaterial({color:0x454b55, roughness:0.9});
+const ped = new THREE.Mesh(pedGeo, pedMat); ped.receiveShadow = true; scene.add(ped);
+
+async function shoot(object){
+  // 摆正 + 取景
+  const box = new THREE.Box3().setFromObject(object);
+  const size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const s = 1.5/maxDim; // 归一化：所有模型缩放到相同视觉尺寸
+  const wrapper = new THREE.Group();
+  object.position.sub(center);
+  object.position.y += size.y/2 + 0.04;
+  wrapper.add(object);
+  wrapper.scale.setScalar(s);
+  wrapper.rotation.y = Math.PI/5;
+  scene.add(wrapper);
+  ped.position.y = 0;
+  const dist = (0.75) / Math.tan(THREE.MathUtils.degToRad(camera.fov/2)) * 1.45;
+  camera.position.set(dist*0.62, dist*0.62, dist*0.85);
+  camera.lookAt(0, 0.5, 0);
+  sun.position.set(3,5,4);
+  const d = 2; Object.assign(sun.shadow.camera, {left:-d,right:d,top:d,bottom:-d, far:20});
+  renderer.render(scene, camera);
+  renderer.render(scene, camera);
+  renderer.render(scene, camera);
+  const url = renderer.domElement.toDataURL('image/jpeg', 0.82);
+  window.__dbg = window.__dbg || [];
+  window.__dbg.push({ maxDim: +maxDim.toFixed(2), s: +s.toFixed(3), url: url.slice(0, 60), len: url.length });
+  scene.remove(wrapper);
+  return url;
+}
+
+async function renderPack(pack, tok){
+  const list = pack.files;
+  try { renderer.forceContextLoss(); } catch(e) {}
+  try { renderer.dispose(); } catch(e) {}
+  renderer = createRenderer();
+  const h2 = document.createElement('h2'); h2.textContent = pack.name + ' — 渲染中…'; content.appendChild(h2);
+  const grid = document.createElement('div'); grid.className='grid'; content.appendChild(grid);
+  let done = 0, failed = 0;
+  for (const file of list){
+    if (tok && tok.aborted) return;
+    try {
+      const model = await loadModel(pack, file);
+      const url = await shoot(model);
+      const card = document.createElement('div'); card.className='card';
+      card.innerHTML = `<img loading="lazy" src="${url}"><div class="name">${file.replace('.glb','')}</div>`;
+      card.onclick = () => { modal.style.display='flex'; modal.querySelector('img').src = url; modal.querySelector('.name').textContent = pack.name.split('（')[0] + ' / ' + file.replace('.glb',''); };
+      grid.appendChild(card);
+      done++;
+    } catch(e){ failed++; }
+    if (done % 10 === 0) statusEl.textContent = `${pack.name}: ${done}/${list.length}`;
+    await new Promise(r=>setTimeout(r,0));
+  }
+  h2.textContent = pack.name + ` — ${done} 个模型` + (failed? `（${failed} 个加载失败）`:'');
+}
+
+// 从服务器目录列表拿不到，直接内嵌文件名列表：由生成脚本注入
+window.ALL_PACKS = [];
+window.RENDER_PACKS = async (packs) => {
+  window.ALL_PACKS = packs;
+  const sel = document.createElement('select');
+  sel.style.cssText = 'margin:0 20px 10px;padding:6px 10px;font-size:14px;';
+  packs.forEach((p,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=p.name; sel.appendChild(o); });
+  sel.onchange = () => renderOne(+sel.value);
+  content.before(sel);
+  await renderOne(0);
+};
+async function renderOne(i){
+  content.innerHTML = '';
+  if (window.__renderToken) window.__renderToken.aborted = true;
+  const tok = { aborted:false }; window.__renderToken = tok;
+  await renderPack(window.ALL_PACKS[i], tok);
+  statusEl.textContent = '全部完成 ✓ 共渲染 ' + document.querySelectorAll('.card').length + ' 个模型（当前包）';
+  document.title = '图鉴 渲染完成';
+}
+modal.onclick = () => modal.style.display='none';
+</script>
+
+<script>
+window.addEventListener('load', async () => {
+  const res = await fetch('manifest.json');
+  const packs = await res.json();
+  window.RENDER_PACKS(packs);
+});
+</script>
+</body>
+</html>

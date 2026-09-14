@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>CozyFrontier 风格决策板</title>
+<style>
+  body { margin:0; background:#1a1d24; color:#d8d4c8; font-family:"Segoe UI",sans-serif; }
+  h1 { font-size:22px; padding:16px 24px 4px; }
+  h2 { font-size:16px; padding:18px 24px 8px; color:#e8b84b; }
+  .sub { padding:0 24px 12px; color:#8a8778; font-size:14px; line-height:1.7; }
+  .row { display:grid; grid-template-columns:repeat(2, 1fr); gap:14px; padding:0 24px 20px; }
+  .row4 { display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; padding:0 24px 20px; }
+  .cell { background:#22262f; border-radius:10px; overflow:hidden; }
+  .cell img { width:100%; display:block; }
+  .cell p { font-size:13px; margin:0; padding:10px 14px; color:#a8a494; line-height:1.6; }
+  .cell h3 { font-size:14px; margin:0; padding:10px 14px 0; color:#d8d4c8; }
+  .wide { padding:0 24px 20px; }
+  .wide img { width:100%; display:block; border-radius:10px; }
+  .wide p { font-size:13px; color:#a8a494; padding:8px 4px; margin:0; }
+  table { margin:0 24px 24px; border-collapse:collapse; font-size:13px; }
+  td, th { border:1px solid #3a3f4a; padding:8px 14px; text-align:left; }
+  th { color:#e8b84b; }
+</style>
+</head>
+<body>
+<h1>CozyFrontier 画风决策板 · 完整风格规范</h1>
+<div class="sub"><b style="color:#e8b84b">画风锚点（所有资产/概念图的唯一基准）：</b>45° 等距 3D 渲染 · 圆润低多边形 · 柔和手绘质感贴图 · 暖色调 · 柔和阳光与软阴影 —— 源自下方 WoodCabin 木屋。任何新图必须以 fa_22.jpg 为参考图生成，保证渲染语言一致。</div>
+<div class="sub">以下全部图像由锚点扩展生成，构成完整艺术圣经：宏观地形 / 村民职业 / 资源采集 / 农田系统 / UI 驾驶舱 / 四季氛围。</div>
+
+<h2>① 宏观地图 —— 真实地形 + 资源点分布（定案）</h2>
+<div class="wide">
+  <img src="shots/style-terrain-v2.png">
+  <p>村庄只是地图中央一小部分，60%以上是被荒野覆盖的资源区：起伏丘陵与石质山脊（不可建筑区）、梯田台地、裸岩山地+矿洞口、红棕色黏土坑、森林深处的浆果丛群与野猪空地、钓鱼浅滩。地形起伏真实（对应 S2 地形数据 / S21 资源分布 / S37 地形改造），资源点远离村庄、需要规划采集路线。</p>
+</div>
+
+<h2>② 村民职业设定 —— 小人长什么样</h2>
+<div class="wide">
+  <img src="shots/style-villagers.png">
+  <p>大头小身（约1:2头身比）Q版比例，每职业有标志性道具与配色：农夫（草帽麻袋）/ 樵夫（格衫斧头）/ 矿工（头灯矿帽+矿石筐）/ 渔夫（斗笠鱼竿）/ 磨坊工（头巾面粉袋）/ 小孩（追鸡）。3D 建模与骨骼动画按此设定执行。</p>
+</div>
+
+<h2>③ 资源与采集交互 —— 石头怎么挖、树怎么砍</h2>
+<div class="wide">
+  <img src="shots/style-gathering.png">
+  <p>四组标准交互场景：采石场（大岩石+裂纹进度+石料堆）、伐木（倾斜的树+年轮树桩+原木堆）、矿洞入口（木支撑+铁轨矿车+灯笼）、野外采集（浆果丛/蘑菇/枯枝）。交互反馈元素：裂纹、碎屑、进度闪光的画法都在此定调。</p>
+</div>
+
+<h2>④ 农田系统 —— 生长阶段与作物种类</h2>
+<div class="wide">
+  <img src="shots/style-farms-v2.png">
+  <p>三行九块：上行小麦生长三阶段（犁沟→发芽→成熟闪光）；中行作物种类（胡萝卜/南瓜/卷心菜）；下行特殊状态（杂草入侵需除草/贫瘠浅色土壤/施肥深色沃土）。统一规格：1x1 地块、木栅栏边角、褐色犁沟。</p>
+</div>
+
+<h2>⑤ UI —— 信息密集"驾驶舱"（定案，对应 S31 / ADR-025）</h2>
+<div class="wide">
+  <img src="shots/style-ui-v2.png">
+  <p>PC 模拟经营的信息密集界面（对标《最远的边陲》/Timberborn），不是手游金框：左侧领域导航（概览/人口/生产/农业/科技/贸易）、顶部状态条（年/季/日+时钟+天气+人口+快乐+五资源）、右侧滑入的生产链面板（输入库存条/产出速率/工人分配/效率%/红色缺料警告）、底部事件滚动条。视觉语言：扁平克制、深色半透明底+细木纹、米白文字、语义色（绿=盈/红=亏/黄=警/蓝=信息）、图标+进度条为主。</p>
+  <p>此版本 UI 底色与 3D 场景渲染语言一致（同一锚点生成）。对照：style-ui.png（手游金框，否决）、style-ui-mgmt.png（油画风底，渲染语言不一致）。</p>
+</div>
+
+<h2>⑥ 四季氛围变体（基于旧全景参考，渲染语言待锚点化重生成）</h2>
+<div class="row4">
+  <div class="cell"><img src="shots/panorama-early.png"><h3>开局 · V1 切片</h3><p>迷雾边缘、孤木屋、一块田。</p></div>
+  <div class="cell"><img src="shots/panorama-village.png"><h3>春夏 · 全景</h3><p>基线色板：暖黄+草绿。</p></div>
+  <div class="cell"><img src="shots/panorama-autumn.png"><h3>秋季 · 丰收黄昏</h3><p>金麦浪、橙红树冠、长影。</p></div>
+  <div class="cell"><img src="shots/panorama-winter.png"><h3>冬季 · 活过冬天</h3><p>雪覆、暖窗、炊烟。</p></div>
+</div>
+
+<h2>风格拆分（艺术圣经要素）</h2>
+<table>
+  <tr><th>要素</th><th>定案</th></tr>
+  <tr><td>视角</td><td>45° 等距上帝视角，可缩放（宏观看布局、捏近看村民）</td></tr>
+  <tr><td>造型</td><td>圆润低模 + 手绘质感贴图；不规则轮廓（拒绝素材感）；村民 1:2 头身 Q 版</td></tr>
+  <tr><td>色板</td><td>暖板：茅草黄 #E8C060 / 草绿 #7CB45B / 木棕 #7D5430 / 白墙 #F0E0BD / 天蓝 #A8D8E8；季节整板替换</td></tr>
+  <tr><td>光照</td><td>暖阳单向光+软阴影+轻雾；冬转冷光+暖窗点光；黄昏长影</td></tr>
+  <tr><td>UI</td><td>深木框+羊皮纸+黄铜金边+手绘图标，圆角，与世界观融合</td></tr>
+  <tr><td>交互反馈</td><td>采矿裂纹/伐木倾斜/收获闪光/选中绿色轮廓圈——都用"手绘感"反馈而非科技感</td></tr>
+</table>
+
+<h2>概念图 → 现有资产对应</h2>
+<table>
+  <tr><th>元素</th><th>资产来源</th></tr>
+  <tr><td>茅草木屋（主角建筑）</td><td>概念图即定稿参考 → AI 3D 生成+人工重拓扑（同 WoodCabin 流程）</td></tr>
+  <tr><td>树木花丛岩石</td><td>Quaternius Stylized Nature MegaKit（68件已入库）✔</td></tr>
+  <tr><td>农田与作物</td><td>Kenney Food Kit 作物 + 农田程序化网格（贴图按④图风格绘制）</td></tr>
+  <tr><td>风车/水井/石桥/码头</td><td>Kenny Fantasy Town Kit + Quaternius Farm Buildings + Watercraft</td></tr>
+  <tr><td>栅栏/灯笼/木桶</td><td>Kenney Survival Kit + Town Kit ✔</td></tr>
+  <tr><td>村民小人</td><td>Kenney Mini Characters 打底 + ②图设定定制六大职业外观</td></tr>
+  <tr><td>牛羊鸡</td><td>Quaternius Farm Animal Pack（待下载）</td></tr>
+  <tr><td>矿洞/铁轨矿车</td><td>待补：暂无现成，需 AI 生成或自制低模</td></tr>
+</table>
+
+<div class="sub">原始图：shots/style-*.png（宏观/村民/采集/农田/UI）与 panorama-*.png（四季）。重生成：gpt-image-gen --ref shots/panorama-village.png。</div>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="margin:0">
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const r = new THREE.WebGLRenderer({antialias:true});
+r.setSize(innerWidth, innerHeight); document.body.appendChild(r.domElement);
+r.toneMapping = THREE.NeutralToneMapping; r.outputColorSpace = THREE.SRGBColorSpace;
+const s = new THREE.Scene(); s.background = new THREE.Color(0x88aacc);
+s.add(new THREE.HemisphereLight(0xffffff, 0x445544, 1.5));
+const d = new THREE.DirectionalLight(0xffffff, 2.2); d.position.set(5,10,7); s.add(d);
+const c = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 500);
+new GLTFLoader().loadAsync(encodeURI('assets/quaternius/nature-megakit/glTF/CommonTree_1.gltf')).then(g => {
+  s.add(g.scene);
+  const b = new THREE.Box3().setFromObject(g.scene), sz = b.getSize(new THREE.Vector3()), ct = b.getCenter(new THREE.Vector3());
+  c.position.set(ct.x + sz.x*1.2, ct.y + sz.y*0.8, ct.z + sz.z*1.5); c.lookAt(ct);
+  r.render(s,c); document.title = 'rendered ' + sz.y.toFixed(1);
+}).catch(e => document.title = 'ERR ' + e.message);
+</script></body></html>

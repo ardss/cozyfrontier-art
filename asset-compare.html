@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>CozyFrontier 资产对比 — 程序化盒子 vs Kenney 专业资产</title>
+<style>
+  body { margin:0; background:#1a1d24; color:#d8d4c8; font-family:"Segoe UI",sans-serif; }
+  h1 { font-size:20px; padding:14px 20px 4px; }
+  .sub { padding:0 20px 10px; color:#8a8778; font-size:13px; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:0 20px 14px; }
+  .cell { background:#22262f; border-radius:10px; overflow:hidden; }
+  .cell h2 { font-size:14px; margin:0; padding:10px 14px; font-weight:600; }
+  canvas { display:block; width:100%; }
+  #status { padding:0 20px 20px; font-size:13px; color:#e8b84b; }
+</style>
+</head>
+<body>
+<h1>程序化盒子 vs 专业资产包 — 同一套光照</h1>
+<div class="sub">两幅画面使用完全相同的渲染配置：Neutral tonemapping、单方向光+软阴影、半球环境光、距离雾、固定45°俯视相机。唯一变量是资产本身。</div>
+<div class="row">
+  <div class="cell"><h2>左 · 程序化盒子（style-lab 方案B 同款）</h2><canvas id="c1" width="960" height="540"></canvas></div>
+  <div class="cell"><h2>右 · Kenney Fantasy Town Kit + Nature Kit（CC0）</h2><canvas id="c2" width="960" height="540"></canvas></div>
+</div>
+<div id="status">加载中…</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const status = document.getElementById('status');
+
+// ===== 方案B 渲染配置（与 style-lab 完全一致）=====
+const P = { grass:0x7cb45b, grassDark:0x5e9145, dirt:0x9a6b45, sky:0xa8d8e8 };
+function setupRenderer(r){
+  r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+  r.toneMapping = THREE.NeutralToneMapping; r.outputColorSpace = THREE.SRGBColorSpace;
+}
+function setupScene(s){
+  s.background = new THREE.Color(P.sky);
+  s.fog = new THREE.Fog(P.sky, 30, 75);
+  const sun = new THREE.DirectionalLight(0xfff2dd, 2.6);
+  sun.position.set(18,26,12); sun.castShadow = true;
+  sun.shadow.mapSize.set(2048,2048);
+  const d=34; Object.assign(sun.shadow.camera,{left:-d,right:d,top:d,bottom:-d});
+  s.add(sun);
+  s.add(new THREE.HemisphereLight(P.sky, P.grassDark, 1.1));
+}
+function makeCamera(){
+  const cam = new THREE.PerspectiveCamera(42, 960/540, 0.1, 200);
+  cam.position.set(0,17,14); cam.lookAt(1,0,-2);
+  return cam;
+}
+function ground(){
+  const g = new THREE.PlaneGeometry(60,60,12,12); g.rotateX(-Math.PI/2);
+  const gp = g.attributes.position;
+  for (let i=0;i<gp.count;i++){
+    const x=gp.getX(i), z=gp.getZ(i);
+    const edge = Math.max(Math.abs(x),Math.abs(z));
+    gp.setY(i, edge>24 ? Math.sin(x*0.4)*Math.cos(z*0.35)*2.2*(edge-24)/6 : 0);
+  }
+  const c = new THREE.Color(P.grass), n = gp.count, cols = new Float32Array(n*3);
+  for (let i=0;i<n;i++){ cols[i*3]=c.r; cols[i*3+1]=c.g; cols[i*3+2]=c.b; }
+  g.setAttribute('color', new THREE.BufferAttribute(cols,3));
+  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.95}));
+  m.receiveShadow = true;
+  return m;
+}
+
+// ===== 左：程序化盒子场景（复刻 style-lab 方案B 的谷仓+树+石头）=====
+function flatBox(w,h,d,color){
+  const g = new THREE.BoxGeometry(w,h,d).toNonIndexed(); g.computeVertexNormals();
+  const c = new THREE.Color(color), n = g.attributes.position.count, cols = new Float32Array(n*3);
+  for (let i=0;i<n;i++){ cols[i*3]=c.r; cols[i*3+1]=c.g; cols[i*3+2]=c.b; }
+  g.setAttribute('color', new THREE.BufferAttribute(cols,3));
+  return g;
+}
+function gradGeo(geo,color,s=0.28){
+  const g = flatGeo(geo,color);
+  const pos=g.attributes.position, nor=g.attributes.normal, col=g.attributes.color;
+  const c=new THREE.Color(color), lo=c.clone().multiplyScalar(1-s), hi=c.clone().lerp(new THREE.Color(0xffffff),s*0.5);
+  for (let i=0;i<pos.count;i++){ const t=THREE.MathUtils.clamp(nor.getY(i)*0.5+0.5,0,1); const cc=lo.clone().lerp(hi,t); col.setXYZ(i,cc.r,cc.g,cc.b); }
+  return g;
+  function flatGeo(geo,c2){
+    const g2 = geo.toNonIndexed(); g2.computeVertexNormals();
+    const cc = new THREE.Color(c2), n = g2.attributes.position.count, cols = new Float32Array(n*3);
+    for (let i=0;i<n;i++){ cols[i*3]=cc.r; cols[i*3+1]=cc.g; cols[i*3+2]=cc.b; }
+    g2.setAttribute('color', new THREE.BufferAttribute(cols,3));
+    return g2;
+  }
+}
+function boxMesh(geo,x,y,z){ const m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.95})); m.position.set(x,y,z); m.castShadow=m.receiveShadow=true; return m; }
+function buildProcedural(){
+  const s = new THREE.Scene(); setupScene(s); s.add(ground());
+  const C = { wall:0xf0e0bd, roof:0xc7563e, wood:0xa4713f, woodDark:0x7d5430, leaf:0x4f9e4f, stone:0x9d9a90 };
+  // 谷仓
+  s.add(boxMesh(flatBox(6,3.4,5,C.wall),12,1.7,-6));
+  const roof = new THREE.CylinderGeometry(0.01,4.1,2.4,4,1); roof.rotateY(Math.PI/4);
+  s.add(boxMesh(gradGeo(roof,C.roof),12,4.6,-6));
+  s.add(boxMesh(flatBox(7,0.5,6,C.wood),12,0.25,-6));
+  // 树
+  [[-4,-14,1.2],[20,4,1],[-14,14,1.1],[16,14,1.3]].forEach(([x,z,sc])=>{
+    const g = new THREE.Group();
+    g.add(boxMesh(gradGeo(new THREE.CylinderGeometry(0.28,0.4,1.4,5),C.woodDark),0,0.7,0));
+    g.add(boxMesh(gradGeo(new THREE.IcosahedronGeometry(1.5,0),C.leaf),0,2.4,0));
+    g.scale.setScalar(sc); g.position.set(x,0,z);
+    g.traverse(o=>{ if(o.isMesh){o.castShadow=o.receiveShadow=true;} });
+    s.add(g);
+  });
+  // 石头
+  [[5,-3,0.5],[-8,8,0.7]].forEach(([x,z,r])=> s.add(boxMesh(gradGeo(new THREE.DodecahedronGeometry(r,0),C.stone),x,r*0.6,z)));
+  return s;
+}
+
+// ===== 右：Kenney 资产场景 =====
+const ASSET = encodeURI('assets/Models/GLB format/');
+const loader = new GLTFLoader();
+function load(name){
+  return new Promise((res,rej)=> loader.load(ASSET+name+'.glb', g=>res(g.scene), undefined, rej));
+}
+async function buildKenney(){
+  const s = new THREE.Scene(); setupScene(s); s.add(ground());
+  const need = ['windmill','wall-block','wall-block-half','wall-door','wall-window-glass','roof-gable','roof-gable-top','roof-gable-end','chimney','tree','tree-high','tree-crooked','rock-large','rock-small','rock-wide','fence','fence-gate','stall-red','lantern','cart','hedge','barrel','crate'];
+  const M = {};
+  let loaded=0, failed=[];
+  await Promise.all(need.map(async n=>{
+    try { M[n] = await load(n); loaded++; }
+    catch(e){ failed.push(n); }
+  }));
+  status.textContent = `已加载 ${loaded}/${need.length} 个模型` + (failed.length?`，失败: ${failed.join(',')}`:'');
+
+  const world = new THREE.Group(); // 统一缩放容器
+  function place(name, x,y,z, ry=0, sc=1){
+    const src = M[name]; if(!src) return null;
+    const o = src.clone(true);
+    o.traverse(m=>{ if(m.isMesh){ m.castShadow=true; m.receiveShadow=true; } });
+    o.position.set(x,y,z); o.rotation.y=ry; o.scale.setScalar(sc);
+    world.add(o); return o;
+  }
+  // 风车（完整模型，Kenney 的朝向是 -Z 正面）
+  place('windmill', -6, 0, -5, Math.PI/6, 1.4);
+  // 模块化小屋：3x3 地块，墙围一圈，双坡屋顶
+  const HX=7, HZ=-3, U=1; // 模块尺寸
+  // 后墙
+  place('wall-block', HX-U, 0, HZ-U*2);
+  place('wall-window-glass', HX, 0, HZ-U*2);
+  place('wall-block', HX+U, 0, HZ-U*2);
+  // 侧墙
+  place('wall-block', HX-U*2, 0, HZ-U, Math.PI/2);
+  place('wall-block', HX-U*2, 0, HZ, Math.PI/2);
+  place('wall-block', HX+U*2, 0, HZ-U, Math.PI/2);
+  place('wall-block', HX+U*2, 0, HZ, Math.PI/2);
+  // 前墙（门+窗）
+  place('wall-door', HX-U, 0, HZ+U);
+  place('wall-block-half', HX, 0, HZ+U);
+  place('wall-window-glass', HX+U, 0, HZ+U);
+  // 屋顶
+  place('roof-gable-end', HX-U*1.5, U*2, HZ);
+  place('roof-gable', HX-U*0.5, U*2, HZ);
+  place('roof-gable', HX+U*0.5, U*2, HZ);
+  place('roof-gable-end', HX+U*1.5, U*2, HZ);
+  place('roof-gable-top', HX, U*2.5, HZ);
+  place('chimney', HX+U, U*2.6, HZ-U);
+  // 环境物件
+  place('tree-high', -4, 0, -14, 0, 1.2);
+  place('tree', -8, 0, -11, 1);
+  place('tree-crooked', 18, 0, 2, 0.5, 1.3);
+  place('tree', 16, 0, 12, 2);
+  place('rock-large', 5, 0, -3);
+  place('rock-wide', -8, 0, 8);
+  place('rock-small', 3, 0, 6);
+  // 栅栏一排
+  for (let i=0;i<4;i++) place('fence', -4+i, 0, 7);
+  place('fence-gate', 0, 0, 7);
+  place('stall-red', -3, 0, 1, -Math.PI/3);
+  place('cart', 2, 0, 5, Math.PI/5);
+  place('lantern', 4.4, 0, -0.6);
+  place('barrel', 5.6, 0, 0.2);
+  place('crate', 4, 0, 3, 0.4);
+  place('hedge', -2, 0, 10, 0, 1);
+  place('hedge', 0, 0, 10);
+  world.scale.setScalar(2.0);
+  world.position.set(-4, 0, 1);
+  s.add(world);
+  return s;
+}
+
+const r1 = new THREE.WebGLRenderer({canvas:document.getElementById('c1'), antialias:true}); setupRenderer(r1);
+r1.render(buildProcedural(), makeCamera());
+const r2 = new THREE.WebGLRenderer({canvas:document.getElementById('c2'), antialias:true}); setupRenderer(r2);
+const scene2 = await buildKenney();
+r2.render(scene2, makeCamera());
+status.textContent += ' — 渲染完成';
+document.title = '资产对比 渲染完成';
+</script>
+</body>
+</html>
