@@ -3,41 +3,52 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>图生 3D 实测 · TripoSR / Hunyuan3D</title>
+<title>图生 3D 横评 · TripoSR / Hunyuan3D / TripoSG</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:"PingFang SC","Microsoft YaHei",sans-serif; background:#2b2420; color:#f0e6d8; padding:24px; }
   h1 { font-size:22px; color:#ffd9a0; margin-bottom:4px; }
-  .sub { color:#a89880; font-size:13px; margin-bottom:20px; line-height:1.6; }
-  .row { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:16px; max-width:1400px; }
+  .sub { color:#a89880; font-size:13px; margin-bottom:20px; line-height:1.6; max-width:1100px; }
+  .row { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:16px; max-width:1500px; }
   .card { background:#3a3128; border:1px solid #52463a; border-radius:12px; overflow:hidden; }
   .card h2 { font-size:15px; color:#ffd9a0; padding:12px 16px 4px; }
   .card .meta { font-size:12px; color:#a89880; padding:0 16px 10px; line-height:1.7; }
   .card img, .card canvas { width:100%; display:block; aspect-ratio:1/1; object-fit:contain; background:#2b2420; }
   canvas { cursor:grab; touch-action:none; }
-  .tag { display:inline-block; font-size:11px; background:#5a4a2a; color:#ffd9a0; border-radius:4px; padding:2px 8px; margin:0 16px 12px; }
-  .warn { background:#5a3a2a; color:#ffc9a0; }
+  .good { color:#a8d8a0; }
+  .bad { color:#e0a8a0; }
 </style>
 </head>
 <body>
-<h1>🧊 图生 3D 本地实测 — CozyFrontier</h1>
-<p class="sub">输入：gpt-image-2 按 fa_22 锚点生成的锯木厂概念图（白底单体）→ 本地 RTX 5060 8GB 推理 → 可交互 3D 模型（拖动旋转 / 滚轮缩放）</p>
+<h1>🧊 图生 3D 本地横评 — 同一张概念图 · RTX 5060 8GB</h1>
+<p class="sub">全部可拖动旋转 / 滚轮缩放。输入：gpt-image-2 按 fa_22 锚点生成的等距锯木厂概念图（1024²，rembg 抠底后送入各模型）。
+<span class="good">结论：形状质量 Hunyuan3D-2mini ≈ TripoSG &gt;&gt; TripoSR；贴图用「投影烘焙」补齐 Hunyuan 无贴图的短板（正面视角效果接近原图，背面拉伸）。</span>
+<span class="bad">TripoSR 是 2023 年单图前馈方案，输出偏「散」——已可淘汰，仅保留作秒级占位。</span></p>
 <div class="row">
   <div class="card">
     <h2>① 输入图</h2>
-    <p class="meta">gpt-image-2 · 1024×1024 · rembg 自动抠底</p>
+    <p class="meta">gpt-image-2 · 1024×1024 · 白底单体</p>
     <img src="i23d-results/input-sawmill.png" alt="输入概念图">
   </div>
   <div class="card">
-    <h2>② TripoSR 输出（带烘焙贴图）</h2>
-    <p class="meta">形状 3.4s · 贴图烘焙 41s · 97,400 面<br>OBJ + 2048 贴图（高模底模，需 Blender 减面）</p>
+    <h2>② TripoSR + 自带烘焙贴图 <span class="bad">（淘汰候选）</span></h2>
+    <p class="meta">50 秒/张 · 97K 面 · 颜色散、结构糊</p>
     <canvas id="cv-triposr"></canvas>
   </div>
   <div class="card">
-    <h2>③ Hunyuan3D-2mini 输出（形状）</h2>
-    <p class="meta">开源第一梯队几何质量 · DiT 流匹配</p>
+    <h2>③ Hunyuan3D-2mini-turbo 纯形状 <span class="good">（形状冠军）</span></h2>
+    <p class="meta">~2.5 分钟/张 · 10 万面（原始 170 万减面）· 无贴图</p>
     <canvas id="cv-hunyuan"></canvas>
-    <span class="tag" id="hy-status">生成中…</span>
+  </div>
+  <div class="card">
+    <h2>④ TripoSG 12 万面 <span class="good">（同档对比）</span></h2>
+    <p class="meta">加载 30s + 扩散 16s(30步) + 解码 ~1 分钟 · 无贴图</p>
+    <canvas id="cv-triposg"></canvas>
+  </div>
+  <div class="card">
+    <h2>⑤ Hunyuan 形状 + 投影烘焙贴图 <span class="good">（当前最优组合）</span></h2>
+    <p class="meta">+24 秒烘焙 · 正面视角≈原图，背面为投影拉伸 · 待官方 Paint 低显存方案验证</p>
+    <canvas id="cv-hy-tex"></canvas>
   </div>
 </div>
 <script type="importmap">
@@ -60,10 +71,9 @@ function makeViewer(canvas) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x2b2420);
   const cam = new THREE.PerspectiveCamera(45, 1, 0.01, 100);
-  cam.position.set(1.2, 1.0, 1.2);
   const key = new THREE.DirectionalLight(0xfff2dc, 2.2); key.position.set(3, 5, 2);
   const fill = new THREE.DirectionalLight(0xcfe0ff, 0.7); fill.position.set(-2, 3, -3);
-  scene.add(key, fill, new THREE.AmbientLight(0xffffff, 0.5));
+  scene.add(key, fill, new THREE.AmbientLight(0xffffff, 0.55));
   const grid = new THREE.GridHelper(4, 20, 0x52463a, 0x3a3128); scene.add(grid);
   const controls = new OrbitControls(cam, canvas);
   controls.enableDamping = true;
@@ -89,28 +99,41 @@ function makeViewer(canvas) {
   }};
 }
 
-// TripoSR OBJ + texture
+// ② TripoSR OBJ + texture
 {
   const v = makeViewer(document.getElementById('cv-triposr'));
   const tex = new THREE.TextureLoader().load(enc('i23d-results/triposr-sawmill.png'));
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.flipY = false;
+  tex.colorSpace = THREE.SRGBColorSpace; tex.flipY = false;
   new OBJLoader().load(enc('i23d-results/triposr-sawmill.obj'), obj => {
-    obj.traverse(c => { if (c.isMesh) {
-      c.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9, metalness: 0 });
-    }});
+    obj.traverse(c => { if (c.isMesh) c.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 }); });
     v.fit(obj);
   });
 }
-
-// Hunyuan GLB (added when available)
+// ③ Hunyuan shape GLB
 {
   const v = makeViewer(document.getElementById('cv-hunyuan'));
-  const st = document.getElementById('hy-status');
-  new GLTFLoader().load(enc('i23d-results/hunyuan-sawmill.glb'),
-    g => { v.fit(g.scene); st.remove(); },
-    undefined,
-    () => { st.textContent = '暂无输出（生成失败或未完成）'; st.classList.add('warn'); });
+  new GLTFLoader().load(enc('i23d-results/hunyuan-sawmill.glb'), g => {
+    g.scene.traverse(c => { if (c.isMesh) c.material = new THREE.MeshStandardMaterial({ color: 0xd8c8a8, roughness: 0.9 }); });
+    v.fit(g.scene);
+  });
+}
+// ④ TripoSG shape GLB
+{
+  const v = makeViewer(document.getElementById('cv-triposg'));
+  new GLTFLoader().load(enc('i23d-results/triposg-sawmill.glb'), g => {
+    g.scene.traverse(c => { if (c.isMesh) c.material = new THREE.MeshStandardMaterial({ color: 0xd8c8a8, roughness: 0.9 }); });
+    v.fit(g.scene);
+  });
+}
+// ⑤ Hunyuan + projection-baked texture (OBJ + png)
+{
+  const v = makeViewer(document.getElementById('cv-hy-tex'));
+  const tex = new THREE.TextureLoader().load(enc('i23d-results/hunyuan-sawmill-tex.png'));
+  tex.colorSpace = THREE.SRGBColorSpace; tex.flipY = false;
+  new OBJLoader().load(enc('i23d-results/hunyuan-sawmill-tex.obj'), obj => {
+    obj.traverse(c => { if (c.isMesh) c.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95 }); });
+    v.fit(obj);
+  });
 }
 </script>
 </body>
