@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>图生 3D 实测 · TripoSR / Hunyuan3D</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"PingFang SC","Microsoft YaHei",sans-serif; background:#2b2420; color:#f0e6d8; padding:24px; }
+  h1 { font-size:22px; color:#ffd9a0; margin-bottom:4px; }
+  .sub { color:#a89880; font-size:13px; margin-bottom:20px; line-height:1.6; }
+  .row { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:16px; max-width:1400px; }
+  .card { background:#3a3128; border:1px solid #52463a; border-radius:12px; overflow:hidden; }
+  .card h2 { font-size:15px; color:#ffd9a0; padding:12px 16px 4px; }
+  .card .meta { font-size:12px; color:#a89880; padding:0 16px 10px; line-height:1.7; }
+  .card img, .card canvas { width:100%; display:block; aspect-ratio:1/1; object-fit:contain; background:#2b2420; }
+  canvas { cursor:grab; touch-action:none; }
+  .tag { display:inline-block; font-size:11px; background:#5a4a2a; color:#ffd9a0; border-radius:4px; padding:2px 8px; margin:0 16px 12px; }
+  .warn { background:#5a3a2a; color:#ffc9a0; }
+</style>
+</head>
+<body>
+<h1>🧊 图生 3D 本地实测 — CozyFrontier</h1>
+<p class="sub">输入：gpt-image-2 按 fa_22 锚点生成的锯木厂概念图（白底单体）→ 本地 RTX 5060 8GB 推理 → 可交互 3D 模型（拖动旋转 / 滚轮缩放）</p>
+<div class="row">
+  <div class="card">
+    <h2>① 输入图</h2>
+    <p class="meta">gpt-image-2 · 1024×1024 · rembg 自动抠底</p>
+    <img src="i23d-results/input-sawmill.png" alt="输入概念图">
+  </div>
+  <div class="card">
+    <h2>② TripoSR 输出（带烘焙贴图）</h2>
+    <p class="meta">形状 3.4s · 贴图烘焙 41s · 97,400 面<br>OBJ + 2048 贴图（高模底模，需 Blender 减面）</p>
+    <canvas id="cv-triposr"></canvas>
+  </div>
+  <div class="card">
+    <h2>③ Hunyuan3D-2mini 输出（形状）</h2>
+    <p class="meta">开源第一梯队几何质量 · DiT 流匹配</p>
+    <canvas id="cv-hunyuan"></canvas>
+    <span class="tag" id="hy-status">生成中…</span>
+  </div>
+</div>
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const enc = p => p.split('/').map(encodeURIComponent).join('/');
+
+function makeViewer(canvas) {
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.toneMapping = THREE.NeutralToneMapping;
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x2b2420);
+  const cam = new THREE.PerspectiveCamera(45, 1, 0.01, 100);
+  cam.position.set(1.2, 1.0, 1.2);
+  const key = new THREE.DirectionalLight(0xfff2dc, 2.2); key.position.set(3, 5, 2);
+  const fill = new THREE.DirectionalLight(0xcfe0ff, 0.7); fill.position.set(-2, 3, -3);
+  scene.add(key, fill, new THREE.AmbientLight(0xffffff, 0.5));
+  const grid = new THREE.GridHelper(4, 20, 0x52463a, 0x3a3128); scene.add(grid);
+  const controls = new OrbitControls(cam, canvas);
+  controls.enableDamping = true;
+  function resize() {
+    const w = canvas.clientWidth, h = canvas.clientHeight || canvas.clientWidth;
+    renderer.setSize(w, h, false);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    cam.aspect = w / h; cam.updateProjectionMatrix();
+  }
+  resize(); addEventListener('resize', resize);
+  (function loop(){ requestAnimationFrame(loop); controls.update(); renderer.render(scene, cam); })();
+  return { scene, fit(obj) {
+    scene.add(obj);
+    const box = new THREE.Box3().setFromObject(obj);
+    const size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    obj.position.sub(center);
+    const d = maxDim * 2.2;
+    cam.position.set(d * 0.8, d * 0.6, d * 0.8);
+    controls.target.set(0, 0, 0);
+    grid.position.y = box.min.y - obj.position.y;
+    cam.far = d * 10; cam.updateProjectionMatrix();
+  }};
+}
+
+// TripoSR OBJ + texture
+{
+  const v = makeViewer(document.getElementById('cv-triposr'));
+  const tex = new THREE.TextureLoader().load(enc('i23d-results/triposr-sawmill.png'));
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.flipY = false;
+  new OBJLoader().load(enc('i23d-results/triposr-sawmill.obj'), obj => {
+    obj.traverse(c => { if (c.isMesh) {
+      c.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9, metalness: 0 });
+    }});
+    v.fit(obj);
+  });
+}
+
+// Hunyuan GLB (added when available)
+{
+  const v = makeViewer(document.getElementById('cv-hunyuan'));
+  const st = document.getElementById('hy-status');
+  new GLTFLoader().load(enc('i23d-results/hunyuan-sawmill.glb'),
+    g => { v.fit(g.scene); st.remove(); },
+    undefined,
+    () => { st.textContent = '暂无输出（生成失败或未完成）'; st.classList.add('warn'); });
+}
+</script>
+</body>
+</html>
