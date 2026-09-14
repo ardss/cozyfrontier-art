@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CozyFrontier 暖境边陲 · 美术展示中心</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"PingFang SC","Microsoft YaHei",sans-serif; background:#2b2420; color:#f0e6d8; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .wrap { max-width:860px; width:100%; }
+  h1 { font-size:26px; margin-bottom:6px; color:#ffd9a0; }
+  .sub { color:#a89880; margin-bottom:28px; font-size:14px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:16px; }
+  a.card { display:block; background:#3a3128; border:1px solid #52463a; border-radius:12px; padding:20px; text-decoration:none; color:#f0e6d8; transition:all .2s; }
+  a.card:hover { background:#4a3e32; border-color:#c9a227; transform:translateY(-2px); }
+  .card h2 { font-size:17px; margin-bottom:8px; color:#ffd9a0; }
+  .card p { font-size:13px; color:#a89880; line-height:1.6; }
+  .tag { display:inline-block; font-size:11px; background:#5a4a2a; color:#ffd9a0; border-radius:4px; padding:2px 8px; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🌲 CozyFrontier 暖境边陲 · 美术展示中心</h1>
+  <p class="sub">公网只读镜像 · 本地源：F:\CozyFrontier\art-prototype</p>
+  <div class="grid">
+    <a class="card" href="style-decision.html">
+      <h2>📐 画风决策板</h2>
+      <p>画风锚点（fa_22 木屋）、宏观地形图、村民职业、农田系统、UI 驾驶舱、四季变体、风格拆分表与资产对应表。定案从这里看。</p>
+      <span class="tag">核心 · 定案</span>
+    </a>
+    <a class="card" href="terrain-sample.html">
+      <h2>🗺️ 地形样张（S2 规则）</h2>
+      <p>按 docs S2 地形规则程序化搭建的 32×32 Tile 世界：6 种地形、带储量资源点、开局营地、4 名带工作标记的村民。</p>
+      <span class="tag">引擎逻辑搭建</span>
+    </a>
+    <a class="card" href="gallery.html">
+      <h2>🖼️ 资产图鉴</h2>
+      <p>15 个资产包 · 1169 个模型，可逐个渲染预览（Kenney 全家桶 + Quaternius 农舍/吉卜力自然包）。</p>
+      <span class="tag">模型较多 · 加载稍慢</span>
+    </a>
+    <a class="card" href="style-lab.html">
+      <h2>🎨 画风实验场</h2>
+      <p>5 种渲染方案同屏对比（A~E），方案 B「渐变低模 + Neutral + 暖调板」为最终定案，实验依据在此。</p>
+      <span class="tag">实验记录</span>
+    </a>
+    <a class="card" href="asset-compare.html">
+      <h2>⚖️ 程序化 vs 资产包对比</h2>
+      <p>纯程序化盒子建模与 Kenney 资产在同光照下的直观差距对比。</p>
+      <span class="tag">对比实验</span>
+    </a>
+    <a class="card" href="shots/">
+      <h2>📸 概念图目录</h2>
+      <p>四季全景、村民职业、采集交互、农田系统、UI 驾驶舱、地形资源图等全部 AI 概念图原始文件。</p>
+      <span class="tag">原始素材</span>
+    </a>
+  </div>
+</div>
+</body>
+</html>
