@@ -1,0 +1,49 @@
+<!DOCTYPE html><html><head><meta charset="utf8"><style>
+body{margin:0;background:#2b2420;color:#f0e6d8;font-family:sans-serif}
+.row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:8px;max-width:1400px}
+.card{background:#3a3128;border-radius:8px;overflow:hidden}
+h3{margin:6px 8px;font-size:13px}
+.card img,.card canvas{width:100%;display:block;aspect-ratio:1/1;background:#2b2420}
+</style>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script></head>
+<body><div class="row" id="r"></div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+const names=['hut','farmhouse','dovecote','fountain','granary'];
+function makeViewer(canvas){
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+  renderer.toneMappingExposure=1.15;
+  const scene=new THREE.Scene();scene.background=new THREE.Color(0x2b2420);
+  const cam=new THREE.PerspectiveCamera(45,1,0.01,100);
+  const key=new THREE.DirectionalLight(0xfff0d8,1.9);key.position.set(3,5,2);
+  const back=new THREE.DirectionalLight(0xffe8cc,0.7);back.position.set(-3,-2,-4);
+  scene.add(key,back,new THREE.HemisphereLight(0xfff4e2,0x8a7358,0.85),new THREE.AmbientLight(0xffffff,0.35));
+  const controls=new OrbitControls(cam,canvas);controls.enableDamping=true;
+  function resize(){const w=canvas.clientWidth,h=canvas.clientHeight||canvas.clientWidth;renderer.setSize(w,h,false);renderer.setPixelRatio(Math.min(devicePixelRatio,2));cam.aspect=w/h;cam.updateProjectionMatrix();}
+  resize();addEventListener('resize',resize);
+  (function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,cam);})();
+  return {scene,fit(obj){
+    scene.add(obj);
+    const box=new THREE.Box3().setFromObject(obj);
+    const size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
+    const maxDim=Math.max(size.x,size.y,size.z);
+    obj.position.sub(center);
+    const d=maxDim*2.2;
+    cam.position.set(d*0.8,d*0.6,d*0.8);cam.far=d*10;cam.updateProjectionMatrix();
+    controls.target.set(0,0,0);
+    resize();
+  }};
+}
+for(const n of names){
+  const d=document.createElement('div');d.className='card';
+  d.innerHTML=`<h3>${n}</h3><canvas id="c-${n}"></canvas>`;
+  document.getElementById('r').appendChild(d);
+  const v=makeViewer(d.querySelector('canvas'));
+  new GLTFLoader().load(`ai3d-mirror/paint-batch-${n}.glb?v=3`,
+    g=>{v.fit(g.scene);},
+    undefined,
+    e=>{d.querySelector('h3').textContent=n+' LOAD FAIL '+e;});
+}
+</script></body></html>
