@@ -46,9 +46,14 @@
     <canvas id="cv-triposg"></canvas>
   </div>
   <div class="card">
-    <h2>⑤ Hunyuan 形状 + 投影烘焙贴图 <span class="good">（当前最优组合）</span></h2>
-    <p class="meta">+24 秒烘焙 · 正面视角≈原图，背面为投影拉伸 · 待官方 Paint 低显存方案验证</p>
+    <h2>⑤ Hunyuan 形状 + 投影烘焙贴图 <span class="bad">（已淘汰：贴图错位）</span></h2>
+    <p class="meta">+24 秒烘焙 · 单视角投影，背面拉伸、接缝乱</p>
     <canvas id="cv-hy-tex"></canvas>
+  </div>
+  <div class="card">
+    <h2>⑥ Hunyuan 官方 Paint 多视角贴图 <span class="good">（当前最优组合）</span></h2>
+    <p class="meta">Hunyuan3D-Paint v2-turbo · 多视角扩散 + 图割烘焙 + 修补 · 全向贴图无拉伸</p>
+    <canvas id="cv-hy-paint"></canvas>
   </div>
 </div>
 <script type="importmap">
@@ -135,6 +140,13 @@ function makeViewer(canvas) {
   new OBJLoader().load(enc('i23d-results/hunyuan-sawmill-tex.obj') + '?v=6', obj => {
     obj.traverse(c => { if (c.isMesh) c.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95, side: THREE.DoubleSide }); });
     v.fit(obj);
+  });
+}
+// ⑥ Hunyuan official Paint multiview texture (GLB with baked atlas)
+{
+  const v = makeViewer(document.getElementById('cv-hy-paint'));
+  new GLTFLoader().load(enc('i23d-results/hunyuan-sawmill-paint.glb') + '?v=1', g => {
+    v.fit(g.scene);
   });
 }
 </script>
