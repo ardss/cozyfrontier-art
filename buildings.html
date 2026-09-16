@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>暖境边陲 · 图生3D 建筑资产库（官方多视角贴图）</title>
+<title>暖境边陲 · 水彩图生 3D 建筑库 v2</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:"PingFang SC","Microsoft YaHei",sans-serif; background:#2b2420; color:#f0e6d8; padding:24px; }
@@ -11,19 +11,20 @@
   .pager button { background:#52463a; color:#ffd9a0; border:none; border-radius:8px; padding:8px 18px; font-size:14px; cursor:pointer; }
   .pager button:disabled { opacity:0.4; cursor:default; }
   .pager .info { color:#a89880; font-size:13px; }
-  .row { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; max-width:1600px; }
+  .row { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:14px; max-width:1500px; }
   .card { background:#3a3128; border:1px solid #52463a; border-radius:12px; overflow:hidden; }
   .card h2 { font-size:14px; color:#ffd9a0; padding:10px 14px 4px; }
-  .card canvas { width:100%; display:block; aspect-ratio:1/1; background:#2b2420; cursor:grab; touch-action:none; }
+  .duo { display:grid; grid-template-columns:1fr 1fr; gap:4px; }
+  .duo img, .duo canvas { width:100%; display:block; aspect-ratio:1/1; background:#2b2420; object-fit:contain; }
+  .duo canvas { cursor:grab; touch-action:none; }
+  .tag { font-size:11px; color:#a89880; }
   .good { color:#a8d8a0; }
 </style></head>
 <body>
-<h1>🏘️ 暖境边陲 · 图生3D 建筑资产库 <span class="good">28 栋全部带贴图</span></h1>
-<p class="sub">流程：概念图（gpt-image-2）→ Hunyuan3D-2mini 形状 → 减面至~10万 → Hunyuan3D-Paint v2-turbo 官方多视角贴图（扩散+图割烘焙+修补）。RTX 5060 8GB 本地批量产出，贴图均摊约 3.4 分钟/栋。全部可拖动旋转（每页 12 栋，翻页浏览）。</p>
+<h1>🏘️ 水彩图生 3D 建筑库 <span class="good">18 栋 · 官方 Paint 多视角贴图</span></h1>
+<p class="sub">输入统一来自 2048 水彩总表切出的单体图（与官方 3D 展示页木屋同源同风格）→ Hunyuan3D-2mini 形状 → 减面 → Hunyuan3D-Paint v2-turbo 多视角贴图。每栋左边是输入水彩图，右边是 3D 成品（可拖动旋转）。</p>
 <div class="pager">
-  <button id="prev">← 上一页</button>
-  <span class="info" id="pinfo"></span>
-  <button id="next">下一页 →</button>
+  <button id="prev">← 上一页</button><span class="info" id="pinfo"></span><button id="next">下一页 →</button>
 </div>
 <div class="row" id="r"></div>
 <script type="importmap">
@@ -37,16 +38,16 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const enc = p => p.split('/').map(encodeURIComponent).join('/');
-const ASSETS=[["sawmill", "hy-sawmill-paint.glb"], ["apiary", "paint-batch-apiary.glb"], ["bakery", "paint-batch-bakery.glb"], ["bathhouse", "paint-batch-bathhouse.glb"], ["brewery", "paint-batch-brewery.glb"], ["bridge", "paint-batch-bridge.glb"], ["clinic", "paint-batch-clinic.glb"], ["cottage_a", "paint-batch-cottage_a.glb"], ["cottage_b", "paint-batch-cottage_b.glb"], ["dovecote", "paint-batch-dovecote.glb"], ["farmhouse", "paint-batch-farmhouse.glb"], ["fountain", "paint-batch-fountain.glb"], ["granary", "paint-batch-granary.glb"], ["greenhouse", "paint-batch-greenhouse.glb"], ["home_large", "paint-batch-home_large.glb"], ["home_small", "paint-batch-home_small.glb"], ["hut", "paint-batch-hut.glb"], ["laundry", "paint-batch-laundry.glb"], ["lighthouse", "paint-batch-lighthouse.glb"], ["marketstall", "paint-batch-marketstall.glb"], ["school", "paint-batch-school.glb"], ["shipyard", "paint-batch-shipyard.glb"], ["stable", "paint-batch-stable.glb"], ["tollgate", "paint-batch-tollgate.glb"], ["warehouse", "paint-batch-warehouse.glb"], ["watchpost", "paint-batch-watchpost.glb"], ["watchtower", "paint-batch-watchtower.glb"], ["wellhouse", "paint-batch-wellhouse.glb"]];
-const PER=12; let page=0; let alive=[];
+const ASSETS = [{"name": "watchtower", "cell": "s2-r5c1.png", "glb": "wc-watchtower-paint.glb"}, {"name": "well", "cell": "s3-r2c4.png", "glb": "wc-well-paint.glb"}, {"name": "farmhouse", "cell": "s2-r5c2.png", "glb": "wc-farmhouse-paint.glb"}, {"name": "home_large", "cell": "s3-r1c1.png", "glb": "wc-home_large-paint.glb"}, {"name": "home_small", "cell": "s3-r1c2.png", "glb": "wc-home_small-paint.glb"}, {"name": "cottage_a", "cell": "s2-r5c5.png", "glb": "wc-cottage_a-paint.glb"}, {"name": "cottage_b", "cell": "s3-r1c3.png", "glb": "wc-cottage_b-paint.glb"}, {"name": "hut", "cell": "s2-r5c4.png", "glb": "wc-hut-paint.glb"}, {"name": "warehouse", "cell": "s3-r2c5.png", "glb": "wc-warehouse-paint.glb"}, {"name": "sawmill", "cell": "s3-r3c2.png", "glb": "wc-sawmill-paint.glb"}, {"name": "marketstall", "cell": "s3-r3c3.png", "glb": "wc-marketstall-paint.glb"}, {"name": "bakery", "cell": "s3-r4c1.png", "glb": "wc-bakery-paint.glb"}, {"name": "clinic", "cell": "s3-r4c2.png", "glb": "wc-clinic-paint.glb"}, {"name": "school", "cell": "s3-r4c3.png", "glb": "wc-school-paint.glb"}, {"name": "watchpost", "cell": "s3-r4c5.png", "glb": "wc-watchpost-paint.glb"}, {"name": "shipyard", "cell": "s4-r4c1.png", "glb": "wc-shipyard-paint.glb"}, {"name": "bridge", "cell": "s4-r3c2.png", "glb": "wc-bridge-paint.glb"}, {"name": "brewery", "cell": "s4-r1c4.png", "glb": "wc-brewery-paint.glb"}];
+const PER = 9; let page = 0; let alive = [];
 function makeViewer(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.toneMappingExposure = 1.15;
+  renderer.toneMappingExposure = 1.35;
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0x2b2420);
   const cam = new THREE.PerspectiveCamera(45, 1, 0.01, 100);
-  const key = new THREE.DirectionalLight(0xfff0d8, 1.9); key.position.set(3, 5, 2);
-  const back = new THREE.DirectionalLight(0xffe8cc, 0.7); back.position.set(-3, -2, -4);
-  scene.add(key, back, new THREE.HemisphereLight(0xfff4e2, 0x8a7358, 0.85), new THREE.AmbientLight(0xffffff, 0.35));
+  const key = new THREE.DirectionalLight(0xfff0d8, 2.0); key.position.set(3, 5, 2);
+  const back = new THREE.DirectionalLight(0xffe8cc, 0.8); back.position.set(-3, -2, -4);
+  scene.add(key, back, new THREE.HemisphereLight(0xfff4e2, 0x8a7358, 1.0), new THREE.AmbientLight(0xffffff, 0.45));
   const controls = new OrbitControls(cam, canvas); controls.enableDamping = true;
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight || canvas.clientWidth;
@@ -66,25 +67,26 @@ function makeViewer(canvas) {
     controls.target.set(0, 0, 0);
   }};
 }
-function showPage(p){
-  page=p;
-  alive.forEach(v=>{ v.renderer.forceContextLoss(); v.renderer.dispose(); });
-  alive=[]; 
-  const r=document.getElementById('r'); r.innerHTML='';
-  const slice=ASSETS.slice(p*PER,(p+1)*PER);
-  slice.forEach(([name,file],i)=>{
-    const d=document.createElement('div'); d.className='card';
-    d.innerHTML=`<h2>${name}</h2><canvas></canvas>`; r.appendChild(d);
-    const cv=d.querySelector('canvas');
-    const v=makeViewer(cv); alive.push(v);
-    new GLTFLoader().load(enc('ai3d-mirror/'+file)+'?v=1', g=>{ v.fit(g.scene); });
+function showPage(p) {
+  page = p;
+  alive.forEach(v => { v.renderer.forceContextLoss(); v.renderer.dispose(); });
+  alive = [];
+  const r = document.getElementById('r'); r.innerHTML = '';
+  const slice = ASSETS.slice(p * PER, (p + 1) * PER);
+  slice.forEach(a => {
+    const d = document.createElement('div'); d.className = 'card';
+    d.innerHTML = `<h2>${a.name} <span class="tag">左输入 · 右3D</span></h2>
+      <div class="duo"><img src="${enc('ai3d-mirror/' + a.cell)}"><canvas></canvas></div>`;
+    r.appendChild(d);
+    const v = makeViewer(d.querySelector('canvas')); alive.push(v);
+    new GLTFLoader().load(enc('ai3d-mirror/' + a.glb) + '?v=1', g => v.fit(g.scene));
   });
-  document.getElementById('pinfo').textContent=`第 ${p+1} / ${Math.ceil(ASSETS.length/PER)} 页 · 本页 ${slice.length} 栋`;
-  document.getElementById('prev').disabled = p===0;
-  document.getElementById('next').disabled = (p+1)*PER >= ASSETS.length;
-  scrollTo(0,0);
+  document.getElementById('pinfo').textContent = `第 ${p+1} / ${Math.ceil(ASSETS.length/PER)} 页 · 共 ${ASSETS.length} 栋`;
+  document.getElementById('prev').disabled = p === 0;
+  document.getElementById('next').disabled = (p + 1) * PER >= ASSETS.length;
+  scrollTo(0, 0);
 }
-document.getElementById('prev').onclick=()=>showPage(page-1);
-document.getElementById('next').onclick=()=>showPage(page+1);
+document.getElementById('prev').onclick = () => showPage(page - 1);
+document.getElementById('next').onclick = () => showPage(page + 1);
 showPage(0);
 </script></body></html>
