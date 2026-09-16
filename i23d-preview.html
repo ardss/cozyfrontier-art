@@ -28,7 +28,7 @@
   <div class="card">
     <h2>① 输入图</h2>
     <p class="meta">gpt-image-2 · 1024×1024 · 白底单体</p>
-    <img src="i23d-results/input-sawmill.png" alt="输入概念图">
+    <img src="i23d-results/input-sawmill.png?v=6" alt="输入概念图">
   </div>
   <div class="card">
     <h2>② TripoSR + 自带烘焙贴图 <span class="bad">（淘汰候选）</span></h2>
@@ -67,7 +67,6 @@ const enc = p => p.split('/').map(encodeURIComponent).join('/');
 
 function makeViewer(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.toneMappingExposure = 1.15;
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x2b2420);
@@ -104,36 +103,37 @@ function makeViewer(canvas) {
 // ② TripoSR OBJ + texture
 {
   const v = makeViewer(document.getElementById('cv-triposr'));
-  const tex = new THREE.TextureLoader().load(enc('i23d-results/triposr-sawmill.png'));
-  tex.colorSpace = THREE.SRGBColorSpace; tex.flipY = false;
-  new OBJLoader().load(enc('i23d-results/triposr-sawmill.obj'), obj => {
-    obj.traverse(c => { if (c.isMesh) c.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 }); });
+  const tex = new THREE.TextureLoader().load(enc('i23d-results/triposr-sawmill.png') + '?v=6');
+  tex.colorSpace = THREE.SRGBColorSpace;
+  new OBJLoader().load(enc('i23d-results/triposr-sawmill.obj') + '?v=6', obj => {
+    obj.traverse(c => { if (c.isMesh) c.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9, side: THREE.DoubleSide }); });
     v.fit(obj);
   });
 }
 // ③ Hunyuan shape GLB
 {
   const v = makeViewer(document.getElementById('cv-hunyuan'));
-  new GLTFLoader().load(enc('i23d-results/hunyuan-sawmill.glb'), g => {
-    g.scene.traverse(c => { if (c.isMesh) c.material = new THREE.MeshStandardMaterial({ color: 0xe6d2ac, roughness: 0.82, flatShading: true }); });
+  new GLTFLoader().load(enc('i23d-results/hunyuan-sawmill.glb') + '?v=6', g => {
+    g.scene.traverse(c => { if (c.isMesh) c.material = new THREE.MeshStandardMaterial({ color: 0xe6d2ac, roughness: 0.82, flatShading: true, side: THREE.DoubleSide }); });
     v.fit(g.scene);
   });
 }
 // ④ TripoSG shape GLB
 {
   const v = makeViewer(document.getElementById('cv-triposg'));
-  new GLTFLoader().load(enc('i23d-results/triposg-sawmill.glb'), g => {
-    g.scene.traverse(c => { if (c.isMesh) c.material = new THREE.MeshStandardMaterial({ color: 0xe6d2ac, roughness: 0.82, flatShading: true }); });
+  new GLTFLoader().load(enc('i23d-results/triposg-sawmill.glb') + '?v=6', g => {
+    g.scene.traverse(c => { if (c.isMesh) c.material = new THREE.MeshStandardMaterial({ color: 0xe6d2ac, roughness: 0.82, flatShading: true, side: THREE.DoubleSide }); });
     v.fit(g.scene);
   });
 }
 // ⑤ Hunyuan + projection-baked texture (OBJ + png)
 {
   const v = makeViewer(document.getElementById('cv-hy-tex'));
-  const tex = new THREE.TextureLoader().load(enc('i23d-results/hunyuan-sawmill-tex.png'));
-  tex.colorSpace = THREE.SRGBColorSpace; tex.flipY = false;
-  new OBJLoader().load(enc('i23d-results/hunyuan-sawmill-tex.obj'), obj => {
-    obj.traverse(c => { if (c.isMesh) c.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95 }); });
+  const tex = new THREE.TextureLoader().load(enc('i23d-results/hunyuan-sawmill-tex.png') + '?v=16');
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.flipY = false;
+  new OBJLoader().load(enc('i23d-results/hunyuan-sawmill-tex.obj') + '?v=6', obj => {
+    obj.traverse(c => { if (c.isMesh) c.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95, side: THREE.DoubleSide }); });
     v.fit(obj);
   });
 }
