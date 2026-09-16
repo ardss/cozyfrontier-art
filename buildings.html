@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>暖境边陲 · 图生3D 建筑资产库（官方多视角贴图）</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"PingFang SC","Microsoft YaHei",sans-serif; background:#2b2420; color:#f0e6d8; padding:24px; }
+  h1 { font-size:22px; color:#ffd9a0; margin-bottom:4px; }
+  .sub { color:#a89880; font-size:13px; margin-bottom:16px; line-height:1.6; max-width:1100px; }
+  .pager { display:flex; align-items:center; gap:14px; margin-bottom:14px; }
+  .pager button { background:#52463a; color:#ffd9a0; border:none; border-radius:8px; padding:8px 18px; font-size:14px; cursor:pointer; }
+  .pager button:disabled { opacity:0.4; cursor:default; }
+  .pager .info { color:#a89880; font-size:13px; }
+  .row { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; max-width:1600px; }
+  .card { background:#3a3128; border:1px solid #52463a; border-radius:12px; overflow:hidden; }
+  .card h2 { font-size:14px; color:#ffd9a0; padding:10px 14px 4px; }
+  .card canvas { width:100%; display:block; aspect-ratio:1/1; background:#2b2420; cursor:grab; touch-action:none; }
+  .good { color:#a8d8a0; }
+</style></head>
+<body>
+<h1>🏘️ 暖境边陲 · 图生3D 建筑资产库 <span class="good">28 栋全部带贴图</span></h1>
+<p class="sub">流程：概念图（gpt-image-2）→ Hunyuan3D-2mini 形状 → 减面至~10万 → Hunyuan3D-Paint v2-turbo 官方多视角贴图（扩散+图割烘焙+修补）。RTX 5060 8GB 本地批量产出，贴图均摊约 3.4 分钟/栋。全部可拖动旋转（每页 12 栋，翻页浏览）。</p>
+<div class="pager">
+  <button id="prev">← 上一页</button>
+  <span class="info" id="pinfo"></span>
+  <button id="next">下一页 →</button>
+</div>
+<div class="row" id="r"></div>
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const enc = p => p.split('/').map(encodeURIComponent).join('/');
+const ASSETS=[["sawmill", "hy-sawmill-paint.glb"], ["apiary", "paint-batch-apiary.glb"], ["bakery", "paint-batch-bakery.glb"], ["bathhouse", "paint-batch-bathhouse.glb"], ["brewery", "paint-batch-brewery.glb"], ["bridge", "paint-batch-bridge.glb"], ["clinic", "paint-batch-clinic.glb"], ["cottage_a", "paint-batch-cottage_a.glb"], ["cottage_b", "paint-batch-cottage_b.glb"], ["dovecote", "paint-batch-dovecote.glb"], ["farmhouse", "paint-batch-farmhouse.glb"], ["fountain", "paint-batch-fountain.glb"], ["granary", "paint-batch-granary.glb"], ["greenhouse", "paint-batch-greenhouse.glb"], ["home_large", "paint-batch-home_large.glb"], ["home_small", "paint-batch-home_small.glb"], ["hut", "paint-batch-hut.glb"], ["laundry", "paint-batch-laundry.glb"], ["lighthouse", "paint-batch-lighthouse.glb"], ["marketstall", "paint-batch-marketstall.glb"], ["school", "paint-batch-school.glb"], ["shipyard", "paint-batch-shipyard.glb"], ["stable", "paint-batch-stable.glb"], ["tollgate", "paint-batch-tollgate.glb"], ["warehouse", "paint-batch-warehouse.glb"], ["watchpost", "paint-batch-watchpost.glb"], ["watchtower", "paint-batch-watchtower.glb"], ["wellhouse", "paint-batch-wellhouse.glb"]];
+const PER=12; let page=0; let alive=[];
+function makeViewer(canvas) {
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.toneMappingExposure = 1.15;
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(0x2b2420);
+  const cam = new THREE.PerspectiveCamera(45, 1, 0.01, 100);
+  const key = new THREE.DirectionalLight(0xfff0d8, 1.9); key.position.set(3, 5, 2);
+  const back = new THREE.DirectionalLight(0xffe8cc, 0.7); back.position.set(-3, -2, -4);
+  scene.add(key, back, new THREE.HemisphereLight(0xfff4e2, 0x8a7358, 0.85), new THREE.AmbientLight(0xffffff, 0.35));
+  const controls = new OrbitControls(cam, canvas); controls.enableDamping = true;
+  function resize() {
+    const w = canvas.clientWidth, h = canvas.clientHeight || canvas.clientWidth;
+    renderer.setSize(w, h, false); renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    cam.aspect = w / h; cam.updateProjectionMatrix();
+  }
+  resize(); addEventListener('resize', resize);
+  (function loop(){ requestAnimationFrame(loop); controls.update(); renderer.render(scene, cam); })();
+  return { scene, renderer, fit(obj) {
+    scene.add(obj);
+    const box = new THREE.Box3().setFromObject(obj);
+    const size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    obj.position.sub(center);
+    const d = maxDim * 2.2;
+    cam.position.set(d * 0.8, d * 0.6, d * 0.8); cam.far = d * 10; cam.updateProjectionMatrix();
+    controls.target.set(0, 0, 0);
+  }};
+}
+function showPage(p){
+  page=p;
+  alive.forEach(v=>{ v.renderer.forceContextLoss(); v.renderer.dispose(); });
+  alive=[]; 
+  const r=document.getElementById('r'); r.innerHTML='';
+  const slice=ASSETS.slice(p*PER,(p+1)*PER);
+  slice.forEach(([name,file],i)=>{
+    const d=document.createElement('div'); d.className='card';
+    d.innerHTML=`<h2>${name}</h2><canvas></canvas>`; r.appendChild(d);
+    const cv=d.querySelector('canvas');
+    const v=makeViewer(cv); alive.push(v);
+    new GLTFLoader().load(enc('ai3d-mirror/'+file)+'?v=1', g=>{ v.fit(g.scene); });
+  });
+  document.getElementById('pinfo').textContent=`第 ${p+1} / ${Math.ceil(ASSETS.length/PER)} 页 · 本页 ${slice.length} 栋`;
+  document.getElementById('prev').disabled = p===0;
+  document.getElementById('next').disabled = (p+1)*PER >= ASSETS.length;
+  scrollTo(0,0);
+}
+document.getElementById('prev').onclick=()=>showPage(page-1);
+document.getElementById('next').onclick=()=>showPage(page+1);
+showPage(0);
+</script></body></html>
