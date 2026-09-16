@@ -115,7 +115,7 @@ function makeViewer(canvas) {
 {
   const v = makeViewer(document.getElementById('cv-hunyuan'));
   new GLTFLoader().load(enc('i23d-results/hunyuan-sawmill.glb'), g => {
-    g.scene.traverse(c => { if (c.isMesh) c.material = new THREE.MeshStandardMaterial({ color: 0xe6d2ac, roughness: 0.82 }); });
+    g.scene.traverse(c => { if (c.isMesh) c.material = new THREE.MeshStandardMaterial({ color: 0xe6d2ac, roughness: 0.82, flatShading: true }); });
     v.fit(g.scene);
   });
 }
@@ -123,7 +123,7 @@ function makeViewer(canvas) {
 {
   const v = makeViewer(document.getElementById('cv-triposg'));
   new GLTFLoader().load(enc('i23d-results/triposg-sawmill.glb'), g => {
-    g.scene.traverse(c => { if (c.isMesh) c.material = new THREE.MeshStandardMaterial({ color: 0xe6d2ac, roughness: 0.82 }); });
+    g.scene.traverse(c => { if (c.isMesh) c.material = new THREE.MeshStandardMaterial({ color: 0xe6d2ac, roughness: 0.82, flatShading: true }); });
     v.fit(g.scene);
   });
 }
