@@ -78,8 +78,9 @@ function makeViewer(canvas) {
   const cam = new THREE.PerspectiveCamera(45, 1, 0.01, 100);
   const key = new THREE.DirectionalLight(0xfff0d8, 1.9); key.position.set(3, 5, 2);
   const fill = new THREE.DirectionalLight(0xcfe0ff, 0.45); fill.position.set(-2, 3, -3);
+  const back = new THREE.DirectionalLight(0xffe8cc, 0.7); back.position.set(-3, -2, -4);
   const hemi = new THREE.HemisphereLight(0xfff4e2, 0x8a7358, 0.85);
-  scene.add(key, fill, hemi, new THREE.AmbientLight(0xffffff, 0.35));
+  scene.add(key, fill, back, hemi, new THREE.AmbientLight(0xffffff, 0.35));
   const grid = new THREE.GridHelper(4, 20, 0x52463a, 0x3a3128); scene.add(grid);
   const controls = new OrbitControls(cam, canvas);
   controls.enableDamping = true;
@@ -145,7 +146,8 @@ function makeViewer(canvas) {
 // ⑥ Hunyuan official Paint multiview texture (GLB with baked atlas)
 {
   const v = makeViewer(document.getElementById('cv-hy-paint'));
-  new GLTFLoader().load(enc('i23d-results/hunyuan-sawmill-paint.glb') + '?v=1', g => {
+  new GLTFLoader().load(enc('i23d-results/hunyuan-sawmill-paint.glb') + '?v=2', g => {
+    g.scene.traverse(c => { if (c.isMesh && c.material) { c.material.side = THREE.DoubleSide; c.material.metalness = 0; c.material.needsUpdate = true; } });
     v.fit(g.scene);
   });
 }
