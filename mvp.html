@@ -619,6 +619,61 @@ function floatText(text, worldPos) {
   setTimeout(() => el.remove(), 1300);
 }
 
+/* ---- A* 网格寻路：占用格(建筑/工地/树木岩石)不可通行，8方向、禁斜穿角落 ---- */
+function cellFree(x, z) {
+  if (x < 0 || z < 0 || x >= GRID || z >= GRID) return false;
+  return !G.occ.has(key(x, z));
+}
+function nearestFree(cx, cz) {
+  if (cellFree(cx, cz)) return { x: cx, z: cz };
+  for (let r = 1; r <= 3; r++)
+    for (let dx = -r; dx <= r; dx++)
+      for (let dz = -r; dz <= r; dz++) {
+        if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue;
+        if (cellFree(cx + dx, cz + dz)) return { x: cx + dx, z: cz + dz };
+      }
+  return null;
+}
+function losFree(ax, az, bx, bz) {
+  const d = Math.hypot(bx - ax, bz - az), steps = Math.ceil(d / .3) || 1;
+  for (let i = 1; i <= steps; i++) {
+    const x = Math.floor(ax + (bx - ax) * i / steps), z = Math.floor(az + (bz - az) * i / steps);
+    if (!cellFree(x, z)) return false;
+  }
+  return true;
+}
+function findPath(sx, sz, tx, tz) {
+  const goal = nearestFree(Math.floor(tx), Math.floor(tz));
+  if (!goal) return null;
+  const start = { x: Math.floor(sx), z: Math.floor(sz) };
+  if (start.x === goal.x && start.z === goal.z) return [{ x: goal.x + .5, z: goal.z + .5 }];
+  const K = (x, z) => x * 100 + z;
+  const open = new Map([[K(start.x, start.z), { x: start.x, z: start.z, g: 0, f: 0, parent: null }]]);
+  const closed = new Set();
+  let best = null, guard = 0;
+  while (open.size && guard++ < 4000) {
+    let cur = null;
+    for (const n of open.values()) if (!cur || n.f < cur.f) cur = n;
+    open.delete(K(cur.x, cur.z)); closed.add(K(cur.x, cur.z));
+    if (cur.x === goal.x && cur.z === goal.z) { best = cur; break; }
+    for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) {
+      if (!dx && !dz) continue;
+      const nx = cur.x + dx, nz = cur.z + dz;
+      if (!cellFree(nx, nz)) continue;
+      if (dx && dz && (!cellFree(cur.x + dx, cur.z) || !cellFree(cur.x, cur.z + dz))) continue;
+      const nk = K(nx, nz);
+      if (closed.has(nk)) continue;
+      const g = cur.g + ((dx && dz) ? 1.414 : 1);
+      const ex = open.get(nk);
+      if (!ex || g < ex.g) open.set(nk, { x: nx, z: nz, g, f: g + Math.hypot(nx - goal.x, nz - goal.z), parent: cur });
+    }
+  }
+  if (!best) return null;
+  const pts = [];
+  for (let n = best; n; n = n.parent) pts.unshift({ x: n.x + .5, z: n.z + .5 });
+  return pts;
+}
+
 function stepVillager(v, dt, t) {
   const speed = 1.5;
   // 路过掉落物顺手拾取
@@ -674,19 +729,37 @@ function stepVillager(v, dt, t) {
   }
   if (!dest) { animIdle(v, t); return; }
   const dx = dest.x - v.obj.position.x, dz = dest.z - v.obj.position.z;
-  const dist = Math.hypot(dx, dz);
-  if (dist > arriveR) {
-    const nx = v.obj.position.x + dx / dist * speed * dt;
-    const nz = v.obj.position.z + dz / dist * speed * dt;
-    const blocker = G.occ.get(key(Math.floor(nx), Math.floor(nz)));
-    if (blocker && blocker.inst && G.placed.includes(blocker)) {
-      // 建筑挡路：沿切线绕行
-      v.obj.position.x += dz / dist * speed * dt * (v._side || (v._side = Math.random() < .5 ? 1 : -1));
-    } else { v.obj.position.x = nx; v.obj.position.z = nz; v._side = 0; }
-    v.obj.rotation.y = Math.atan2(dx, dz);
-    animWalk(v, t);
-    return;
+  let dist = Math.hypot(dx, dz);
+  let arrived = dist <= arriveR;
+  if (!arrived) {
+    // 目标变化 → 重算路径；直线有视野则直走，否则沿 A* 路点走
+    const tk = v.task.kind + ':' + Math.round(dest.x * 2) + ':' + Math.round(dest.z * 2);
+    if (v._pathKey !== tk) { v.path = findPath(v.obj.position.x, v.obj.position.z, dest.x, dest.z); v._pi = 0; v._pathKey = tk; }
+    let tx = dest.x, tz = dest.z;
+    if (v.path) {
+      if (losFree(v.obj.position.x, v.obj.position.z, dest.x, dest.z)) v.path = null;
+      else {
+        let wp = v.path[v._pi];
+        while (wp && Math.hypot(wp.x - v.obj.position.x, wp.z - v.obj.position.z) < .3) { v._pi++; wp = v.path[v._pi]; }
+        if (wp) { tx = wp.x; tz = wp.z; }
+        else v.path = null;
+      }
+    }
+    const ddx = tx - v.obj.position.x, ddz = tz - v.obj.position.z;
+    const dd = Math.hypot(ddx, ddz) || 1;
+    const nx = v.obj.position.x + ddx / dd * speed * dt;
+    const nz = v.obj.position.z + ddz / dd * speed * dt;
+    if (cellFree(Math.floor(nx), Math.floor(nz)) || !cellFree(Math.floor(v.obj.position.x), Math.floor(v.obj.position.z))) {
+      v.obj.position.x = nx; v.obj.position.z = nz;
+    } else {
+      // 撞上障碍：终点就在旁边（围着目标干活）则视为到位，否则下一帧重寻路
+      if (dist < arriveR + .8) arrived = true;
+      v._pathKey = null;
+    }
+    v.obj.rotation.y = Math.atan2(ddx, ddz);
   }
+  if (!arrived) { animWalk(v, t); return; }
+  v._pathKey = null;
   if (v.task.kind === 'move' || v.task.kind === 'fetch') { v.task = null; return; }
   if (v.task.kind === 'build') {
     const site = v.task.target;
@@ -1550,6 +1623,18 @@ window.__camCtl = camCtl;
     G.res.food = Math.min(G.foodCap, G.res.food + p.food * dt / DAY_SECONDS);
     if (G.time >= DAY_SECONDS) { G.time = 0; nightSettlement(); }
     for (const v of G.villagers) stepVillager(v, dt, t);
+    // 村民间软碰撞：重叠时互相推开，避免叠在一起
+    for (let i = 0; i < G.villagers.length; i++) for (let j = i + 1; j < G.villagers.length; j++) {
+      const a = G.villagers[i].obj.position, b = G.villagers[j].obj.position;
+      const ddx = b.x - a.x, ddz = b.z - a.z, dd = Math.hypot(ddx, ddz);
+      if (dd > 0 && dd < .45) {
+        const push = (.45 - dd) / 2;
+        const ax = a.x - ddx / dd * push, az = a.z - ddz / dd * push;
+        const bx = b.x + ddx / dd * push, bz = b.z + ddz / dd * push;
+        if (cellFree(Math.floor(ax), Math.floor(az))) { a.x = ax; a.z = az; }
+        if (cellFree(Math.floor(bx), Math.floor(bz))) { b.x = bx; b.z = bz; }
+      }
+    }
     if (Math.floor(t * 2) !== G._uiT) { G._uiT = Math.floor(t * 2); UI.refresh(); }
   }
   stepCameraKeys();
