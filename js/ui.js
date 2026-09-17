@@ -2,7 +2,7 @@
  * 11. UI —— 侧栏、缩略图、选择面板、提示、toast
  * ===================================================================*/
 import * as THREE from 'three';
-import { DAY_SECONDS, SEASONS, RES_INFO, CARRY_CAP, DEFS, CATS } from './config.js';
+import { DAY_SECONDS, SEASONS, RES_INFO, CARRY_CAP, DEFS, CATS, RECIPES } from './config.js';
 import { mainEl, camCtl, pickAt } from './scene.js';
 import { G, canAfford, unlocked, houseCapacity } from './world.js';
 import { protos } from './assets.js';
@@ -111,7 +111,8 @@ export const UI = {
   showSideTip(def, row) {
     const tip = document.getElementById('tip');
     const roleTxt = { house: '住房 · 提升人口上限', wood: '生产 · 派村民上工产木', food: '生产 · 派村民上工产食', granary: '粮仓 · 食物上限+25', well: '设施 · 附近民居更满意', happy: '设施 · 提升快乐', market: '设施 · 4木换5食', tower: '设施 · 夜间防狼', deco: '装饰' }[def.role] || def.cat;
-    tip.innerHTML = `<b>${def.name}</b><br><span style="color:#a8d8a0">${roleTxt}${def.cap ? ' · 容量' + def.cap : ''}${def.out ? ' · 产量' + def.out : ''}</span><br>${def.desc}<br><span style="color:#a89880">造价：${Object.entries(def.cost).map(([r, v]) => v + RES_INFO[r].label).join(' ')} · ${def.w}×${def.d}</span>`;
+    const rcTxt = RECIPES[def.id] ? '<br>⚙ 配方：' + Object.entries(RECIPES[def.id].in).map(([r, v]) => v + RES_INFO[r].icon).join(' ') + ' → ' + Object.entries(RECIPES[def.id].out).map(([r, v]) => v + RES_INFO[r].icon).join(' ') + ' / ' + RECIPES[def.id].time + '秒' : '';
+    tip.innerHTML = `<b>${def.name}</b><br><span style="color:#a8d8a0">${roleTxt}${def.cap ? ' · 容量' + def.cap : ''}${def.out ? ' · 产量' + def.out : ''}</span>${rcTxt}<br>${def.desc}<br><span style="color:#a89880">造价：${Object.entries(def.cost).map(([r, v]) => v + RES_INFO[r].label).join(' ')} · ${def.w}×${def.d}</span>`;
     const m = row.getBoundingClientRect(), mm = mainEl.getBoundingClientRect();
     tip.style.display = 'block';
     tip.style.left = '12px';
@@ -123,6 +124,8 @@ export const UI = {
     document.getElementById('r-wood').textContent = Math.floor(G.res.wood);
     document.getElementById('r-food').textContent = Math.floor(G.res.food);
     document.getElementById('r-stone').textContent = Math.floor(G.res.stone);
+    document.getElementById('r-plank').textContent = Math.floor(G.res.plank || 0);
+    document.getElementById('r-bread').textContent = Math.floor(G.res.bread || 0);
     document.getElementById('r-happy').textContent = Math.round(G.happy);
     document.getElementById('r-pop').textContent = G.villagers.length;
     document.getElementById('r-cap').textContent = '/' + houseCapacity();
@@ -183,8 +186,19 @@ export const UI = {
     const d = entry.def;
     const workers = G.villagers.filter(v => v.task && v.task.target === entry).length;
     const trade = d.role === 'market' && G.res.wood >= 4 ? '<button id="btn-trade">4 木换 5 食</button>' : '';
-    el.innerHTML = `<b>${d.name}</b><br><span style="color:#a89880;font-size:11px">${d.cat} · ${d.w}×${d.d} · 拖拽可搬移</span><br>${d.desc}<br>在岗：${workers} 人${trade}<button id="btn-del">拆除</button>`;
+    const rc = RECIPES[d.id];
+    const rcTxt = rc ? '⚙ 配方：' + Object.entries(rc.in).map(([r, v]) => v + RES_INFO[r].icon).join(' ') + ' → ' + Object.entries(rc.out).map(([r, v]) => v + RES_INFO[r].icon).join(' ') + ' / ' + rc.time + '秒<br>进度 ' + Math.floor(((entry.prodT || 0) / rc.time) * 100) + '%<br>' : '';
+    const assignBtn = rc && G.selected.size ? `<button id="btn-assign">派选中 ${G.selected.size} 人上工</button>` : '';
+    el.innerHTML = `<b>${d.name}</b><br><span style="color:#a89880;font-size:11px">${d.cat} · ${d.w}×${d.d} · 拖拽可搬移</span><br>${d.desc}<br>${rcTxt}在岗：${workers} 人${trade}${assignBtn}<button id="btn-del">拆除</button>`;
     document.getElementById('btn-del').onclick = () => { removeEntry(entry); this.hideInfo(); };
+    const ba = document.getElementById('btn-assign');
+    if (ba) ba.onclick = () => {
+      for (const v of [...G.selected]) { v.task = { kind: 'work', target: entry, workT: 0 }; v.ring.visible = false; }
+      G.selected.clear();
+      this.selectionChanged();
+      this.showBuildingInfo(entry);
+      toast('🏭 派工完成');
+    };
     const bt = document.getElementById('btn-trade');
     if (bt) bt.onclick = () => {
       if (G.res.wood >= 4) { G.res.wood -= 4; G.res.food = Math.min(G.foodCap, G.res.food + 5); toast('🛒 -4 木 +5 食'); UI.refresh(); }
@@ -209,7 +223,11 @@ export const UI = {
       tip.innerHTML = `<b>🏗 ${site.def.name} 工地</b><br>进度 ${Math.floor(r * 100)}%${site.builder ? '' : '<br><span style="color:#c98">等待村民建造…</span>'}`;
     }
     else if (nat) tip.innerHTML = `<b>${nat.def.name}</b><br>剩余 ${nat.hp} 次 · ${RES_INFO[nat.def.yield].icon}+${nat.def.amt}/次<br><span style="color:#a89880">选村民后右键或框选派工</span>`;
-    else if (bld) tip.innerHTML = `<b>${bld.def.name}</b><br>${bld.def.desc}<br><span style="color:#a89880">点击看详情 · 拖拽可搬移${bld.def.role === 'wood' || bld.def.role === 'food' ? ' · 选村民右键它=上工' : ''}</span>`;
+    else if (bld) {
+      const rc = RECIPES[bld.def.id];
+      const rcTxt = rc ? '<br>⚙ ' + Object.entries(rc.in).map(([r, v]) => v + RES_INFO[r].icon).join(' ') + ' → ' + Object.entries(rc.out).map(([r, v]) => v + RES_INFO[r].icon).join(' ') + '（缺原料会停工）' : '';
+      tip.innerHTML = `<b>${bld.def.name}</b><br>${bld.def.desc}${rcTxt}<br><span style="color:#a89880">点击看详情 · 拖拽可搬移${bld.def.role === 'wood' || bld.def.role === 'food' ? ' · 选村民右键它=上工' : ''}</span>`;
+    }
     else tip.innerHTML = `<b>${vil.name}</b><br>${vil.task ? '忙' : '待命'} · 点击选中`;
   },
 };

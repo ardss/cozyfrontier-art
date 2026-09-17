@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { GRID } from './config.js';
 
 export const G = {
-  res: { wood: 10, food: 10, stone: 2 }, foodCap: 30, happy: 70,
+  res: { wood: 10, food: 10, stone: 2, plank: 0, bread: 0 }, foodCap: 30, happy: 70,
   day: 1, time: 0, over: false,
   placed: [], occ: new Map(), villagers: [], nature: [], drops: [], sites: [],
   selected: new Set(),

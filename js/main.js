@@ -10,7 +10,7 @@ import { scatterNature } from './nature.js';
 import { spawnVillagers } from './villagers.js';
 import { stepDrops } from './drops.js';
 import { stepDropAnims, stepSites } from './buildings.js';
-import { stepVillager, productionPerDay, nightSettlement } from './sim.js';
+import { stepVillager, productionPerDay, nightSettlement, stepProduction } from './sim.js';
 import { stepCameraKeys, Input, startPlacing } from './input.js';
 import { UI, toast } from './ui.js';
 import { ctx } from './context.js';
@@ -58,6 +58,7 @@ window.__camCtl = camCtl;
     G.res.food = Math.min(G.foodCap, G.res.food + p.food * dt / DAY_SECONDS);
     if (G.time >= DAY_SECONDS) { G.time = 0; nightSettlement(); }
     for (const v of G.villagers) stepVillager(v, dt, t);
+    stepProduction(dt);
     // 村民间软碰撞：重叠时互相推开，避免叠在一起
     for (let i = 0; i < G.villagers.length; i++) for (let j = i + 1; j < G.villagers.length; j++) {
       const a = G.villagers[i].obj.position, b = G.villagers[j].obj.position;

@@ -9,6 +9,13 @@ export const RES_INFO = {
   wood:  { label: '木', icon: '🪵', depotRole: 'wood',  color: 0x8a5a34 },
   food:  { label: '食', icon: '🍎', depotRole: 'food',  color: 0xc23c2e },
   stone: { label: '石', icon: '🪨', depotRole: 'wood',  color: 0x8d8d86 },  // 石料送工坊/锯木厂
+  plank: { label: '板', icon: '🟫', depotRole: 'wood',  color: 0xb08850 },  // 加工材：进阶建筑消耗
+  bread: { label: '包', icon: '🍞', depotRole: 'food',  color: 0xd8a04c },  // 优质食物：夜间优先食用
+};
+/* ---- 配方生产：在岗村民消耗库存原料 → 产出成品（R2 生产主轴） ---- */
+export const RECIPES = {
+  sawmill: { in: { wood: 2 }, out: { plank: 3 }, time: 6 },
+  bakery:  { in: { food: 2 }, out: { bread: 3 }, time: 8 },
 };
 export const GRID = 26, CELL_SINK = 0.045, DRAG_TOLERANCE = 5;
 
@@ -18,11 +25,11 @@ export const DEFS = [
   { id:'cottage_a', name:'村舍',   w:2,d:1, cat:'住房', cost:{wood:5},  role:'house', cap:2, desc:'温暖的小家。' },
   { id:'cottage_b', name:'猎户村舍',w:2,d:1, cat:'住房', cost:{wood:5},  role:'house', cap:2, desc:'猎户的家。' },
   { id:'home_small',name:'小民居', w:2,d:2, cat:'住房', cost:{wood:7},  role:'house', cap:3, desc:'舒适民居。' },
-  { id:'home_large',name:'大民居', w:2,d:2, cat:'住房', cost:{wood:13}, role:'house', cap:4, desc:'宽敞民居。' },
+  { id:'home_large',name:'大民居', w:2,d:2, cat:'住房', cost:{wood:8,plank:4}, role:'house', cap:4, desc:'宽敞民居（需要木板）。' },
   { id:'farmhouse', name:'农舍',   w:2,d:2, cat:'生产', cost:{wood:9},  role:'food',  out:4, desc:'村民主产食物。' },
-  { id:'sawmill',   name:'锯木厂', w:2,d:2, cat:'生产', cost:{wood:6},  role:'wood',  out:4, desc:'村民主产木材。' },
+  { id:'sawmill',   name:'锯木厂', w:2,d:2, cat:'生产', cost:{wood:6},  role:'wood',  desc:'配方：2木 → 3板。派村民上工。' },
   { id:'apiary',    name:'蜂箱架', w:1,d:1, cat:'生产', cost:{wood:3},  role:'food',  out:2, desc:'产蜂蜜小屋。' },
-  { id:'bakery',    name:'面包房', w:2,d:1, cat:'生产', cost:{wood:8},  role:'food',  out:3, desc:'把粮变面包。' },
+  { id:'bakery',    name:'面包房', w:2,d:1, cat:'生产', cost:{wood:8},  role:'food',  desc:'配方：2食 → 3面包。派村民上工。' },
   { id:'greenhouse',name:'温室',   w:2,d:2, cat:'生产', cost:{wood:10}, role:'food',  out:3, desc:'冬天也能产食物。' },
   { id:'granary',   name:'粮仓',   w:2,d:2, cat:'设施', cost:{wood:5},  role:'granary',desc:'食物上限 +25。' },
   { id:'wellhouse', name:'水井',   w:1,d:1, cat:'设施', cost:{wood:3,stone:2},  role:'well',  desc:'附近民居更满意。' },

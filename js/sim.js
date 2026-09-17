@@ -1,7 +1,7 @@
 /* =====================================================================
  * 10. 模拟 —— 村民行为步进、经济、日程、夜晚结算
  * ===================================================================*/
-import { GRID, RES_INFO, CARRY_CAP, WINTER_DAY, END_DAY } from './config.js';
+import { GRID, RES_INFO, CARRY_CAP, WINTER_DAY, END_DAY, RECIPES } from './config.js';
 import { scene } from './scene.js';
 import { G, houseCapacity } from './world.js';
 import { cellFree, findPath, losFree } from './pathfinding.js';
@@ -139,7 +139,7 @@ export function productionPerDay() {
   const eff = (0.6 + G.happy / 250) * (0.5 + 0.5 * houseHappiness());
   const winter = G.day >= WINTER_DAY;
   for (const p of G.placed) {
-    if (p.def.role !== 'wood' && p.def.role !== 'food') continue;
+    if (p.def.out === undefined) continue;
     const n = G.villagers.filter(v => v.task && v.task.kind === 'work' && v.task.target === p).length;
     if (!n) continue;
     const rate = winter && p.def.id !== 'greenhouse' ? 0.3 : 1;
@@ -148,8 +148,28 @@ export function productionPerDay() {
   }
   return { wood, food };
 }
+/* ---- 配方生产：在岗村民按配方消耗库存原料 → 成品入库 ---- */
+export function stepProduction(dt) {
+  for (const p of G.placed) {
+    const rc = RECIPES[p.def.id];
+    if (!rc) continue;
+    const n = G.villagers.filter(v => v.task && v.task.kind === 'work' && v.task.target === p).length;
+    if (!n) { p.prodT = 0; continue; }
+    p.prodT = (p.prodT || 0) + dt * Math.min(n, 2);
+    while (p.prodT >= rc.time) {
+      if (!Object.entries(rc.in).every(([r, v]) => G.res[r] >= v)) { p.prodT = rc.time; break; }   // 缺原料：保持满格待料
+      Object.entries(rc.in).forEach(([r, v]) => G.res[r] -= v);
+      Object.entries(rc.out).forEach(([r, v]) => G.res[r] = (G.res[r] || 0) + v);
+      p.prodT -= rc.time;
+      const [res, amt] = Object.entries(rc.out)[0];
+      floatText('+' + amt + ' ' + RES_INFO[res].icon, p.inst.position);
+    }
+  }
+}
 export function nightSettlement() {
-  const need = G.villagers.length;
+  let need = G.villagers.length;
+  const eatBread = Math.min(G.res.bread || 0, need);   // 面包优先上桌，省下生食
+  G.res.bread -= eatBread; need -= eatBread;
   if (G.res.food >= need) G.res.food -= need;
   else {
     G.res.food = 0; G.happy -= 15;
