@@ -159,6 +159,21 @@ const wellDef = DEFS.find(d => d.id === 'wellhouse');
 if (wellDef) wellDef.glb = 'ai3d-mirror/wc-well-paint.glb';
 const coreDef = DEFS.find(d => d.id === 'core');
 if (coreDef) coreDef.glb = 'ai3d-mirror/wc-warehouse-paint.glb';   // 村中心借用仓库大模型
+
+/* ---- 全局比例设计 ----
+ * 村民身高 0.55。建筑按"目标高度"缩放（脚印只允许少量超出），
+ * 自然物按高度定标：树比人高得多，石块齐膝，草花贴地 */
+const HEIGHTS = {
+  hut:1.0, cottage_a:1.1, cottage_b:1.1, home_small:1.25, home_large:1.45,
+  farmhouse:1.2, sawmill:1.2, apiary:0.7, bakery:1.1, greenhouse:1.1,
+  granary:1.35, wellhouse:0.7, fountain:0.8, marketstall:0.9, watchtower:1.9,
+  bridge:0.5, tollgate:0.8, stable:1.0, lighthouse:1.8, bathhouse:1.0,
+  school:1.1, clinic:1.1, dovecote:0.9, laundry:0.6, shipyard:1.2,
+  warehouse:1.35, watchpost:1.2, core:1.6,
+  fence:0.5, barrel:0.5, crate:0.45, lantern:0.6, signpost:0.7,
+  campfire:0.4, haystack:0.8, cart:0.5,
+};
+DEFS.forEach(d => d.h = HEIGHTS[d.id] || 1.0);
 // 自产小物件改用 prop 管线的模型
 ['fence','barrel','crate','lantern','signpost','campfire','haystack','cart'].forEach(id => {
   const d = DEFS.find(x => x.id === id);
@@ -166,22 +181,22 @@ if (coreDef) coreDef.glb = 'ai3d-mirror/wc-warehouse-paint.glb';   // 村中心�
 });
 
 const NATURE_DEFS = {
-  tree:  { glb: 'ai3d-mirror/prop-tree_oak.glb',  name: '橡树', yield: 'wood', amt: TREE_YIELD, hp: TREE_HP, work: WORK_RATE },
-  tree2: { glb: 'ai3d-mirror/prop-tree_pine.glb', name: '松树', yield: 'wood', amt: TREE_YIELD, hp: TREE_HP, work: WORK_RATE },
-  tree3: { glb: 'ai3d-mirror/prop-tree_blossom.glb', name: '花树', yield: 'wood', amt: TREE_YIELD, hp: TREE_HP, work: WORK_RATE },
-  dead:  { glb: 'ai3d-mirror/prop-tree_dead.glb', name: '枯木', yield: 'wood', amt: 2, hp: 2, work: WORK_RATE },
-  bush:  { glb: 'ai3d-mirror/prop-berry_bush.glb', name: '浆果丛', yield: 'food', amt: BUSH_FOOD, hp: 3, work: WORK_RATE, regrow: 3 },
-  rocks: { glb: 'ai3d-mirror/prop-rocks_small.glb', name: '碎石堆', yield: 'stone', amt: 1, hp: 2, work: WORK_RATE },
-  rock:  { glb: 'ai3d-mirror/prop-rock_big.glb', name: '巨石', yield: 'stone', amt: 2, hp: 3, work: WORK_RATE },
+  tree:  { glb: 'ai3d-mirror/prop-tree_oak.glb',  name: '橡树', yield: 'wood', amt: TREE_YIELD, hp: TREE_HP, work: WORK_RATE, h: 1.8 },
+  tree2: { glb: 'ai3d-mirror/prop-tree_pine.glb', name: '松树', yield: 'wood', amt: TREE_YIELD, hp: TREE_HP, work: WORK_RATE, h: 1.9 },
+  tree3: { glb: 'ai3d-mirror/prop-tree_blossom.glb', name: '花树', yield: 'wood', amt: TREE_YIELD, hp: TREE_HP, work: WORK_RATE, h: 1.7 },
+  dead:  { glb: 'ai3d-mirror/prop-tree_dead.glb', name: '枯木', yield: 'wood', amt: 2, hp: 2, work: WORK_RATE, h: 1.5 },
+  bush:  { glb: 'ai3d-mirror/prop-berry_bush.glb', name: '浆果丛', yield: 'food', amt: BUSH_FOOD, hp: 3, work: WORK_RATE, regrow: 3, h: 0.9 },
+  rocks: { glb: 'ai3d-mirror/prop-rocks_small.glb', name: '碎石堆', yield: 'stone', amt: 1, hp: 2, work: WORK_RATE, h: 0.45 },
+  rock:  { glb: 'ai3d-mirror/prop-rock_big.glb', name: '巨石', yield: 'stone', amt: 2, hp: 3, work: WORK_RATE, h: 0.65 },
+  // 地表小物：不占格，玩家看到就能采集/清理
+  stump:      { glb: 'ai3d-mirror/prop-stump.glb', name: '树桩', yield: 'wood', amt: 1, hp: 1, work: WORK_RATE, h: 0.4, free: true },
+  mushrooms:  { glb: 'ai3d-mirror/prop-mushrooms.glb', name: '蘑菇', yield: 'food', amt: 1, hp: 1, work: WORK_RATE, regrow: 4, h: 0.3, free: true },
+  grass_tuft: { glb: 'ai3d-mirror/prop-grass_tuft.glb', name: '草丛', yield: 'wood', amt: 1, hp: 1, work: 1.2, h: 0.35, free: true },
+  flowers:    { glb: 'ai3d-mirror/prop-flowers.glb', name: '野花', yield: 'food', amt: 1, hp: 1, work: 1.2, regrow: 4, h: 0.35, free: true },
 };
-const SCATTER_DEFS = {
-  flowers:    'ai3d-mirror/prop-flowers.glb',
-  grass_tuft: 'ai3d-mirror/prop-grass_tuft.glb',
-  mushrooms:  'ai3d-mirror/prop-mushrooms.glb',
-  stump:      'ai3d-mirror/prop-stump.glb',
-};
-const SCATTER_COUNTS = { grass_tuft: 26, flowers: 16, mushrooms: 10, stump: 6 };
-const NATURE_COUNTS  = { tree: 22, tree2: 8, tree3: 6, dead: 4, bush: 14, rocks: 8, rock: 5 };
+const SCATTER_DEFS = {};
+const SCATTER_COUNTS = {};
+const NATURE_COUNTS  = { tree: 20, tree2: 8, tree3: 6, dead: 4, bush: 12, rocks: 7, rock: 5, stump: 6, mushrooms: 8, grass_tuft: 12, flowers: 12 };
 const VNAMES = ['阿岚', '小满', '石头', '阿枣', '春妮', '大川', '阿槐', '小蝶'];
 const CATS = ['全部', '住房', '生产', '设施', '装饰'];
 
@@ -225,9 +240,13 @@ function loadProto(id, glb, fit) {
   }, undefined, err => { console.error('load fail', glb, err); done(); });
 }
 // 建筑适配 w×d 脚印；自然物/散布物/村民适配目标尺寸
-DEFS.forEach(d => loadProto(d.id, d.glb, s => Math.min(d.w / s.x, d.d / s.z)));   // 脚印贴齐即可，高度不压缩（避免房子被压扁）
-Object.entries(NATURE_DEFS).forEach(([id, nd]) => loadProto('nat_' + id, nd.glb, s => 1.15 / Math.max(s.x, s.z)));
-Object.entries(SCATTER_DEFS).forEach(([id, glb]) => loadProto('deco_' + id, glb, s => 0.55 / Math.max(s.x, s.z)));
+// 建筑适配：以目标高度为主，脚印允许 0.4 格容差
+DEFS.forEach(d => loadProto(d.id, d.glb, s => {
+  const sH = d.h / s.y;
+  const sF = Math.min(d.w / s.x, d.d / s.z);
+  return Math.min(Math.max(sH, sF), (d.w + 0.4) / s.x, (d.d + 0.4) / s.z);
+}));
+Object.entries(NATURE_DEFS).forEach(([id, nd]) => loadProto('nat_' + id, nd.glb, s => nd.h / s.y));
 
 /* ---- 村民：运行时人形骨骼绑定 ----
  * 静态网格 → 按顶点最近骨段分配蒙皮权重 → SkinnedMesh，走路/砍伐直接驱动骨头 */
@@ -402,37 +421,25 @@ function scatterNature() {
   let tries = 0;
   for (const [type, n] of Object.entries(NATURE_COUNTS)) {
     let placedN = 0;
-    while (placedN < n && tries++ < 800) {
+    while (placedN < n && tries++ < 2000) {
       const x = 1 + Math.floor(Math.random() * (GRID - 2));
       const z = 1 + Math.floor(Math.random() * (GRID - 2));
-      if (G.occ.has(key(x, z))) continue;
+      const k = key(x, z);
+      const free = NATURE_DEFS[type].free;
+      if (!free && G.occ.has(k)) continue;           // 占格类不重叠；贴地类可共存
       const dc = Math.hypot(x - center, z - center);
-      if (dc < 3.5) continue;                                     // 中心留空地给村庄
-      if (type !== 'bush' && dc > 4 && dc < 5.2 && Math.random() < .7) continue;
+      if (dc < 3.5 && !free) continue;               // 中心留空地给村庄
+      if (type !== 'bush' && !free && dc > 4 && dc < 5.2 && Math.random() < .7) continue;
       const nd = NATURE_DEFS[type];
       const inst = protos['nat_' + type].clone();
       inst.position.set(x + .5 + (Math.random() - .5) * .25, 0, z + .5 + (Math.random() - .5) * .25);
       inst.rotation.y = Math.random() * Math.PI * 2;
-      inst.scale.setScalar(.8 + Math.random() * .45);
+      inst.scale.setScalar(.85 + Math.random() * .3);
       scene.add(inst);
       const node = { type, def: nd, inst, x, z, hp: nd.hp, alive: true, respawnDay: 0 };
       G.nature.push(node);
-      G.occ.set(key(x, z), node);
+      if (!free) G.occ.set(k, node);
       placedN++;
-    }
-  }
-}
-function scatterDeco() {
-  for (const [type, n] of Object.entries(SCATTER_COUNTS)) {
-    for (let i = 0, tries = 0; i < n && tries < 300; tries++) {
-      const x = Math.random() * (GRID - 1), z = Math.random() * (GRID - 1);
-      if (G.occ.has(key(Math.floor(x), Math.floor(z)))) continue;
-      const inst = protos['deco_' + type].clone();
-      inst.position.set(x, 0, z);
-      inst.rotation.y = Math.random() * Math.PI * 2;
-      inst.scale.setScalar(.7 + Math.random() * .6);
-      scene.add(inst);
-      i++;
     }
   }
 }
@@ -511,7 +518,7 @@ function spawnVillagers(n) {
     ring.position.y = .02; ring.visible = false;
     wrap.add(ring);
     scene.add(wrap);
-    G.villagers.push({ name: VNAMES[G.villagers.length % VNAMES.length], obj: wrap, bones, ring, task: null, resume: null, carry: {} });
+    G.villagers.push({ name: VNAMES[G.villagers.length % VNAMES.length], obj: wrap, bones, ring, task: null, resume: null, carry: {}, slot: (G.villagers.length % 4) * 0.3 });
   }
 }
 function command(v, kind, target) { v.task = { kind, target, workT: 0 }; }
@@ -650,7 +657,7 @@ function stepVillager(v, dt, t) {
     if (v.task.kind === 'move') { dest = v.task.target; arriveR = .25; }
     else if (v.task.kind === 'chop') {
       if (!v.task.target.alive) { v.task = null; }
-      else { dest = v.task.target.inst.position; arriveR = 1.15; }
+      else { dest = v.task.target.inst.position; arriveR = 1.05 + (v.slot || 0); }   // 站位错开，多人可同时砍
     } else if (v.task.kind === 'work') {
       if (!G.placed.includes(v.task.target)) { v.task = null; }
       else { dest = v.task.target.inst.position; arriveR = 1.3; }
@@ -821,7 +828,8 @@ function stepSites(dt) {
   if (G._siteT > 1.5) {
     G._siteT = 0;
     for (const site of G.sites) {
-      if (site.builder && site.builder.task && site.builder.task.target === site) continue;
+      const builders = G.villagers.filter(v => v.task && v.task.kind === 'build' && v.task.target === site).length;
+      if (builders >= 2) continue;
       let near = null, nd = 1e9;
       for (const v of G.villagers) {
         if (v.task) continue;
@@ -1507,7 +1515,7 @@ const UI = {
 function startGame() {
   UI.initSidebar();
   scatterNature();
-  scatterDeco();
+
   spawnVillagers(3);
   UI.startThumbs();
   UI.refresh();
