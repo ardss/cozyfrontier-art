@@ -170,6 +170,10 @@ export function stepProduction(dt) {
     }
   }
 }
+/* ---- 设施加成汇总（喷泉/澡堂/学堂/灯塔/晾晒场等 role:'happy'） ---- */
+function decorBonus() {
+  return G.placed.filter(p => p.def.role === 'happy').reduce((s, p) => s + (p.def.add || 0), 0);
+}
 export function nightSettlement() {
   const winter = G.day >= WINTER_DAY;
   const pop = G.villagers.length;
@@ -179,8 +183,14 @@ export function nightSettlement() {
   if (G.res.food >= need) G.res.food -= need;
   else {
     G.res.food = 0; G.happy -= 15;
-    const leaver = G.villagers.pop();
-    if (leaver) { scene.remove(leaver.obj); G.selected.delete(leaver); ctx.toast(`😢 ${leaver.name} 饿坏了，离开了村庄`); }
+    // 诊所：一半概率把要走的村民劝住
+    if (G.placed.some(p => p.def.id === 'clinic') && Math.random() < 0.5) {
+      G.happy += 5;
+      ctx.toast('🏥 诊所熬过难关，村民留了下来');
+    } else {
+      const leaver = G.villagers.pop();
+      if (leaver) { scene.remove(leaver.obj); G.selected.delete(leaver); ctx.toast(`😢 ${leaver.name} 饿坏了，离开了村庄`); }
+    }
   }
   if (winter) {
     // 冬季燃料：每人烧 1 木/天，篝火旁过冬省一半
@@ -188,22 +198,26 @@ export function nightSettlement() {
     const fuelNeed = Math.ceil(G.villagers.length * (fire ? 0.5 : 1));
     if (G.res.wood >= fuelNeed) G.res.wood -= fuelNeed;
     else {
-      G.res.wood = 0; G.happy -= 12;
-      ctx.toast(`🥶 燃料不足，村民受冻（快乐 -12，建篝火可省一半木柴）`);
+      G.res.wood = 0; G.happy -= G.placed.some(p => p.def.id === 'bathhouse') ? 6 : 12;   // 澡堂：暖身更抗冻
+      ctx.toast(`🥶 燃料不足，村民受冻${G.placed.some(p => p.def.id === 'bathhouse') ? '（澡堂帮大家缓了缓）' : '（快乐 -12，建篝火可省一半木柴）'}`);
     }
     G.happy -= 6;
-  } else G.happy = Math.min(100, G.happy + 4);
+  } else G.happy = Math.min(100, G.happy + 4 + Math.round(decorBonus() * 0.2));   // 装饰设施：每天小幅回情绪
   const roll = Math.random();
+  const guarded = G.placed.some(p => p.def.role === 'tower' || p.def.id === 'watchpost');
   if (roll < 0.22 && G.day >= 3) {
-    if (!G.placed.some(p => p.def.role === 'tower')) {
+    if (!guarded) {
       const loss = Math.min(G.res.food, 4 + Math.floor(Math.random() * 4));
       G.res.food -= loss;
       ctx.toast(`🐺 狼群偷粮！损失 ${loss} 食（建瞭望塔可防）`);
-    } else ctx.toast('🐺 狼群被瞭望塔吓退了');
+    } else ctx.toast('🐺 狼群被哨塔吓退了');
   } else if (roll < 0.4 && houseCapacity() > G.villagers.length && G.res.food >= G.villagers.length) {
     spawnVillagers(1);
     ctx.toast(`🎉 旅行者加入村庄（现 ${G.villagers.length} 人）`);
   } else if (roll < 0.5) { G.res.wood += 3; ctx.toast('🌊 河水送来浮木 +3 木'); }
+  // 鸽房：每晚落 2 蛋换粮（冬天 1），受粮仓上限约束
+  const dove = G.placed.filter(p => p.def.id === 'dovecote').length;
+  if (dove) G.res.food = Math.min(G.foodCap, G.res.food + (winter ? 1 : 2) * dove);
   G.happy = Math.max(0, G.happy);
   G.day++;
   regrow();

@@ -47,6 +47,7 @@ export function placeInstance(def, x, z, rot, animate) {
   if (animate) startDropAnim(inst);
   if (def.role === 'happy') G.happy += def.add;
   if (def.role === 'granary') G.foodCap += 25;
+  if (def.id === 'warehouse') G.foodCap += 50;
   return entry;
 }
 export function removeEntry(entry) {
@@ -56,6 +57,7 @@ export function removeEntry(entry) {
   G.villagers.forEach(v => { if (v.task && v.task.target === entry) v.task = null; });
   if (entry.def.role === 'happy') G.happy -= entry.def.add;
   if (entry.def.role === 'granary') G.foodCap -= 25;
+  if (entry.def.id === 'warehouse') G.foodCap -= 50;
   ctx.UI && ctx.UI.refresh();
 }
 

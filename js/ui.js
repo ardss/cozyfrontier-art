@@ -110,7 +110,7 @@ export const UI = {
   // 侧栏悬停说明：这张卡是干什么的
   showSideTip(def, row) {
     const tip = document.getElementById('tip');
-    const roleTxt = { house: '住房 · 提升人口上限', wood: '生产 · 派村民上工产木', food: '生产 · 派村民上工产食', granary: '粮仓 · 食物上限+25', well: '设施 · 附近民居更满意', happy: '设施 · 提升快乐', market: '设施 · 4木换5食', tower: '设施 · 夜间防狼', deco: '装饰' }[def.role] || def.cat;
+    const roleTxt = { house: '住房 · 提升人口上限', wood: '生产 · 派村民上工产木', food: '生产 · 派村民上工产食', granary: '粮仓 · 食物上限+25', well: '设施 · 附近民居更满意', happy: '设施 · 提升快乐', market: '设施 · 4木换5食', tower: '设施 · 夜间防狼', deco: '' }[def.role] || def.cat;
     const rcTxt = RECIPES[def.id] ? '<br>⚙ 配方：' + Object.entries(RECIPES[def.id].in).map(([r, v]) => v + RES_INFO[r].icon).join(' ') + ' → ' + Object.entries(RECIPES[def.id].out).map(([r, v]) => v + RES_INFO[r].icon).join(' ') + ' / ' + RECIPES[def.id].time + '秒' : '';
     tip.innerHTML = `<b>${def.name}</b><br><span style="color:#a8d8a0">${roleTxt}${def.cap ? ' · 容量' + def.cap : ''}${def.out ? ' · 产量' + def.out : ''}</span>${rcTxt}<br>${def.desc}<br><span style="color:#a89880">造价：${Object.entries(def.cost).map(([r, v]) => v + RES_INFO[r].label).join(' ')} · ${def.w}×${def.d}</span>`;
     const m = row.getBoundingClientRect(), mm = mainEl.getBoundingClientRect();
