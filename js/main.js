@@ -21,6 +21,7 @@ ctx.UI = UI;
 ctx.Input = Input;
 ctx.toast = toast;
 ctx.startPlacing = startPlacing;
+document.getElementById('btn-tech').onclick = () => UI.toggleTech();
 
 function startGame() {
   UI.initSidebar();

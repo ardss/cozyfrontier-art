@@ -2,7 +2,7 @@
  * 11. UI —— 侧栏、缩略图、选择面板、提示、toast
  * ===================================================================*/
 import * as THREE from 'three';
-import { DAY_SECONDS, SEASONS, RES_INFO, CARRY_CAP, DEFS, CATS, RECIPES } from './config.js';
+import { DAY_SECONDS, SEASONS, RES_INFO, CARRY_CAP, DEFS, CATS, RECIPES, TECHS } from './config.js';
 import { mainEl, camCtl, pickAt } from './scene.js';
 import { G, canAfford, unlocked, houseCapacity } from './world.js';
 import { protos } from './assets.js';
@@ -46,7 +46,10 @@ export const UI = {
       row.onmouseenter = e => UI.showSideTip(def, row);
       row.onmouseleave = () => UI.hideSideTip();
       row.onclick = () => {
-        if (!unlocked(def)) { toast('🔒 先建造村中心，才能解锁其他建筑'); return; }
+        if (!unlocked(def)) {
+          toast(def.tech ? '🔒 需在【科技】中研究 ' + ((TECHS.find(t => t.id === def.tech) || {}).name || def.tech) : '🔒 先建造村中心，才能解锁其他建筑');
+          return;
+        }
         if (canAfford(def)) ctx.startPlacing(def);
         else toast('材料不够：需 ' + Object.entries(def.cost).map(([r, v]) => v + RES_INFO[r].label).join(' '));
       };
@@ -62,7 +65,10 @@ export const UI = {
       row.classList.toggle('poor', locked || !canAfford(def));
       row.classList.toggle('locked', locked);
       const lockEl = row.querySelector('.lk');
-      if (locked && !lockEl) row.querySelector('.tx').insertAdjacentHTML('beforeend', '<div class="lk" style="font-size:10px;color:#c98">🔒 需村中心</div>');
+      if (locked && !lockEl) {
+        const reason = def.tech ? '🔒 需研究 ' + ((TECHS.find(t => t.id === def.tech) || {}).name || def.tech) : '🔒 需村中心';
+        row.querySelector('.tx').insertAdjacentHTML('beforeend', `<div class="lk" style="font-size:10px;color:#c98">${reason}</div>`);
+      }
       else if (!locked && lockEl) lockEl.remove();
     });
   },
@@ -126,6 +132,7 @@ export const UI = {
     document.getElementById('r-stone').textContent = Math.floor(G.res.stone);
     document.getElementById('r-plank').textContent = Math.floor(G.res.plank || 0);
     document.getElementById('r-bread').textContent = Math.floor(G.res.bread || 0);
+    document.getElementById('r-know').textContent = Math.floor(G.res.know || 0);
     document.getElementById('r-happy').textContent = Math.round(G.happy);
     document.getElementById('r-pop').textContent = G.villagers.length;
     document.getElementById('r-cap').textContent = '/' + houseCapacity();
@@ -209,6 +216,33 @@ export const UI = {
   },
 
   hideInfo() { document.getElementById('info').style.display = 'none'; this.infoEntry = this.infoVillager = null; },
+
+  // 科技面板：研究消耗知识📘，解锁进阶建筑
+  toggleTech() {
+    const el = document.getElementById('tech');
+    if (el.style.display === 'block') { el.style.display = 'none'; return; }
+    this.hideInfo();
+    el.style.display = 'block';
+    this.renderTech();
+  },
+  renderTech() {
+    const el = document.getElementById('tech');
+    el.innerHTML = `<b>🔬 科技（知识 ${Math.floor(G.res.know || 0)}）</b>` + TECHS.map(t => {
+      const done = G.tech.has(t.id);
+      const can = !done && (G.res.know || 0) >= t.cost;
+      return `<div class="trow ${done ? 'done' : can ? 'can' : ''}"><span>${done ? '✓' : '📘' + t.cost} ${t.name}</span><span style="color:var(--dim);font-size:10px">${t.desc}</span>${done ? '' : `<button data-t="${t.id}" ${can ? '' : 'disabled'}>研究</button>`}</div>`;
+    }).join('') + `<div style="text-align:right"><button id="btn-techclose">关闭</button></div>`;
+    el.querySelectorAll('button[data-t]').forEach(b => b.onclick = () => {
+      const t = TECHS.find(x => x.id === b.dataset.t);
+      if (!t || G.tech.has(t.id) || (G.res.know || 0) < t.cost) return;
+      G.res.know -= t.cost;
+      G.tech.add(t.id);
+      toast('🔬 研究完成：' + t.name + '（' + t.unlock.map(id => (DEFS.find(d => d.id === id) || {}).name || id).join('/') + ' 解锁）');
+      this.renderTech();
+      this.renderList();
+    });
+    document.getElementById('btn-techclose').onclick = () => el.style.display = 'none';
+  },
 
   hoverTip(e) {
     const tip = document.getElementById('tip');

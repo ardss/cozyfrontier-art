@@ -11,12 +11,25 @@ export const RES_INFO = {
   stone: { label: '石', icon: '🪨', depotRole: 'wood',  color: 0x8d8d86 },  // 石料送工坊/锯木厂
   plank: { label: '板', icon: '🟫', depotRole: 'wood',  color: 0xb08850 },  // 加工材：进阶建筑消耗
   bread: { label: '包', icon: '🍞', depotRole: 'food',  color: 0xd8a04c },  // 优质食物：夜间优先食用
+  know:  { label: '识', icon: '📘', depotRole: 'wood',  color: 0x6a8ac2 },   // 知识：学堂产出，研究科技消耗
 };
 /* ---- 配方生产：在岗村民消耗库存原料 → 产出成品（R2 生产主轴） ---- */
 export const RECIPES = {
   sawmill: { in: { wood: 2 }, out: { plank: 3 }, time: 6 },
   bakery:  { in: { food: 2 }, out: { bread: 3 }, time: 8 },
+  school:  { in: {},          out: { know: 2 },  time: 15 },   // 书院讲学：无原料，产出知识
 };
+/* ---- 科技树：研究消耗知识，解锁进阶建筑（R5） ---- */
+export const TECHS = [
+  { id: 'woodwork', name: '木工术',   cost: 2, unlock: ['sawmill'],   desc: '解锁锯木厂：2木 → 3板' },
+  { id: 'baking',   name: '烘焙术',   cost: 2, unlock: ['bakery'],    desc: '解锁面包房：2食 → 3面包' },
+  { id: 'masonry',  name: '石作术',   cost: 3, unlock: ['wellhouse', 'fountain', 'watchtower'], desc: '解锁水井/喷泉/瞭望塔' },
+  { id: 'watch',    name: '哨戒',     cost: 2, unlock: ['watchpost'], desc: '解锁哨位（夜间防狼）' },
+  { id: 'storage',  name: '仓储术',   cost: 3, unlock: ['warehouse'], desc: '解锁仓库（食物上限 +50）' },
+  { id: 'glass',    name: '温室栽培', cost: 4, unlock: ['greenhouse'], desc: '解锁温室（冬天也能产食）' },
+  { id: 'wellness', name: '澄心之道', cost: 4, unlock: ['bathhouse', 'clinic'], desc: '解锁澡堂/诊所' },
+  { id: 'sailing',  name: '航海术',   cost: 5, unlock: ['lighthouse', 'shipyard'], desc: '解锁灯塔/造船厂' },
+];
 export const GRID = 26, CELL_SINK = 0.045, DRAG_TOLERANCE = 5;
 
 export const DEFS = [
@@ -27,27 +40,27 @@ export const DEFS = [
   { id:'home_small',name:'小民居', w:2,d:2, cat:'住房', cost:{wood:7},  role:'house', cap:3, desc:'舒适民居。' },
   { id:'home_large',name:'大民居', w:2,d:2, cat:'住房', cost:{wood:8,plank:4}, role:'house', cap:4, desc:'宽敞民居（需要木板）。' },
   { id:'farmhouse', name:'农舍',   w:2,d:2, cat:'生产', cost:{wood:9},  role:'food',  out:4, desc:'村民主产食物。' },
-  { id:'sawmill',   name:'锯木厂', w:2,d:2, cat:'生产', cost:{wood:6},  role:'wood',  desc:'配方：2木 → 3板。派村民上工。' },
+  { id:'sawmill',   name:'锯木厂', w:2,d:2, cat:'生产', cost:{wood:6},  role:'wood',  desc:'配方：2木 → 3板。派村民上工。', tech:"woodwork" },
   { id:'apiary',    name:'蜂箱架', w:1,d:1, cat:'生产', cost:{wood:3},  role:'food',  out:2, desc:'产蜂蜜小屋。' },
-  { id:'bakery',    name:'面包房', w:2,d:1, cat:'生产', cost:{wood:8},  role:'food',  desc:'配方：2食 → 3面包。派村民上工。' },
-  { id:'greenhouse',name:'温室',   w:2,d:2, cat:'生产', cost:{wood:10}, role:'food',  out:3, desc:'冬天也能产食物。' },
+  { id:'bakery',    name:'面包房', w:2,d:1, cat:'生产', cost:{wood:8},  role:'food',  desc:'配方：2食 → 3面包。派村民上工。', tech:"baking" },
+  { id:'greenhouse',name:'温室',   w:2,d:2, cat:'生产', cost:{wood:10}, role:'food',  out:3, desc:'冬天也能产食物。', tech:"glass" },
   { id:'granary',   name:'粮仓',   w:2,d:2, cat:'设施', cost:{wood:5},  role:'granary',desc:'食物上限 +25。' },
-  { id:'wellhouse', name:'水井',   w:1,d:1, cat:'设施', cost:{wood:3,stone:2},  role:'well',  desc:'附近民居更满意。' },
-  { id:'fountain',  name:'喷泉',   w:1,d:1, cat:'设施', cost:{wood:4,stone:2},  role:'happy', add:5, desc:'快乐 +5。' },
+  { id:'wellhouse', name:'水井',   w:1,d:1, cat:'设施', cost:{wood:3,stone:2},  role:'well',  desc:'附近民居更满意。', tech:"masonry" },
+  { id:'fountain',  name:'喷泉',   w:1,d:1, cat:'设施', cost:{wood:4,stone:2},  role:'happy', add:5, desc:'快乐 +5。', tech:"masonry" },
   { id:'marketstall',name:'市集',  w:2,d:1, cat:'设施', cost:{wood:5,stone:2},  role:'market',desc:'4 木换 5 食。' },
-  { id:'watchtower',name:'瞭望塔', w:2,d:2, cat:'设施', cost:{wood:7,stone:3},  role:'tower', desc:'夜间防狼。' },
+  { id:'watchtower',name:'瞭望塔', w:2,d:2, cat:'设施', cost:{wood:7,stone:3},  role:'tower', desc:'夜间防狼。', tech:"masonry" },
   { id:'bridge',    name:'石桥',   w:3,d:1, cat:'装饰', cost:{wood:2},  role:'deco', desc:'装饰。' },
   { id:'tollgate',  name:'关卡',   w:3,d:1, cat:'装饰', cost:{wood:2},  role:'deco', desc:'装饰。' },
   { id:'stable',    name:'马厩',   w:3,d:2, cat:'装饰', cost:{wood:6},  role:'deco', desc:'牲畜畜牧的雏形（后续更新）。' },
-  { id:'lighthouse',name:'灯塔',   w:2,d:2, cat:'装饰', cost:{wood:6},  role:'happy', add:4, desc:'灯塔的光让人心安。快乐加成。' },
-  { id:'bathhouse', name:'澡堂',   w:2,d:2, cat:'设施', cost:{wood:8,plank:2},  role:'happy', add:6, desc:'快乐加成；冬天燃料不足时受冻减半。' },
-  { id:'school',    name:'学堂',   w:2,d:2, cat:'设施', cost:{wood:8},  role:'happy', add:6, desc:'书声琅琅。快乐加成（科技系统后续更新）。' },
-  { id:'clinic',    name:'诊所',   w:2,d:2, cat:'设施', cost:{wood:8},  role:'happy', add:4, desc:'快乐加成；饥荒时一半概率留住要走的村民。' },
+  { id:'lighthouse',name:'灯塔',   w:2,d:2, cat:'装饰', cost:{wood:6},  role:'happy', add:4, desc:'灯塔的光让人心安。快乐加成。', tech:"sailing" },
+  { id:'bathhouse', name:'澡堂',   w:2,d:2, cat:'设施', cost:{wood:8,plank:2},  role:'happy', add:6, desc:'快乐加成；冬天燃料不足时受冻减半。', tech:"wellness" },
+  { id:'school',    name:'学堂',   w:2,d:2, cat:'设施', cost:{wood:8},  role:'happy', add:6, desc:'书院：派村民上工产出知识📘，兼快乐加成。' },
+  { id:'clinic',    name:'诊所',   w:2,d:2, cat:'设施', cost:{wood:8},  role:'happy', add:4, desc:'快乐加成；饥荒时一半概率留住要走的村民。', tech:"wellness" },
   { id:'dovecote',  name:'鸽房',   w:1,d:1, cat:'生产', cost:{wood:2},  role:'deco', desc:'每晚落 2 蛋换粮（冬天 1）。' },
   { id:'laundry',   name:'晾晒场', w:2,d:1, cat:'装饰', cost:{wood:2},  role:'happy', add:3, desc:'阳光的味道。快乐加成。' },
-  { id:'shipyard',  name:'造船厂', w:4,d:3, cat:'装饰', cost:{wood:12}, role:'deco', desc:'航海贸易的起点（后续更新）。' },
-  { id:'warehouse', name:'仓库',   w:3,d:2, cat:'设施', cost:{wood:7,plank:4},  role:'deco', desc:'食物上限 +50。' },
-  { id:'watchpost', name:'哨位',   w:2,d:2, cat:'设施', cost:{wood:4},  role:'deco', desc:'和瞭望塔一样：夜间防狼。' },
+  { id:'shipyard',  name:'造船厂', w:4,d:3, cat:'装饰', cost:{wood:12}, role:'deco', desc:'航海贸易的起点（后续更新）。', tech:"sailing" },
+  { id:'warehouse', name:'仓库',   w:3,d:2, cat:'设施', cost:{wood:7,plank:4},  role:'deco', desc:'食物上限 +50。', tech:"storage" },
+  { id:'watchpost', name:'哨位',   w:2,d:2, cat:'设施', cost:{wood:4},  role:'deco', desc:'和瞭望塔一样：夜间防狼。', tech:"watch" },
   // 自产小物件（prop 管线）
   { id:'fence',    name:'木栅栏', w:1,d:1, cat:'装饰', cost:{wood:1}, role:'deco', desc:'围出你的院子。' },
   { id:'barrel',   name:'木桶',   w:1,d:1, cat:'装饰', cost:{wood:1}, role:'deco', desc:'装点什么好呢。' },

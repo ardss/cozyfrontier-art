@@ -43,6 +43,14 @@
   #info{position:absolute;right:12px;top:12px;width:240px;background:rgba(58,49,40,.97);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.7;display:none;z-index:6}
   #info b{color:var(--gold);font-size:14px}
   #info button{margin:8px 6px 0 0;background:#8a4a3a;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer}
+  #tech{position:absolute;right:12px;top:12px;width:300px;max-height:80%;overflow-y:auto;background:rgba(58,49,40,.97);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.7;display:none;z-index:6}
+  #tech b{color:var(--gold);font-size:14px}
+  #tech .trow{display:flex;justify-content:space-between;align-items:center;gap:6px;border-top:1px solid var(--line);padding:5px 0;flex-wrap:wrap}
+  #tech .trow.done{color:var(--ok)}
+  #tech .trow.can button{background:#5a8a4a;color:#fff}
+  #tech .trow button{background:#52463a;color:var(--dim);border:none;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer}
+  #tech .trow button:disabled{opacity:.4;cursor:default}
+  #tech button#btn-techclose{margin-top:8px;background:#8a4a3a;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer}
   #selrect{position:absolute;border:1px solid #8fc0ff;background:rgba(140,190,255,.15);display:none;z-index:7;pointer-events:none}
   #toast{position:absolute;left:50%;transform:translateX(-50%);top:14px;display:flex;flex-direction:column;gap:6px;z-index:8;pointer-events:none;align-items:center}
   .toast{background:rgba(43,36,32,.95);border:1px solid var(--gold);border-radius:10px;padding:8px 16px;font-size:13px;animation:tfade 4s forwards}
@@ -74,6 +82,8 @@ window.addEventListener('error',e=>{window.__errs.push(e.message+' @'+e.lineno)}
   <span class="res">🪨 <b id="r-stone">0</b></span>
   <span class="res">🟫 <b id="r-plank">0</b></span>
   <span class="res">🍞 <b id="r-bread">0</b></span>
+  <span class="res">📘 <b id="r-know">0</b></span>
+  <button id="btn-tech" style="background:#2b2420;color:var(--gold);border:1px solid var(--line);border-radius:8px;padding:4px 12px;font-size:13px;cursor:pointer">🔬 科技</button>
   <span class="res">😊 <b id="r-happy">70</b></span>
   <span class="res">👥 <b id="r-pop">0</b><span style="color:var(--dim);font-size:10px" id="r-cap"></span></span>
   <span id="daybox">第 1 天 · 秋</span>
@@ -91,6 +101,7 @@ window.addEventListener('error',e=>{window.__errs.push(e.message+' @'+e.lineno)}
     <div id="help"><b>左键点/框选</b>村民 · <b>右键</b>树/浆果/建筑 = 派去干活，右键空地 = 移动<br>建造：侧栏选 → 点地面 · <b>R</b> 旋转 · 相机 <b>Q/E</b> 旋转 <b>WASD</b> 平移</div>
     <div id="tip"></div>
     <div id="info"></div>
+    <div id="tech"></div>
     <div id="selrect"></div>
     <div id="toast"></div>
     <div id="zoom"><button id="zin">+</button><button id="zout">−</button></div>
