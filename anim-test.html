@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta charset="utf-8"><title>村民骨骼动画测试</title>
+<style>body{margin:0;font-family:system-ui;background:#222;color:#eee}canvas{display:block}
+#ui{position:fixed;top:10px;left:10px;z-index:2}
+button{margin:2px;padding:6px 14px;font-size:14px;cursor:pointer}</style>
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
+</script></head>
+<body>
+<div id="ui">
+<button onclick="play('idle')">idle</button>
+<button onclick="play('walk')">walk</button>
+<button onclick="play('chop')">chop</button>
+<span id="info"></span>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x9db87a);
+const cam = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, .1, 50);
+cam.position.set(3.2, 1.6, 4.6); cam.lookAt(0, .8, 0);
+scene.add(new THREE.HemisphereLight(0xfff4e2, 0x6b8a4f, 1.1));
+const sun = new THREE.DirectionalLight(0xfff0d8, 2.4); sun.position.set(3, 5, 2); scene.add(sun);
+const grid = new THREE.GridHelper(10, 10, 0x557744, 0x668855); grid.position.y = .001; scene.add(grid);
+const loader = new GLTFLoader();
+const draco = new DRACOLoader();
+draco.setDecoderPath('https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/');
+loader.setDRACOLoader(draco);
+const mixers = [];
+loader.load('ai3d-mirror/char-villager_m.glb', g => {
+  const o = g.scene;
+  o.traverse(m => { if (m.isMesh) { m.castShadow = true; const mats = Array.isArray(m.material)?m.material:[m.material]; mats.forEach(mm=>{ if(mm.metalness!==undefined){mm.metalness=0;mm.roughness=1;} }); } });
+  scene.add(o);
+  const box = new THREE.Box3().setFromObject(o);
+  o.position.y = -box.min.y;
+  window.mixer = new THREE.AnimationMixer(o);
+  window.clips = {};
+  for (const c of g.animations) { window.clips[c.name] = window.mixer.clipAction(c); document.getElementById('info').textContent += c.name + ' '; }
+  window.clips['idle']?.play();
+  mixers.push(window.mixer);
+}, undefined, e => document.getElementById('info').textContent = 'LOAD FAIL: ' + e);
+window.play = n => { if(!window.mixer) return; window.mixer.stopAllAction(); window.clips[n]?.play(); };
+addEventListener('resize', () => { cam.aspect = innerWidth/innerHeight; cam.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+const clock = new THREE.Clock();
+(function loop(){ requestAnimationFrame(loop); mixers.forEach(m => m.update(clock.getDelta())); renderer.render(scene, cam); })();
+</script></body></html>
