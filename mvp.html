@@ -240,11 +240,11 @@ function loadProto(id, glb, fit) {
   }, undefined, err => { console.error('load fail', glb, err); done(); });
 }
 // 建筑适配 w×d 脚印；自然物/散布物/村民适配目标尺寸
-// 建筑适配：以目标高度为主，脚印允许 0.4 格容差
+// 建筑适配：目标高度优先（门要比人大），脚印允许 0.9 格出格容差
 DEFS.forEach(d => loadProto(d.id, d.glb, s => {
   const sH = d.h / s.y;
   const sF = Math.min(d.w / s.x, d.d / s.z);
-  return Math.min(Math.max(sH, sF), (d.w + 0.4) / s.x, (d.d + 0.4) / s.z);
+  return Math.min(Math.max(sH, sF * 1.15), (d.w + 0.9) / s.x, (d.d + 0.9) / s.z);
 }));
 Object.entries(NATURE_DEFS).forEach(([id, nd]) => loadProto('nat_' + id, nd.glb, s => nd.h / s.y));
 
@@ -772,7 +772,7 @@ function removeEntry(entry) {
 /* 建造工地：付费后先立工地，由村民花时间建成 */
 const siteNeed = def => 5 + (def.cost.wood || 0) * 0.5;
 const barBgGeo = new THREE.PlaneGeometry(1.1, 0.16);
-const barFillGeo = new THREE.PlaneGeometry(1.06, 0.10);
+const barFillGeo = new THREE.PlaneGeometry(1.06, 0.10).translate(0.53, 0, 0);   // 原点在左端，从左往右涨
 const barBgMat = new THREE.MeshBasicMaterial({ color: 0x2b2420, depthWrite: false });
 function createSite(def, x, z, rot) {
   const pad = makePad(def, rot);
@@ -792,13 +792,15 @@ function createSite(def, x, z, rot) {
   });
   scene.add(inst);
   const topY = new THREE.Box3().setFromObject(inst).max.y + 0.35;
+  const barGrp = new THREE.Group();                                // 面向镜头的进度条
   const barBg = new THREE.Mesh(barBgGeo, barBgMat);
-  barBg.position.set(x + w / 2, topY, z + d / 2);
   const barFill = new THREE.Mesh(barFillGeo, new THREE.MeshBasicMaterial({ color: 0xa8d8a0, depthWrite: false }));
-  barFill.position.set(x + w / 2, topY, z + d / 2 + 0.001);
+  barFill.position.set(-0.53, 0, 0.001);
   barFill.scale.x = 0.001;
-  scene.add(barBg, barFill);
-  const site = { def, inst, pad, x, z, rot, progress: 0, need: siteNeed(def), builder: null, barBg, barFill };
+  barGrp.add(barBg, barFill);
+  barGrp.position.set(x + w / 2, topY, z + d / 2);
+  scene.add(barGrp);
+  const site = { def, inst, pad, x, z, rot, progress: 0, need: siteNeed(def), builder: null, barGrp, barFill };
   cellsOf(def, x, z, rot).forEach(k => G.occ.set(k, site));
   G.sites.push(site);
   return site;
@@ -806,7 +808,6 @@ function createSite(def, x, z, rot) {
 function updateSiteVisuals(site) {
   const r = Math.min(1, site.progress / site.need);
   site.barFill.scale.x = Math.max(0.001, r);
-  site.barFill.position.x = site.x + footprint(site.def, site.rot)[0] / 2 - (1 - r) * 0.53;
   site.inst.traverse(o => {
     if (o.isMesh) {
       const ms = Array.isArray(o.material) ? o.material : [o.material];
@@ -816,13 +817,14 @@ function updateSiteVisuals(site) {
 }
 function finishSite(site) {
   cellsOf(site.def, site.x, site.z, site.rot).forEach(k => { if (G.occ.get(k) === site) G.occ.delete(k); });
-  scene.remove(site.inst, site.pad, site.barBg, site.barFill);
+  scene.remove(site.inst, site.pad, site.barGrp);
   G.sites = G.sites.filter(s => s !== site);
   placeInstance(site.def, site.x, site.z, site.rot, true);
   toast('🔨 ' + site.def.name + ' 建成');
   UI.refresh();
 }
 function stepSites(dt) {
+  for (const site of G.sites) site.barGrp.quaternion.copy(cam.quaternion);   // 进度条始终面向镜头
   // 自动派最近的空闲村民去打工地
   G._siteT = (G._siteT || 0) + dt;
   if (G._siteT > 1.5) {
