@@ -187,9 +187,18 @@ let pendingLoads = 0, onAllLoaded = null;
 function loadProto(id, glb, fit) {
   pendingLoads++;
   const done = () => { if (--pendingLoads === 0 && onAllLoaded) onAllLoaded(); };
-  loader.load(enc(glb) + '?v=4', g => {
+  loader.load(enc(glb) + '?v=5', g => {
     const root = g.scene;
-    root.traverse(o => { if (o.isMesh) { o.castShadow = true; if (o.material) o.material.side = THREE.DoubleSide; } });
+    root.traverse(o => {
+      if (!o.isMesh) return;
+      o.castShadow = true;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      mats.forEach(m => {
+        m.side = THREE.DoubleSide;
+        // glTF 未写 metal/rough 时默认 metalness=1，无环境贴图会发灰发暗 → 强制非金属
+        if (m.metalness !== undefined) { m.metalness = 0; m.roughness = 1; }
+      });
+    });
     const box = new THREE.Box3().setFromObject(root);
     const size = box.getSize(new THREE.Vector3());
     root.scale.setScalar(fit(size));
