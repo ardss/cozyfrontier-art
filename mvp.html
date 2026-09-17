@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>暖境边陲 · MVP</title>
+<style>
+  :root{ --bg:#2b2420; --panel:#3a3128; --line:#52463a; --gold:#ffd9a0; --dim:#a89880; --ok:#a8d8a0; --bad:#e0a8a0; }
+  *{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-user-select:none;-webkit-user-drag:none}
+  html,body{height:100%;overflow:hidden}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:#f0e6d8;display:flex;flex-direction:column}
+  #top{display:flex;align-items:center;gap:14px;background:var(--panel);border-bottom:1px solid var(--line);padding:8px 16px;flex-wrap:wrap}
+  #top .logo{font-size:15px;color:var(--gold);font-weight:700}
+  .res{display:flex;align-items:center;gap:5px;font-size:13px;background:#2b2420;border:1px solid var(--line);border-radius:8px;padding:4px 10px}
+  .res b{color:var(--gold)}
+  .res .d{font-size:10px;color:var(--dim)}
+  #daybox{font-size:13px;color:var(--ok)}
+  #body{flex:1;display:flex;min-height:0}
+  #side{width:250px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column}
+  #side h3{font-size:13px;color:var(--gold);padding:10px 12px 4px}
+  #cats{display:flex;flex-wrap:wrap;gap:4px;padding:0 12px 6px}
+  #cats button{background:#2b2420;color:var(--dim);border:1px solid var(--line);border-radius:6px;font-size:11px;padding:3px 8px;cursor:pointer}
+  #cats button.on{color:var(--gold);border-color:var(--gold)}
+  #list{flex:1;overflow-y:auto;padding:4px 8px}
+  .b{display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:8px;cursor:pointer;border:1px solid transparent;margin-bottom:2px}
+  .b:hover{background:#463a2e}
+  .b.sel{border-color:var(--gold);background:#4a3d2c}
+  .b.poor{opacity:.45;cursor:not-allowed}
+  .b img{width:36px;height:36px;border-radius:6px;background:#efe9da;object-fit:contain;flex-shrink:0;pointer-events:none}
+  .b .tx{pointer-events:none;flex:1}
+  .b .nm{font-size:12px}
+  .b .cost{font-size:10px;color:var(--dim)}
+  .b .cost.no{color:var(--bad)}
+  #vlist{padding:4px 12px 10px;font-size:11px;color:var(--dim);line-height:1.8;max-height:110px;overflow-y:auto;border-top:1px solid var(--line)}
+  #vlist .v{display:flex;justify-content:space-between}
+  #main{flex:1;position:relative;min-width:0}
+  #main canvas{display:block;outline:none;touch-action:none}
+  #tip{position:absolute;pointer-events:none;background:rgba(43,36,32,.96);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:12px;line-height:1.6;max-width:250px;display:none;z-index:6}
+  #tip b{color:var(--gold)}
+  #info{position:absolute;right:12px;top:12px;width:240px;background:rgba(58,49,40,.97);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.7;display:none;z-index:6}
+  #info b{color:var(--gold);font-size:14px}
+  #info button{margin:8px 6px 0 0;background:#8a4a3a;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer}
+  #toast{position:absolute;left:50%;transform:translateX(-50%);top:14px;display:flex;flex-direction:column;gap:6px;z-index:8;pointer-events:none;align-items:center}
+  .toast{background:rgba(43,36,32,.95);border:1px solid var(--gold);color:#f0e6d8;border-radius:10px;padding:8px 16px;font-size:13px;animation:tfade 4s forwards}
+  @keyframes tfade{0%{opacity:0;transform:translateY(-8px)}10%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
+  #end{position:absolute;inset:0;background:rgba(30,24,20,.88);display:none;z-index:20;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+  #end h2{font-size:28px;color:var(--gold)}
+  #end p{color:var(--dim);max-width:400px;text-align:center;line-height:1.8}
+  #end button{background:#5a8a4a;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:15px;cursor:pointer}
+  #zoom{position:absolute;right:12px;bottom:12px;display:flex;flex-direction:column;gap:6px;z-index:5}
+  #zoom button{width:32px;height:32px;background:rgba(58,49,40,.95);color:var(--gold);border:1px solid var(--line);border-radius:8px;font-size:15px;cursor:pointer}
+  #rot{position:absolute;left:12px;bottom:12px;z-index:5;background:rgba(58,49,40,.95);color:var(--gold);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer}
+  #help{position:absolute;left:12px;top:12px;z-index:5;background:rgba(43,36,32,.92);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:11px;color:var(--dim);line-height:1.7}
+  #help b{color:#cbb894}
+</style>
+<script>
+window.__errs=[];
+window.addEventListener('error',e=>{window.__errs.push(e.message+' @line '+e.lineno)});
+window.addEventListener('unhandledrejection',e=>{window.__errs.push('rej: '+(e.reason&&e.reason.message||e.reason))});
+</script>
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<div id="top">
+  <span class="logo">🏘️ 暖境边陲 · MVP</span>
+  <span class="res">🪵 木材 <b id="r-wood">0</b><span class="d" id="d-wood"></span></span>
+  <span class="res">🍎 食物 <b id="r-food">0</b><span class="d" id="d-food"></span></span>
+  <span class="res">😊 快乐 <b id="r-happy">70</b></span>
+  <span class="res">👥 村民 <b id="r-pop">0</b><span class="d" id="r-cap"></span></span>
+  <span id="daybox">第 1 天 · 秋</span>
+</div>
+<div id="body">
+  <div id="side">
+    <h3>建造</h3>
+    <div id="cats"></div>
+    <div id="list"></div>
+    <div id="vlist"></div>
+  </div>
+  <div id="main">
+    <div id="help"><b>点建筑</b>选中 → 点地面建造 · <b>R</b> 旋转 · 拖动建筑搬家 · 点建筑看详情<br><b>Q/E</b> 转视角 · <b>WASD</b> 平移 · 滚轮缩放</div>
+    <div id="tip"></div>
+    <div id="info"></div>
+    <div id="toast"></div>
+    <div id="zoom"><button id="zin">+</button><button id="zout">−</button></div>
+    <button id="rot">⟳ 旋转 (R)</button>
+    <div id="end"><h2 id="end-title"></h2><p id="end-desc"></p><button onclick="location.reload()">再来一局</button></div>
+  </div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+/* ============ 游戏数值（简化自 docs 第一年生存循环） ============ */
+const DAY_SECONDS = 45;        // 一天时长
+const WINTER_DAY = 8;          // 第 8 天入冬，冬天 3 天
+const END_DAY = 11;            // 第 11 天春天判定
+const SEASONS = day => day < WINTER_DAY ? (day < 4 ? '秋' : '深秋') : (day < END_DAY ? '冬 ❄' : '春');
+
+// role: house 容量 | wood 产木 | food 产食 | granary 食仓 | well 水井 | happy 快乐 | market 交易 | tower 防狼
+const DEFS = [
+ // 住房
+ {id:'hut',        name:'窝棚',    w:2,d:2, cat:'住房', cost:{wood:4},  role:'house', cap:2, desc:'最便宜的容身之所。'},
+ {id:'cottage_a',  name:'村舍',    w:2,d:2, cat:'住房', cost:{wood:5},  role:'house', cap:2, desc:'双人小屋。'},
+ {id:'cottage_b',  name:'猎户村舍',w:2,d:2, cat:'住房', cost:{wood:5},  role:'house', cap:2, desc:'双人小屋。'},
+ {id:'home_small', name:'小民居',  w:2,d:2, cat:'住房', cost:{wood:7},  role:'house', cap:3, desc:'三人民居。'},
+ {id:'farmhouse',  name:'农舍',    w:3,d:2, cat:'住房', cost:{wood:9},  role:'house', cap:3, desc:'三人农舍。'},
+ {id:'home_large', name:'大民居',  w:3,d:2, cat:'住房', cost:{wood:13}, role:'house', cap:4, desc:'四人宅邸。'},
+ // 生产
+ {id:'sawmill',    name:'锯木厂',  w:3,d:2, cat:'生产', cost:{wood:6},  role:'wood',  out:3, desc:'村民在此产木材。'},
+ {id:'apiary',     name:'蜂箱架',  w:1,d:1, cat:'生产', cost:{wood:3},  role:'food',  out:2, desc:'甜蜜的蜂蜜产出。'},
+ {id:'bakery',     name:'面包房',  w:2,d:2, cat:'生产', cost:{wood:8},  role:'food',  out:3, desc:'需要靠近粮仓更高效（简化：直接产食）。'},
+ {id:'greenhouse', name:'温室',    w:2,d:2, cat:'生产', cost:{wood:10}, role:'food',  out:3, desc:'冬季不停产的食物来源。'},
+ // 设施
+ {id:'granary',    name:'粮仓',    w:2,d:3, cat:'设施', cost:{wood:5},  role:'granary', desc:'食物储量上限 +25。'},
+ {id:'well',       name:'水井',    w:1,d:1, cat:'设施', cost:{wood:3},  role:'well',  desc:'住房 6 格内没有水井的村民效率减半。'},
+ {id:'marketstall',name:'市集摊位',w:2,d:1, cat:'设施', cost:{wood:5},  role:'market', desc:'详情面板可 4 木换 5 食。'},
+ {id:'fountain',   name:'喷泉',    w:2,d:2, cat:'设施', cost:{wood:8},  role:'happy', add:10, desc:'快乐 +10（建成就生效）。'},
+ {id:'brewery',    name:'酿酒厂',  w:3,d:2, cat:'设施', cost:{wood:9},  role:'happy', add:15, desc:'快乐 +15，冬天也没那么难熬。'},
+ {id:'watchtower', name:'瞭望塔',  w:2,d:2, cat:'设施', cost:{wood:7},  role:'tower', desc:'夜间防狼，保住粮仓。'},
+ {id:'bridge',     name:'石桥',    w:3,d:1, cat:'装饰', cost:{wood:2},  role:'deco', desc:'装饰。'},
+ {id:'tollgate',   name:'关卡',    w:3,d:1, cat:'装饰', cost:{wood:2},  role:'deco', desc:'装饰。'},
+ {id:'stable',     name:'马厩',    w:3,d:2, cat:'装饰', cost:{wood:6},  role:'deco', desc:'装饰。'},
+ {id:'lighthouse', name:'灯塔',    w:2,d:2, cat:'装饰', cost:{wood:6},  role:'deco', desc:'装饰。'},
+ {id:'bathhouse',  name:'澡堂',    w:2,d:2, cat:'装饰', cost:{wood:8},  role:'deco', desc:'装饰。'},
+ {id:'school',     name:'学堂',    w:2,d:2, cat:'装饰', cost:{wood:8},  role:'deco', desc:'装饰。'},
+ {id:'clinic',     name:'诊所',    w:2,d:2, cat:'装饰', cost:{wood:8},  role:'deco', desc:'装饰。'},
+ {id:'dovecote',   name:'鸽房',    w:1,d:1, cat:'装饰', cost:{wood:2},  role:'deco', desc:'装饰。'},
+ {id:'laundry',    name:'晾晒场',  w:2,d:1, cat:'装饰', cost:{wood:2},  role:'deco', desc:'装饰。'},
+ {id:'shipyard',   name:'造船厂',  w:4,d:3, cat:'装饰', cost:{wood:12}, role:'deco', desc:'装饰。'},
+ {id:'warehouse',  name:'仓库',    w:3,d:2, cat:'装饰', cost:{wood:7},  role:'deco', desc:'装饰。'},
+ {id:'watchpost',  name:'哨位',    w:2,d:2, cat:'装饰', cost:{wood:4},  role:'deco', desc:'装饰。'},
+ {id:'fountain2',  name:'喷泉',    w:2,d:2, cat:'装饰', cost:{wood:8},  role:'deco', desc:'装饰。', glb:'ai3d-mirror/wc-fountain-paint.glb'},
+];
+DEFS.forEach(d => { if (!d.glb) d.glb = 'ai3d-mirror/wc-' + d.id + '-paint.glb'; });
+
+const GRID = 26, CELL = 1;
+const enc = p => p.split('/').map(encodeURIComponent).join('/');
+
+/* ============ three.js 场景（复用放置 demo 引擎） ============ */
+const mainEl = document.getElementById('main');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.toneMappingExposure = 1.3;
+mainEl.appendChild(renderer.domElement);
+const dom = renderer.domElement;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87a96b);
+scene.fog = new THREE.Fog(0x87a96b, 40, 95);
+const cam = new THREE.PerspectiveCamera(45, 1, 0.1, 300);
+const sun = new THREE.DirectionalLight(0xfff0d8, 2.4);
+sun.position.set(10, 18, 8);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -20, right: 20, top: 20, bottom: -20, far: 60 });
+scene.add(sun, new THREE.HemisphereLight(0xfff4e2, 0x6b8a4f, 1.05), new THREE.AmbientLight(0xffffff, 0.55));
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(GRID, GRID), new THREE.MeshLambertMaterial({ color: 0x8fae6a }));
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+const gridHelper = new THREE.GridHelper(GRID, GRID, 0x66824c, 0x7d9a5e);
+gridHelper.position.y = 0.01;
+scene.add(gridHelper);
+
+const camCtl = {
+  target: new THREE.Vector3(GRID / 2, 0, GRID / 2), theta: Math.PI * 0.15, phi: Math.PI * 0.34, r: 26,
+  apply() {
+    cam.position.set(this.target.x + this.r * Math.sin(this.phi) * Math.cos(this.theta), this.r * Math.cos(this.phi), this.target.z + this.r * Math.sin(this.phi) * Math.sin(this.theta));
+    cam.lookAt(this.target);
+  },
+  pan(dx, dz) {
+    this.target.x = THREE.MathUtils.clamp(this.target.x + dx, -GRID * .3, GRID * 1.3);
+    this.target.z = THREE.MathUtils.clamp(this.target.z + dz, -GRID * .3, GRID * 1.3);
+    this.apply();
+  },
+  fwd() { return new THREE.Vector3(-Math.cos(this.theta), 0, -Math.sin(this.theta)); },
+  right() { return new THREE.Vector3(Math.sin(this.theta), 0, -Math.cos(this.theta)); },
+};
+
+/* ============ 游戏状态 ============ */
+const G = {
+  res: { wood: 14, food: 12 },
+  foodCap: 30, happy: 70,
+  day: 1, time: 0, over: false,
+  placed: [], occ: new Map(), villagers: [],
+};
+const key = (x, z) => x + ',' + z;
+
+/* ============ 网格与放置 ============ */
+const S = { mode: 'idle', sel: null, rot: 0, cell: { x: 0, z: 0 }, moving: null, hovered: null, downAt: null };
+const keys = {};
+function footprint(b, rot) { return (rot % 2) ? [b.d, b.w] : [b.w, b.d]; }
+function cellsOf(b, x, z, rot) {
+  const [w, d] = footprint(b, rot), out = [];
+  for (let i = 0; i < w; i++) for (let j = 0; j < d; j++) out.push(key(x + i, z + j));
+  return out;
+}
+function canPlace(b, x, z, rot, ignore) {
+  const [w, d] = footprint(b, rot);
+  if (x < 0 || z < 0 || x + w > GRID || z + d > GRID) return false;
+  return cellsOf(b, x, z, rot).every(k => !G.occ.has(k) || G.occ.get(k) === ignore);
+}
+function clampCell(b, x, z, rot) {
+  const [w, d] = footprint(b, rot);
+  return { x: THREE.MathUtils.clamp(x, 0, GRID - w), z: THREE.MathUtils.clamp(z, 0, GRID - d) };
+}
+function canAfford(def) { return Object.entries(def.cost).every(([r, v]) => G.res[r] >= v); }
+function pay(def) { Object.entries(def.cost).forEach(([r, v]) => G.res[r] -= v); }
+
+/* ============ 模型 ============ */
+const protos = {};
+const loader = new GLTFLoader();
+let loaded = 0;
+DEFS.forEach(def => {
+  loader.load(enc(def.glb) + '?v=1', g => {
+    const root = g.scene;
+    root.traverse(o => { if (o.isMesh) { o.castShadow = true; if (o.material) o.material.side = THREE.DoubleSide; } });
+    const box = new THREE.Box3().setFromObject(root);
+    const size = box.getSize(new THREE.Vector3());
+    const s = Math.min(def.w / size.x, def.d / size.z, Math.max(def.w, def.d) / Math.max(size.x, size.z));
+    root.scale.setScalar(s);
+    const box2 = new THREE.Box3().setFromObject(root);
+    const c = box2.getCenter(new THREE.Vector3());
+    root.position.set(-c.x, -box2.min.y, -c.z);
+    const wrap = new THREE.Group(); wrap.add(root);
+    protos[def.id] = wrap;
+    updateRow(def);
+    if (++loaded === DEFS.length) refreshUI();
+  });
+});
+
+/* ============ 脚印地垫 + 落下动画 ============ */
+const matPad = new THREE.MeshLambertMaterial({ color: 0x9db972 });
+const matPadEdge = new THREE.MeshLambertMaterial({ color: 0x8fae63 });
+const padGeo = new THREE.PlaneGeometry(0.98, 0.98).rotateX(-Math.PI / 2);
+const SINK = 0.045;
+function makePad(b, rot) {
+  const g = new THREE.Group(); const [w, d] = footprint(b, rot);
+  for (let i = 0; i < w; i++) for (let j = 0; j < d; j++) {
+    const edge = (i === 0 || j === 0 || i === w - 1 || j === d - 1);
+    const p = new THREE.Mesh(padGeo, edge ? matPadEdge : matPad);
+    p.position.set(i + .5, 0.006, j + .5); p.receiveShadow = true; g.add(p);
+  }
+  return g;
+}
+const anims = [];
+function dropAnim(inst) { inst.userData.anim = { t: 0, fromY: 1.1 }; anims.push(inst); }
+function stepAnims(dt) {
+  for (let i = anims.length - 1; i >= 0; i--) {
+    const inst = anims[i], a = inst.userData.anim;
+    a.t = Math.min(1, a.t + dt * 5);
+    const e = 1 - Math.pow(1 - a.t, 3);
+    inst.position.y = (inst.userData.baseY || 0) + (a.fromY - (inst.userData.baseY || 0)) * (1 - e);
+    if (a.t >= 1) { inst.position.y = inst.userData.baseY || 0; anims.splice(i, 1); }
+  }
+}
+function placeInstance(def, x, z, rot, animate) {
+  const pad = makePad(def, rot); pad.position.set(x, 0, z); scene.add(pad);
+  const inst = protos[def.id].clone();
+  const [w, d] = footprint(def, rot);
+  inst.position.set(x + w / 2, SINK, z + d / 2);
+  inst.rotation.y = rot * Math.PI / 2;
+  inst.userData.baseY = SINK;
+  scene.add(inst);
+  const entry = { def, inst, pad, x, z, rot };
+  cellsOf(def, x, z, rot).forEach(k => G.occ.set(k, entry));
+  G.placed.push(entry);
+  if (animate) dropAnim(inst);
+  onBuilt(entry);
+  return entry;
+}
+function removeEntry(entry) {
+  cellsOf(entry.def, entry.x, entry.z, entry.rot).forEach(k => { if (G.occ.get(k) === entry) G.occ.delete(k); });
+  scene.remove(entry.inst, entry.pad);
+  G.placed = G.placed.filter(p => p !== entry);
+  if (entry.def.role === 'happy') G.happy -= entry.def.add;
+  if (entry.def.role === 'granary') G.foodCap -= 25;
+  entry.workers && entry.workers.forEach(v => v.job = null);
+  refreshUI();
+}
+
+/* ============ 幽灵 ============ */
+const matOK = new THREE.MeshBasicMaterial({ color: 0xaaffaa, transparent: true, opacity: .5, depthWrite: false });
+const matNO = new THREE.MeshBasicMaterial({ color: 0xff6655, transparent: true, opacity: .5, depthWrite: false });
+const ghost = { grp: null, fp: null };
+const fpUnit = new THREE.PlaneGeometry(0.96, 0.96).rotateX(-Math.PI / 2);
+function buildGhost() {
+  killGhost();
+  if (!S.sel || !protos[S.sel.id]) return;
+  ghost.grp = protos[S.sel.id].clone();
+  ghost.grp.traverse(o => { if (o.isMesh) o.material = matOK; });
+  ghost.fp = new THREE.Group();
+  scene.add(ghost.grp, ghost.fp);
+  updateGhost();
+}
+function killGhost() { if (ghost.grp) scene.remove(ghost.grp); if (ghost.fp) scene.remove(ghost.fp); ghost.grp = ghost.fp = null; }
+function updateGhost() {
+  if (!S.sel) return;
+  const def = S.sel, { x, z } = S.cell, rot = S.rot;
+  const [w, d] = footprint(def, rot);
+  const ok = canPlace(def, x, z, rot) && canAfford(def);
+  if (ghost.grp) {
+    ghost.grp.traverse(o => { if (o.isMesh) o.material = ok ? matOK : matNO; });
+    ghost.grp.position.set(x + w / 2, SINK + .02, z + d / 2);
+    ghost.grp.rotation.y = rot * Math.PI / 2;
+  }
+  if (ghost.fp) {
+    ghost.fp.clear();
+    for (let i = 0; i < w; i++) for (let j = 0; j < d; j++) {
+      const p = new THREE.Mesh(fpUnit, ok ? matOK : matNO);
+      p.position.set(x + i + .5, .03, z + j + .5); ghost.fp.add(p);
+    }
+  }
+}
+
+/* ============ 拾取 ============ */
+const raycaster = new THREE.Raycaster(), ndc = new THREE.Vector2();
+const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+function toGround(e) {
+  const r = dom.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  raycaster.setFromCamera(ndc, cam);
+  const pt = new THREE.Vector3();
+  return raycaster.ray.intersectPlane(groundPlane, pt) ? pt : null;
+}
+function pickPlaced(e) {
+  const r = dom.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  raycaster.setFromCamera(ndc, cam);
+  const hit = raycaster.intersectObjects(G.placed.map(p => p.inst), true)[0];
+  if (!hit) return null;
+  let o = hit.object;
+  while (o && !G.placed.some(p => p.inst === o)) o = o.parent;
+  return G.placed.find(p => p.inst === o) || null;
+}
+
+/* ============ 侧栏 ============ */
+const CATS = ['全部', '住房', '生产', '设施', '装饰'];
+let curCat = '全部';
+const catsEl = document.getElementById('cats');
+CATS.forEach(c => {
+  const b = document.createElement('button');
+  b.textContent = c;
+  if (c === curCat) b.className = 'on';
+  b.onclick = () => { curCat = c; [...catsEl.children].forEach(x => x.className = ''); b.className = 'on'; renderList(); };
+  catsEl.appendChild(b);
+});
+const listEl = document.getElementById('list');
+DEFS.forEach(def => {
+  const row = document.createElement('div');
+  row.className = 'b'; row.id = 'b-' + def.id;
+  const costTxt = Object.entries(def.cost).map(([r, v]) => v + r === 'wood' ? v + '木' : '').join(' ');
+  row.innerHTML = `<img draggable="false"><div class="tx"><div class="nm">${def.name}</div><div class="cost">${Object.entries(def.cost).map(([r,v])=>v+'木').join(' ')}</div></div>`;
+  row.addEventListener('click', () => { if (canAfford(def)) startPlacing(def); else toast('木材不够：需要 ' + def.cost.wood + ' 木'); });
+  listEl.appendChild(row);
+});
+function renderList() {
+  DEFS.forEach(def => {
+    const row = document.getElementById('b-' + def.id);
+    row.style.display = (curCat === '全部' || def.cat === curCat) ? 'flex' : 'none';
+    updateRow(def);
+  });
+}
+function updateRow(def) {
+  const row = document.getElementById('b-' + def.id);
+  if (!row) return;
+  row.classList.toggle('poor', !canAfford(def));
+}
+/* 缩略图 */
+const thumbR = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+thumbR.setSize(96, 96); thumbR.toneMappingExposure = 1.4;
+const thumbScene = new THREE.Scene(); thumbScene.background = new THREE.Color(0xf5f1e6);
+const thumbCam = new THREE.PerspectiveCamera(40, 1, .01, 100);
+const tl = new THREE.DirectionalLight(0xfff0d8, 2.4); tl.position.set(3, 5, 2);
+thumbScene.add(tl, new THREE.HemisphereLight(0xfff4e2, 0x8a7358, 1), new THREE.AmbientLight(0xffffff, .5));
+const thumbQ = [];
+function makeThumb(def) { thumbQ.push(def); if (thumbQ.length === 1) pump(); }
+function pump() {
+  const def = thumbQ.shift(); if (!def) return;
+  const obj = protos[def.id].clone();
+  thumbScene.add(obj);
+  const box = new THREE.Box3().setFromObject(obj);
+  const c = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
+  obj.position.sub(new THREE.Vector3(c.x, box.min.y, c.z));
+  const dd = Math.max(size.x, size.y, size.z) * 1.9;
+  thumbCam.position.set(dd * .75, dd * .65, dd * .75);
+  thumbCam.lookAt(0, size.y * .35, 0); thumbCam.far = dd * 10; thumbCam.updateProjectionMatrix();
+  thumbR.render(thumbScene, thumbCam);
+  const img = document.querySelector('#b-' + def.id + ' img');
+  if (img) img.src = thumbR.domElement.toDataURL();
+  thumbScene.remove(obj);
+  requestAnimationFrame(pump);
+}
+
+/* ============ 村民 ============ */
+const CHAR_FILES = ['char-knight.glb', 'char-mage.glb', 'char-rogue.glb'];
+const VNAMES = ['阿岚', '小满', '石头', '阿枣', '春妮', '大川', '阿槐', '小蝶'];
+let charProtos = 0;
+CHAR_FILES.forEach(f => loader.load(enc('ai3d-mirror/' + f) + '?v=1', g => {
+  const root = g.scene;
+  root.traverse(o => { if (o.isMesh && o.material) { o.material.side = THREE.DoubleSide; o.castShadow = true; } });
+  protos['char' + charProtos] = root;
+  charProtos++;
+  if (charProtos === CHAR_FILES.length) { spawnVillagers(3); refreshUI(); }
+}));
+function spawnVillagers(n) {
+  for (let i = 0; i < n; i++) {
+    const proto = protos['char' + (G.villagers.length % CHAR_FILES.length)];
+    const obj = new THREE.Group();
+    const root = proto.clone();
+    const box = new THREE.Box3().setFromObject(root);
+    const h = box.max.y - box.min.y;
+    obj.scale.setScalar(0.8 / h);
+    obj.add(root);
+    obj.position.set(GRID / 2 + (Math.random() - .5) * 4, 0, GRID / 2 + (Math.random() - .5) * 4);
+    scene.add(obj);
+    G.villagers.push({
+      name: VNAMES[G.villagers.length % VNAMES.length], obj, job: null, state: 'idle',
+      target: null, waitT: Math.random() * 2, happy: 70,
+    });
+  }
+}
+function capacity() { return G.placed.filter(p => p.def.role === 'house').reduce((s, p) => s + p.def.cap, 0); }
+function jobBuildings() { return G.placed.filter(p => p.def.role === 'wood' || p.def.role === 'food'); }
+
+/* 自动分配：空闲村民 → 最近的缺人工地 */
+function assignJobs() {
+  const jobs = jobBuildings();
+  if (!jobs.length) return;
+  for (const v of G.villagers) {
+    if (v.job && G.placed.includes(v.job)) continue;
+    v.job = null;
+    let best = null, bd = 1e9;
+    for (const j of jobs) {
+      const n = (j.workers || (j.workers = [])).length;
+      if (n >= 2) continue;
+      const d = v.obj.position.distanceTo(j.inst.position);
+      if (d < bd) { bd = d; best = j; }
+    }
+    if (best) { best.workers.push(v); v.job = best; }
+  }
+}
+function hasWellNear(entry) {
+  return G.placed.some(p => p.def.role === 'well' &&
+    Math.abs(p.x - entry.x) <= 6 && Math.abs(p.z - entry.z) <= 6);
+}
+function houseHappiness() {
+  const houses = G.placed.filter(p => p.def.role === 'house');
+  const good = houses.filter(hasWellNear).reduce((s, p) => s + p.def.cap, 0);
+  const total = houses.reduce((s, p) => s + p.def.cap, 0);
+  return total ? good / total : 1;
+}
+function stepVillagers(dt, t) {
+  for (const v of G.villagers) {
+    let tgt = null;
+    if (v.job && (v.job.def.role === 'wood' || v.job.def.role === 'food')) {
+      tgt = v.job.inst.position;
+    } else {
+      if (!v.wander || v.obj.position.distanceTo(v.wander) < .2) {
+        const x = 2 + Math.random() * (GRID - 4), z = 2 + Math.random() * (GRID - 4);
+        if (!G.occ.has(key(Math.floor(x), Math.floor(z)))) v.wander = new THREE.Vector3(x, 0, z);
+      }
+      tgt = v.wander;
+    }
+    if (!tgt) continue;
+    const dx = tgt.x - v.obj.position.x, dz = tgt.z - v.obj.position.z;
+    const dist = Math.hypot(dx, dz);
+    if (dist > (v.job ? 1.0 : 0.2)) {
+      const sp = 1.4 * dt;
+      const nx = v.obj.position.x + dx / dist * sp, nz = v.obj.position.z + dz / dist * sp;
+      if (G.occ.has(key(Math.floor(nx), Math.floor(nz)))) { v.wander = null; continue; }
+      v.obj.position.set(nx, 0, nz);
+      v.obj.rotation.y = Math.atan2(dx, dz);
+      v.obj.children[0].position.y = Math.abs(Math.sin(t * 9)) * .04;
+    } else if (!v.job) v.wander = null;
+  }
+}
+
+/* ============ 经济 tick ============ */
+function productionPerDay() {
+  let wood = 0, food = 0;
+  const eff = (0.6 + G.happy / 250) * (0.5 + 0.5 * houseHappiness());
+  for (const p of G.placed) {
+    if (p.def.role === 'wood' && p.workers && p.workers.length) wood += p.def.out * Math.min(p.workers.length, 2) * eff;
+    if (p.def.role === 'food' && p.workers && p.workers.length) {
+      const winter = G.day >= WINTER_DAY;
+      const rate = winter && p.def.id !== 'greenhouse' ? 0.3 : 1;
+      food += p.def.out * Math.min(p.workers.length, 2) * eff * rate;
+    }
+  }
+  return { wood, food };
+}
+function onBuilt(entry) {
+  const def = entry.def;
+  if (def.role === 'happy') G.happy += def.add;
+  if (def.role === 'granary') G.foodCap += 25;
+  assignJobs(); refreshUI();
+}
+function night() {
+  // 吃饭
+  const need = G.villagers.length;
+  G.res.food = Math.min(G.foodCap, G.res.food) ;
+  if (G.res.food >= need) { G.res.food -= need; }
+  else {
+    G.res.food = 0;
+    G.happy -= 15;
+    const leaver = G.villagers.pop();
+    if (leaver) { scene.remove(leaver.obj); toast(`😢 ${leaver.name} 饿坏了，离开了村庄`); }
+  }
+  // 冬季寒冷
+  if (G.day >= WINTER_DAY) G.happy -= 6;
+  else G.happy = Math.min(100, G.happy + 4);
+  // 随机事件
+  const roll = Math.random();
+  if (roll < 0.22 && G.day >= 3) {
+    const towers = G.placed.filter(p => p.def.role === 'tower').length;
+    if (towers === 0) {
+      const loss = Math.min(G.res.food, 4 + Math.floor(Math.random() * 4));
+      G.res.food -= loss;
+      toast(`🐺 夜里有狼群翻进了粮仓！损失 ${loss} 食物（建瞭望塔可防）`);
+    } else toast('🐺 狼群靠近，被瞭望塔的火把吓退了');
+  } else if (roll < 0.4 && capacity() > G.villagers.length && G.res.food >= G.villagers.length) {
+    spawnVillagers(1);
+    toast(`🎉 一位旅行者被炊烟吸引，加入了村庄（现 ${G.villagers.length} 人）`);
+  } else if (roll < 0.5) {
+    G.res.wood += 3; toast(' driftwood 河水送来了几根浮木 +3 木');
+  }
+  G.happy = Math.max(0, G.happy);
+  // 天数推进与判定
+  G.day++;
+  if (G.day === WINTER_DAY) toast('❄ 冬天来了！温室外的食物产出大减，熬过 3 天就是春天');
+  if (G.day >= END_DAY) { endGame(); return; }
+  dayTick();
+  refreshUI();
+}
+function dayTick() {
+  const p = productionPerDay();
+  G.res.wood += Math.round(p.wood);
+  G.res.food = Math.min(G.foodCap, G.res.food + Math.round(p.food));
+  assignJobs();
+}
+function endGame() {
+  G.over = true;
+  const pop = G.villagers.length;
+  const el = document.getElementById('end');
+  el.style.display = 'flex';
+  if (pop >= 3) {
+    document.getElementById('end-title').textContent = '🌸 春天来了——你活过了冬天！';
+    document.getElementById('end-desc').textContent = `最终人口 ${pop} 人，余粮 ${G.res.food}，快乐 ${G.happy}。核心循环成立：采集→备粮→过冬。这就是第一版 MVP。`;
+  } else {
+    document.getElementById('end-title').textContent = '❄ 村庄没能撑过冬天';
+    document.getElementById('end-desc').textContent = `春天到来时只剩 ${pop} 人（需 ≥3）。教训：入冬前多囤粮、建温室、保持快乐。`;
+  }
+}
+
+/* ============ UI ============ */
+function refreshUI() {
+  document.getElementById('r-wood').textContent = Math.floor(G.res.wood);
+  document.getElementById('r-food').textContent = Math.floor(G.res.food);
+  document.getElementById('r-happy').textContent = Math.round(G.happy);
+  document.getElementById('r-pop').textContent = G.villagers.length;
+  document.getElementById('r-cap').textContent = '/' + capacity();
+  document.getElementById('daybox').textContent = `第 ${G.day} 天 · ${SEASONS(G.day)} · ${Math.floor(G.time / DAY_SECONDS * 100)}%`;
+  const p = productionPerDay();
+  document.getElementById('d-wood').textContent = '+' + p.wood.toFixed(1) + '/天';
+  document.getElementById('d-food').textContent = '+' + p.food.toFixed(1) + '/天';
+  const vl = document.getElementById('vlist');
+  vl.innerHTML = G.villagers.map(v =>
+    `<div class="v"><span>${v.name}</span><span>${v.job ? (v.job.def.role === 'wood' ? '🪵' : '🍎') + v.job.def.name : '🚶 闲逛'}</span></div>`).join('');
+  renderList();
+}
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.getElementById('toast').appendChild(t);
+  setTimeout(() => t.remove(), 4200);
+}
+function showInfo(entry) {
+  window.__cur = entry;
+  const el = document.getElementById('info');
+  el.style.display = 'block';
+  const d = entry.def;
+  const extra = entry.workers && entry.workers.length ? `<br>在岗：${entry.workers.map(v => v.name).join('、')}` : '';
+  const trade = d.role === 'market' && G.res.wood >= 4 ? '<br><button onclick="__trade()">以 4 木换 5 食</button>' : '';
+  el.innerHTML = `<b>${d.name}</b><br><span style="color:#a89880;font-size:11px">${d.cat} · 占地 ${d.w}×${d.d}</span><br>${d.desc}${extra}${trade}<button onclick="__del()">拆除</button>`;
+}
+window.__trade = () => { if (G.res.wood >= 4) { G.res.wood -= 4; G.res.food = Math.min(G.foodCap, G.res.food + 5); toast('🛒 交易完成：-4 木 +5 食'); refreshUI(); } };
+window.__del = () => { if (window.__cur) removeEntry(window.__cur); document.getElementById('info').style.display = 'none'; };
+
+/* ============ 交互 ============ */
+function startPlacing(def) {
+  S.sel = def; S.rot = 0; S.mode = 'placing';
+  document.querySelectorAll('.b').forEach(e => e.classList.remove('sel'));
+  document.getElementById('b-' + def.id).classList.add('sel');
+  buildGhost(); dom.style.cursor = 'copy';
+}
+function stopPlacing() {
+  S.sel = null; S.mode = 'idle';
+  document.querySelectorAll('.b').forEach(e => e.classList.remove('sel'));
+  killGhost(); dom.style.cursor = 'default';
+}
+const DRAG_T = 5;
+function isOverCanvas(e) {
+  const r = dom.getBoundingClientRect();
+  return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+}
+addEventListener('pointerdown', e => {
+  if (e.target !== dom || G.over) return;
+  S.downAt = { x: e.clientX, y: e.clientY };
+  try { dom.setPointerCapture(e.pointerId); } catch (_) {}
+  if (e.button === 1) { S.mode = 'panning'; e.preventDefault(); return; }
+  if (e.button !== 0 || S.mode === 'placing') return;
+  const hit = pickPlaced(e);
+  if (hit) {
+    S.moving = hit; S.rot = hit.rot;
+    cellsOf(hit.def, hit.x, hit.z, hit.rot).forEach(k => G.occ.delete(k));
+    S.mode = 'movingBuilding';
+    dom.style.cursor = 'grabbing';
+  }
+});
+addEventListener('pointermove', e => {
+  if (G.over) return;
+  if (S.mode === 'movingBuilding' && S.moving) {
+    const pt = toGround(e);
+    if (pt) {
+      S.cell = clampCell(S.moving.def, Math.floor(pt.x), Math.floor(pt.z), S.rot);
+      const [w, d] = footprint(S.moving.def, S.rot);
+      S.moving.inst.position.set(S.cell.x + w / 2, .05, S.cell.z + d / 2);
+      S.moving.inst.rotation.y = S.rot * Math.PI / 2;
+      const ok = canPlace(S.moving.def, S.cell.x, S.cell.z, S.rot);
+      S.moving.inst.traverse(o => { if (o.isMesh) o.material = ok ? matOK : matNO; });
+      S.moving.valid = ok;
+    }
+    return;
+  }
+  if (S.mode === 'placing') {
+    if (isOverCanvas(e)) {
+      const pt = toGround(e);
+      if (pt && S.sel) { S.cell = clampCell(S.sel, Math.floor(pt.x), Math.floor(pt.z), S.rot); updateGhost(); }
+    }
+    return;
+  }
+  if (S.mode === 'panning') {
+    if (e.movementX || e.movementY) {
+      const sp = camCtl.r * .0016, f = camCtl.fwd(), r = camCtl.right();
+      camCtl.pan(-e.movementX * sp * r.x + e.movementY * sp * f.x, -e.movementX * sp * r.z + e.movementY * sp * f.z);
+    }
+    return;
+  }
+  if (S.mode === 'idle' && isOverCanvas(e)) {
+    const pt = toGround(e);
+    const tip = document.getElementById('tip');
+    if (pt) {
+      const entry = G.occ.get(key(Math.floor(pt.x), Math.floor(pt.z)));
+      if (entry) {
+        const m = mainEl.getBoundingClientRect();
+        tip.style.display = 'block';
+        tip.style.left = Math.min(e.clientX - m.left + 14, m.width - 260) + 'px';
+        tip.style.top = Math.min(e.clientY - m.top + 10, m.height - 90) + 'px';
+        tip.innerHTML = `<b>${entry.def.name}</b><br>${entry.def.desc}`;
+        S.hovered = entry; dom.style.cursor = 'pointer'; return;
+      }
+    }
+    tip.style.display = 'none'; S.hovered = null; dom.style.cursor = 'default';
+  }
+});
+addEventListener('pointerup', e => {
+  if (G.over) return;
+  const wasClick = S.downAt && Math.abs(e.clientX - S.downAt.x) < DRAG_T && Math.abs(e.clientY - S.downAt.y) < DRAG_T;
+  if (S.mode === 'placing' && wasClick && e.button === 0 && S.sel) {
+    if (canPlace(S.sel, S.cell.x, S.cell.z, S.rot) && canAfford(S.sel)) {
+      pay(S.sel);
+      placeInstance(S.sel, S.cell.x, S.cell.z, S.rot, true);
+      toast('🔨 ' + S.sel.name + ' 建成');
+      stopPlacing(); refreshUI();
+    }
+  } else if (S.mode === 'movingBuilding' && S.moving) {
+    const m = S.moving, def = m.def;
+    scene.remove(m.inst, m.pad);
+    m.inst = protos[def.id].clone();
+    if (m.valid) { m.x = S.cell.x; m.z = S.cell.z; m.rot = S.rot; }
+    const [w, d] = footprint(def, m.rot);
+    m.inst.position.set(m.x + w / 2, SINK, m.z + d / 2);
+    m.inst.rotation.y = m.rot * Math.PI / 2;
+    m.inst.userData.baseY = SINK;
+    m.pad = makePad(def, m.rot); m.pad.position.set(m.x, 0, m.z);
+    scene.add(m.inst, m.pad);
+    cellsOf(def, m.x, m.z, m.rot).forEach(k => G.occ.set(k, m));
+    dropAnim(m.inst);
+    S.moving = null;
+    if (wasClick) showInfo(m);
+    assignJobs();
+  }
+  S.mode = S.sel ? 'placing' : 'idle';
+  S.downAt = null;
+  dom.style.cursor = S.sel ? 'copy' : 'default';
+});
+addEventListener('dragstart', e => e.preventDefault());
+dom.addEventListener('contextmenu', e => e.preventDefault());
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k === 'escape') { stopPlacing(); document.getElementById('info').style.display = 'none'; return; }
+  if (['w','a','s','d','q','e','r'].includes(k)) e.preventDefault();
+  keys[k] = true;
+  if (k === 'r' && S.sel) { S.rot = (S.rot + 1) % 4; S.cell = clampCell(S.sel, S.cell.x, S.cell.z, S.rot); updateGhost(); }
+  if ((k === 'delete' || k === 'backspace') && S.hovered) removeEntry(S.hovered);
+});
+addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+function camKeys() {
+  const sp = camCtl.r * .02, f = camCtl.fwd(), r = camCtl.right();
+  if (keys.w) camCtl.pan(f.x * sp, f.z * sp);
+  if (keys.s) camCtl.pan(-f.x * sp, -f.z * sp);
+  if (keys.d) camCtl.pan(r.x * sp, r.z * sp);
+  if (keys.a) camCtl.pan(-r.x * sp, -r.z * sp);
+  if (keys.q) { camCtl.theta += .03; camCtl.apply(); }
+  if (keys.e) { camCtl.theta -= .03; camCtl.apply(); }
+}
+dom.addEventListener('wheel', e => {
+  e.preventDefault();
+  camCtl.r = THREE.MathUtils.clamp(camCtl.r + e.deltaY * .02, 7, 55); camCtl.apply();
+}, { passive: false });
+document.getElementById('zin').onclick = () => { camCtl.r = Math.max(7, camCtl.r - 4); camCtl.apply(); };
+document.getElementById('zout').onclick = () => { camCtl.r = Math.min(55, camCtl.r + 4); camCtl.apply(); };
+document.getElementById('rot').onclick = () => { if (S.sel) { S.rot = (S.rot + 1) % 4; S.cell = clampCell(S.sel, S.cell.x, S.cell.z, S.rot); updateGhost(); } };
+
+/* ============ 主循环 ============ */
+function resize() {
+  const w = mainEl.clientWidth, h = mainEl.clientHeight;
+  renderer.setSize(w, h); cam.aspect = w / h; cam.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+camCtl.apply(); resize();
+const clock = new THREE.Clock();
+(function loop() {
+  requestAnimationFrame(loop);
+  const dt = Math.min(clock.getDelta(), .05);
+  const t = clock.elapsedTime;
+  if (!G.over) {
+    G.time += dt;
+    // 连续产出（比一天一结手感好）
+    const p = productionPerDay();
+    G.res.wood += p.wood * dt / DAY_SECONDS;
+    G.res.food = Math.min(G.foodCap, G.res.food + p.food * dt / DAY_SECONDS);
+    if (G.time >= DAY_SECONDS) { G.time = 0; night(); }
+    stepVillagers(dt, t);
+    if (Math.floor(t * 2) !== G._uiT) { G._uiT = Math.floor(t * 2); refreshUI(); }
+  }
+  camKeys(); stepAnims(dt);
+  renderer.render(scene, cam);
+})();
+refreshUI();
+toast('🍂 目标：活过第 10 天的冬天（结束时人口 ≥3）。先建锯木厂和蜂箱，村民会自动上工');
+</script>
+</body>
+</html>
