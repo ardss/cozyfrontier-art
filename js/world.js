@@ -9,6 +9,7 @@ export const G = {
   day: 1, time: 0, over: false,
   placed: [], occ: new Map(), villagers: [], nature: [], drops: [], sites: [],
   selected: new Set(), tech: new Set(),     // tech: 已研究的科技 id
+  year: 1, milestones: new Set(),           // R6 多年进程与里程碑
 };
 export const key = (x, z) => x + ',' + z;
 export function footprint(b, rot) { return (rot % 2) ? [b.d, b.w] : [b.w, b.d]; }

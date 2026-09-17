@@ -2,7 +2,7 @@
  * 11. UI —— 侧栏、缩略图、选择面板、提示、toast
  * ===================================================================*/
 import * as THREE from 'three';
-import { DAY_SECONDS, SEASONS, RES_INFO, CARRY_CAP, DEFS, CATS, RECIPES, TECHS } from './config.js';
+import { DAY_SECONDS, RES_INFO, CARRY_CAP, DEFS, CATS, RECIPES, TECHS, MILESTONES, seasonOf, SEASON_DAYS, YEAR_DAYS } from './config.js';
 import { mainEl, camCtl, pickAt } from './scene.js';
 import { G, canAfford, unlocked, houseCapacity } from './world.js';
 import { protos } from './assets.js';
@@ -136,10 +136,11 @@ export const UI = {
     document.getElementById('r-happy').textContent = Math.round(G.happy);
     document.getElementById('r-pop').textContent = G.villagers.length;
     document.getElementById('r-cap').textContent = '/' + houseCapacity();
-    // 季节进度：把"这一天过了多少"换算成"这个季节过了多少"
-    const seg = G.day < 4 ? [1, 4, '秋'] : G.day < 8 ? [4, 8, '深秋'] : G.day < 11 ? [8, 11, '冬'] : [11, 12, '春'];
-    const sp = Math.min(100, Math.floor(((G.day - seg[0]) + G.time / DAY_SECONDS) / (seg[1] - seg[0]) * 100));
-    document.getElementById('daybox').textContent = `第 ${G.day} 天 · ${seg[2]} ${sp}%${G.day >= 8 && G.day < 11 ? ' ❄' : ''}`;
+    // 年历：第X年 第X天 · 季节 · 季节进度
+    const din = ((G.day - 1) % YEAR_DAYS) + 1;
+    const season = seasonOf(G.day);
+    const sp = Math.min(100, Math.floor(((din - 1) % SEASON_DAYS + G.time / DAY_SECONDS) / SEASON_DAYS * 100));
+    document.getElementById('daybox').textContent = `第 ${G.year || 1}年 第${din}天 · ${season} ${sp}%${season === '冬' ? ' ❄' : ''} · 🏆${(G.milestones && G.milestones.size) || 0}/${MILESTONES.length}`;
     const vl = document.getElementById('vlist');
     vl.innerHTML = G.villagers.map(v => {
       const t = v.task;
@@ -231,7 +232,9 @@ export const UI = {
       const done = G.tech.has(t.id);
       const can = !done && (G.res.know || 0) >= t.cost;
       return `<div class="trow ${done ? 'done' : can ? 'can' : ''}"><span>${done ? '✓' : '📘' + t.cost} ${t.name}</span><span style="color:var(--dim);font-size:10px">${t.desc}</span>${done ? '' : `<button data-t="${t.id}" ${can ? '' : 'disabled'}>研究</button>`}</div>`;
-    }).join('') + `<div style="text-align:right"><button id="btn-techclose">关闭</button></div>`;
+    }).join('') + `<b style="display:block;margin-top:8px">🏆 里程碑 ${G.milestones.size}/${MILESTONES.length}</b>` + MILESTONES.map(m =>
+      `<div class="trow ${G.milestones.has(m.id) ? 'done' : ''}"><span>${G.milestones.has(m.id) ? '✓' : '○'} ${m.name}</span><span style="color:var(--dim);font-size:10px">${m.desc}</span></div>`
+    ).join('') + `<div style="text-align:right"><button id="btn-techclose">关闭</button></div>`;
     el.querySelectorAll('button[data-t]').forEach(b => b.onclick = () => {
       const t = TECHS.find(x => x.id === b.dataset.t);
       if (!t || G.tech.has(t.id) || (G.res.know || 0) < t.cost) return;

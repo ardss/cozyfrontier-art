@@ -1,7 +1,7 @@
 /* =====================================================================
  * 10. 模拟 —— 村民行为步进、经济、日程、夜晚结算
  * ===================================================================*/
-import { GRID, RES_INFO, CARRY_CAP, WINTER_DAY, END_DAY, RECIPES } from './config.js';
+import { GRID, RES_INFO, CARRY_CAP, RECIPES, isWinterDay, seasonOf, SEASON_DAYS, YEAR_DAYS, MILESTONES } from './config.js';
 import { scene } from './scene.js';
 import { G, houseCapacity } from './world.js';
 import { cellFree, findPath, losFree } from './pathfinding.js';
@@ -120,7 +120,7 @@ export function stepVillager(v, dt, t) {
     if (v.task.kind === 'chop') {
       const node = v.task.target;
       // 冬季野外食物大减（浆果/蘑菇凋零），木石照常——冬天砍柴更重要
-      const amt = (node.def.yield === 'food' && G.day >= WINTER_DAY) ? Math.max(1, node.def.amt - 1) : node.def.amt;
+      const amt = (node.def.yield === 'food' && isWinterDay(G.day)) ? Math.max(1, node.def.amt - 1) : node.def.amt;
       spawnDrop(node.def.yield, amt, node.inst.position);
       chopDone(node);
     }
@@ -139,7 +139,7 @@ function houseHappiness() {
 export function productionPerDay() {
   let wood = 0, food = 0;
   const eff = (0.6 + G.happy / 250) * (0.5 + 0.5 * houseHappiness());
-  const winter = G.day >= WINTER_DAY;
+  const winter = isWinterDay(G.day);
   for (const p of G.placed) {
     if (p.def.out === undefined) continue;
     const n = G.villagers.filter(v => v.task && v.task.kind === 'work' && v.task.target === p).length;
@@ -152,7 +152,7 @@ export function productionPerDay() {
 }
 /* ---- 配方生产：在岗村民按配方消耗库存原料 → 成品入库 ---- */
 export function stepProduction(dt) {
-  const winter = G.day >= WINTER_DAY;
+  const winter = isWinterDay(G.day);
   for (const p of G.placed) {
     const rc = RECIPES[p.def.id];
     if (!rc) continue;
@@ -175,7 +175,7 @@ function decorBonus() {
   return G.placed.filter(p => p.def.role === 'happy').reduce((s, p) => s + (p.def.add || 0), 0);
 }
 export function nightSettlement() {
-  const winter = G.day >= WINTER_DAY;
+  const winter = isWinterDay(G.day);
   const pop = G.villagers.length;
   let need = pop * (winter ? 2 : 1);                 // 冬季寒冷，饭量加倍
   const eatBread = Math.min(G.res.bread || 0, need);   // 面包优先上桌，省下生食
@@ -221,8 +221,10 @@ export function nightSettlement() {
   G.happy = Math.max(0, G.happy);
   G.day++;
   regrow();
-  if (G.day === WINTER_DAY) ctx.toast('❄ 冬天来了！露天产出大减，温室/囤粮是关键');
-  else if (G.day + 1 === WINTER_DAY) {
+  const din = ((G.day - 1) % YEAR_DAYS) + 1;
+  if (din === 1 && G.day > 1) { G.year++; ctx.toast('🌸 新的一年开始了——第 ' + G.year + ' 年'); }
+  if (seasonOf(G.day) === '冬' && seasonOf(G.day - 1) !== '冬') ctx.toast('❄ 冬天来了！露天产出大减，温室/囤粮是关键');
+  else if (din === SEASON_DAYS * 3) {
     // 入冬前一天：官网口径的过冬判定（柴≥8/人 且 粮≥5/人）
     const p = G.villagers.length;
     const ok = G.res.wood >= p * 8 && G.res.food >= p * 5;
@@ -230,18 +232,32 @@ export function nightSettlement() {
       ? `❄ 明日入冬：储备达标（柴 ${Math.floor(G.res.wood)}/需${p * 8}，粮 ${Math.floor(G.res.food)}/需${p * 5}），稳了`
       : `⚠ 明日入冬：储备不足！建议 柴≥${p * 8} 粮≥${p * 5}（现 柴 ${Math.floor(G.res.wood)}，粮 ${Math.floor(G.res.food)}）`);
   }
-  if (G.day >= END_DAY) { endGame(); return; }
+  checkMilestones();
+  if (!G.over && G.villagers.length < 3) { endGame(false); return; }
   ctx.UI && ctx.UI.refresh();
 }
-function endGame() {
+function endGame(win) {
   G.over = true;
-  const pop = G.villagers.length;
   document.getElementById('end').style.display = 'flex';
-  if (pop >= 3) {
-    document.getElementById('end-title').textContent = '🌸 春天来了——活过了冬天！';
-    document.getElementById('end-desc').textContent = `最终人口 ${pop}，余粮 ${Math.floor(G.res.food)}，快乐 ${Math.round(G.happy)}。`;
+  if (win) {
+    document.getElementById('end-title').textContent = '🏆 繁荣的暖境边陲';
+    document.getElementById('end-desc').textContent = `全部里程碑达成！第 ${G.year} 年，人口 ${G.villagers.length}，快乐 ${Math.round(G.happy)}。这座村庄成了边陲的传奇。`;
   } else {
-    document.getElementById('end-title').textContent = '❄ 村庄没能撑过冬天';
-    document.getElementById('end-desc').textContent = `春天只剩 ${pop} 人（需 ≥3）。多囤粮、早建温室、盯紧快乐。`;
+    document.getElementById('end-title').textContent = '🥀 村庄衰落了';
+    document.getElementById('end-desc').textContent = `第 ${G.year} 年，村民越来越少，大家收拾行囊离开了边陲。囤粮、燃料与快乐，缺一不可。`;
   }
+}
+/* ---- 里程碑检查：达成 +8 快乐，全达成繁荣终局 ---- */
+function checkMilestones() {
+  for (const m of MILESTONES) {
+    if (G.milestones.has(m.id)) continue;
+    let ok = false;
+    if (m.type === 'place') ok = G.placed.some(p => p.def.id === m.id2);
+    else if (m.type === 'res') ok = (G.res[m.key] || 0) >= m.n;
+    else if (m.type === 'tech') ok = G.tech.size >= m.n;
+    else if (m.type === 'pop') ok = G.villagers.length >= m.n;
+    else if (m.type === 'year') ok = (G.year || 1) >= m.n;
+    if (ok) { G.milestones.add(m.id); G.happy = Math.min(100, G.happy + 8); ctx.toast('🏆 里程碑达成【' + m.name + '】：' + m.desc + '（快乐 +8）'); }
+  }
+  if (G.milestones.size >= MILESTONES.length) endGame(true);
 }

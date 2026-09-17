@@ -1,8 +1,11 @@
 /* =====================================================================
  * 1. 配置 —— 全部数值与数据表
  * ===================================================================*/
-export const DAY_SECONDS = 50, WINTER_DAY = 8, END_DAY = 11;
-export const SEASONS = d => d < 4 ? '秋' : d < WINTER_DAY ? '深秋' : d < END_DAY ? '冬 ❄' : '春';
+/* ---- 年历：一年 24 天 = 四季各 6 天（春/夏/秋/冬），跨年继续玩（R6 多年进程） ---- */
+export const DAY_SECONDS = 50;
+export const SEASON_DAYS = 6, YEAR_DAYS = 24;
+export const seasonOf = day => ['春', '夏', '秋', '冬'][Math.floor(((day - 1) % YEAR_DAYS) / SEASON_DAYS)];
+export const isWinterDay = day => seasonOf(day) === '冬';
 export const TREE_YIELD = 2, TREE_HP = 3, BUSH_FOOD = 3, WORK_RATE = 2.2;
 export const CARRY_CAP = 6;                       // 村民单次搬运上限
 export const RES_INFO = {
@@ -117,3 +120,15 @@ export const SCATTER_COUNTS = {};
 export const NATURE_COUNTS  = { tree: 20, tree2: 8, tree3: 6, dead: 4, bush: 12, rocks: 7, rock: 5, stump: 6, mushrooms: 8, grass_tuft: 12, flowers: 12 };
 export const VNAMES = ['阿岚', '小满', '石头', '阿枣', '春妮', '大川', '阿槐', '小蝶'];
 export const CATS = ['全部', '住房', '生产', '设施', '装饰'];
+
+/* ---- 里程碑：声明式条件，每晚检查，达成 +8 快乐；全达成 = 繁荣终局（R6） ---- */
+export const MILESTONES = [
+  { id: 'home',   name: '安家', desc: '建造村中心',      type: 'place', id2: 'core' },
+  { id: 'full',   name: '温饱', desc: '食物储备达到 30',  type: 'res',   key: 'food', n: 30 },
+  { id: 'fire',   name: '炉火', desc: '建造篝火',        type: 'place', id2: 'campfire' },
+  { id: 'craft',  name: '工坊', desc: '研究首个科技',     type: 'tech',  n: 1 },
+  { id: 'plank',  name: '加工', desc: '木板储备达到 10',  type: 'res',   key: 'plank', n: 10 },
+  { id: 'school', name: '书香', desc: '建造学堂',        type: 'place', id2: 'school' },
+  { id: 'pop6',   name: '人丁', desc: '人口达到 6',      type: 'pop',   n: 6 },
+  { id: 'year2',  name: '跨年', desc: '活过第一个冬天',   type: 'year',  n: 2 },
+];
