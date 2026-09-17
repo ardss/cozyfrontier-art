@@ -52,7 +52,7 @@ canvas{display:block;outline:none}
 </head><body>
 <div id="side">
   <header><h1>🏘️ 建筑放置 Demo</h1>
-  <div class="hint"><b>左键点侧栏</b>选建筑→点地面放置 · <b>R</b> 旋转 · <b>拖动已放建筑</b>搬家 · 点建筑看介绍<br>相机：<b>Q/E</b> 旋转 · <b>WASD</b> 平移 · <b>滚轮</b>缩放 · <b>ESC</b> 取消</div></header>
+  <div class="hint"><b>侧栏直接拖到地图</b>放置（或点选后点地面） · <b>R</b> 旋转 · <b>拖动已放建筑</b>搬家 · 点建筑看介绍<br>相机：<b>Q/E</b> 旋转 · <b>WASD</b> 平移 · <b>滚轮</b>缩放 · <b>ESC</b> 取消</div></header>
   <input id="search" placeholder="搜索建筑…">
   <div id="list"></div>
 </div>
@@ -188,11 +188,17 @@ function pump(){
   tS.remove(obj);
   setTimeout(()=>{ tBusy=false; pump(); }, 5);
 }
+let listDrag = null;
 const list = document.getElementById('list');
 function addRow(b){
   const d = document.createElement('div'); d.className='b'; d.id='b-'+b.id;
   d.innerHTML = '<img><div><div class="nm">'+b.name+'</div><div class="sz">占地 '+b.w+'×'+b.d+'</div></div>';
   d.onclick = () => select(b);
+  d.addEventListener('pointerdown', e => {
+    if(e.button !== 0) return;
+    listDrag = { b, x: e.clientX, y: e.clientY, active: false };
+    e.preventDefault();
+  });
   list.appendChild(d);
 }
 BUILDINGS.forEach(addRow);
@@ -285,6 +291,26 @@ function camMove(){
   }
 }
 addEventListener('pointermove', e => {
+  if(listDrag){
+    if(!listDrag.active && (Math.abs(e.clientX-listDrag.x)>6 || Math.abs(e.clientY-listDrag.y)>6)){
+      listDrag.active = true;
+      select(listDrag.b);
+      mode = 'placeMove';
+      dom.style.cursor = 'copy';
+    }
+    if(listDrag.active){
+      const r = dom.getBoundingClientRect();
+      if(e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top && e.clientY<=r.bottom){
+        const pt = groundHit(e);
+        if(pt && sel){
+          const w = rot%2?sel.d:sel.w, d = rot%2?sel.w:sel.d;
+          gx = Math.max(0, Math.min(GRID-w, Math.floor(pt.x/CELL)));
+          gz = Math.max(0, Math.min(GRID-d, Math.floor(pt.z/CELL)));
+          refreshGhost();
+        }
+      }
+    }
+  }
   if(mode==='none'){
     // hover tooltip
     const pt = groundHit(e);
@@ -321,7 +347,12 @@ addEventListener('pointermove', e => {
   } else if((mode==='placeMove'||mode==='dragBuilding')){
     const pt = groundHit(e);
     if(pt){
-      gx = Math.floor(pt.x/CELL); gz = Math.floor(pt.z/CELL);
+      const b = (mode==='dragBuilding' && dragEntry) ? dragEntry.b : sel;
+      if(b){
+        const w = rot%2?b.d:b.w, d = rot%2?b.w:b.d;
+        gx = Math.max(0, Math.min(GRID-w, Math.floor(pt.x/CELL)));
+        gz = Math.max(0, Math.min(GRID-d, Math.floor(pt.z/CELL)));
+      }
       if(mode==='placeMove') refreshGhost();
       else {
         const b = dragEntry.b;
@@ -336,6 +367,29 @@ addEventListener('pointermove', e => {
   }
 });
 addEventListener('pointerup', e => {
+  if(listDrag){
+    if(listDrag.active){
+      const r = dom.getBoundingClientRect();
+      const over = e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top && e.clientY<=r.bottom;
+      if(over && sel && fits(gx,gz,sel,rot)){
+        const inst = protos[sel.id].clone();
+        const w = rot%2?sel.d:sel.w, d = rot%2?sel.w:sel.d;
+        inst.position.set((gx+w/2)*CELL, 0, (gz+d/2)*CELL);
+        inst.rotation.y = rot*Math.PI/2;
+        scene.add(inst);
+        const entry = { b:sel, inst, cells:cellsFor(gx,gz,sel,rot) };
+        entry.cells.forEach(k=>occ[k]=entry);
+        placed.push(entry);
+        cancelSel();
+      } else {
+        cancelSel();
+      }
+    }
+    listDrag = null;
+    mode = 'none';
+    dom.style.cursor = 'default';
+    return;
+  }
   const wasClick = !moved && Math.abs(e.clientX-downX)<5 && Math.abs(e.clientY-downY)<5;
 
   if(mode==='placeMove' && wasClick && e.button===0 && sel){
