@@ -3,7 +3,7 @@
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>暖境边陲 · 建筑放置 Demo</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-user-drag:none;-webkit-touch-callout:none}
 html,body{height:100%;overflow:hidden}
 body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#2b2420;color:#f0e6d8;display:flex}
 #side{width:280px;background:#3a3128;border-right:1px solid #52463a;display:flex;flex-direction:column;flex-shrink:0}
@@ -11,6 +11,7 @@ body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#2b2420;c
 #side h1{font-size:16px;color:#ffd9a0}
 #side .hint{font-size:11px;color:#a89880;line-height:1.7;margin-top:4px}
 #side .hint b{color:#cbb894;font-weight:600}
+#search{-webkit-user-select:text;user-select:text;}
 #search{margin:8px 12px 4px;padding:6px 10px;background:#2b2420;border:1px solid #52463a;border-radius:8px;color:#f0e6d8;font-size:12px;outline:none;width:calc(100% - 24px)}
 #list{flex:1;overflow-y:auto;padding:8px}
 .b{display:flex;align-items:center;gap:9px;padding:5px 8px;border-radius:8px;cursor:pointer;border:1px solid transparent;margin-bottom:2px}
@@ -203,9 +204,10 @@ function select(b){
   document.querySelectorAll('.b').forEach(e=>e.classList.remove('sel'));
   document.getElementById('b-'+b.id).classList.add('sel');
   sel = b; rot = 0; hideInfo(); makeGhost(b);
+  dom.style.cursor = 'copy';
   setStatus('放置模式：'+b.name+'（R 旋转 · 左键放置 · ESC 取消）');
 }
-function cancelSel(){ sel=null; killGhost(); document.querySelectorAll('.b').forEach(e=>e.classList.remove('sel')); setStatus(); }
+function cancelSel(){ sel=null; killGhost(); document.querySelectorAll('.b').forEach(e=>e.classList.remove('sel')); setStatus(); dom.style.cursor='default'; }
 function setStatus(t){ document.getElementById('status').textContent = t || ('已放置 '+placed.length+' 栋'); }
 function hideInfo(){ document.getElementById('info').style.display='none'; }
 function removeEntry(entry){
@@ -223,12 +225,17 @@ function showInfo(entry){
 }
 const dom = renderer.domElement;
 dom.tabIndex = 0;
+dom.style.touchAction = 'none';
+dom.style.cursor = 'default';
 // camera interaction state
 let mode = 'none'; // none | orbit | pan | placeMove | dragBuilding
 let downX=0, downY=0, moved=false;
 let dragEntry = null, dragOrig = null;
 const keys = {};
+addEventListener('dragstart', e => e.preventDefault());
+dom.addEventListener('mousedown', e => { if(e.preventDefault && e.button!==0) e.preventDefault(); });
 addEventListener('keydown', e => {
+  if(['w','a','s','d','q','e','r'].includes(e.key.toLowerCase()) && document.activeElement !== document.getElementById('search')) e.preventDefault();
   keys[e.key.toLowerCase()] = true;
   if(e.key==='r'||e.key==='R'){ rot=(rot+1)%4; refreshGhost(); }
   if(e.key==='Escape'){ cancelSel(); hideInfo(); }
@@ -248,12 +255,14 @@ function pickBuilding(e){
 }
 dom.addEventListener('pointerdown', e => {
   downX = e.clientX; downY = e.clientY; moved = false;
+  try { dom.setPointerCapture(e.pointerId); } catch(_){}
+  if(mode === 'pan' || mode === 'placeMove' || mode === 'dragBuilding') dom.style.cursor = 'grabbing';
   if(e.button === 1){ mode = 'pan'; e.preventDefault(); }
   else if(e.button === 0){
     if(sel){ mode = 'placeMove'; }
     else {
       dragEntry = pickBuilding(e);
-      if(dragEntry){ mode = 'dragBuilding'; dragOrig = { x: dragEntry.inst.position.x, z: dragEntry.inst.position.z, cells: dragEntry.cells.slice() }; dragEntry.cells.forEach(k=>delete occ[k]); hideInfo(); }
+      if(dragEntry){ mode = 'dragBuilding'; dragOrig = { x: dragEntry.inst.position.x, z: dragEntry.inst.position.z, cells: dragEntry.cells.slice() }; dragEntry.cells.forEach(k=>delete occ[k]); hideInfo(); dom.style.cursor = 'grabbing'; }
       else mode = 'none';
     }
   }
@@ -289,10 +298,13 @@ addEventListener('pointermove', e => {
         tip.style.left = Math.min(e.clientX-m.left+14, m.width-260)+'px';
         tip.style.top = Math.min(e.clientY-m.top+10, m.height-90)+'px';
         tip.innerHTML = '<b>'+entry.b.name+'</b><br>'+entry.b.desc+'<br><span style="color:#a89880">占地 '+entry.b.w+'×'+entry.b.d+' · 拖动搬家 · 点击详情</span>';
-        hovered = entry; return;
+        hovered = entry;
+        if(!sel) dom.style.cursor = 'pointer';
+        return;
       }
     }
     tip.style.display='none'; hovered=null;
+    if(!sel) dom.style.cursor = hovered ? 'pointer' : 'default';
     return;
   }
   const dx = e.clientX-downX, dy = e.clientY-downY;
@@ -376,6 +388,7 @@ addEventListener('pointerup', e => {
     dragEntry = null;
   }
   mode = 'none';
+  dom.style.cursor = 'default';
 });
 dom.addEventListener('contextmenu', e => e.preventDefault());
 dom.addEventListener('wheel', e => { e.preventDefault(); camR = Math.min(55, Math.max(7, camR + e.deltaY*0.02)); applyCam(); }, {passive:false});
