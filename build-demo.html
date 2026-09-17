@@ -4,39 +4,62 @@
 <title>暖境边陲 · 建筑放置 Demo</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#2b2420;color:#f0e6d8;display:flex;height:100vh;overflow:hidden}
-#side{width:270px;background:#3a3128;border-right:1px solid #52463a;overflow-y:auto;padding:12px;flex-shrink:0}
-#side h1{font-size:16px;color:#ffd9a0;margin-bottom:2px}
-#side .hint{font-size:11px;color:#a89880;line-height:1.6;margin-bottom:10px}
-.b{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+html,body{height:100%;overflow:hidden}
+body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#2b2420;color:#f0e6d8;display:flex}
+#side{width:280px;background:#3a3128;border-right:1px solid #52463a;display:flex;flex-direction:column;flex-shrink:0}
+#side header{padding:12px 14px 8px;border-bottom:1px solid #52463a}
+#side h1{font-size:16px;color:#ffd9a0}
+#side .hint{font-size:11px;color:#a89880;line-height:1.7;margin-top:4px}
+#side .hint b{color:#cbb894;font-weight:600}
+#search{margin:8px 12px 4px;padding:6px 10px;background:#2b2420;border:1px solid #52463a;border-radius:8px;color:#f0e6d8;font-size:12px;outline:none;width:calc(100% - 24px)}
+#list{flex:1;overflow-y:auto;padding:8px}
+.b{display:flex;align-items:center;gap:9px;padding:5px 8px;border-radius:8px;cursor:pointer;border:1px solid transparent;margin-bottom:2px}
 .b:hover{background:#463a2e}
 .b.sel{border-color:#ffd9a0;background:#4a3d2c}
-.b img{width:44px;height:44px;border-radius:6px;background:#2b2420;object-fit:contain;flex-shrink:0}
-.b .nm{font-size:13px;color:#f0e6d8}
+.b img{width:42px;height:42px;border-radius:6px;background:#efe9da;object-fit:contain;flex-shrink:0}
+.b .nm{font-size:13px}
 .b .sz{font-size:11px;color:#a89880}
-#main{flex:1;position:relative}
-canvas{display:block}
-#tip{position:absolute;pointer-events:none;background:rgba(43,36,32,.95);border:1px solid #52463a;border-radius:8px;padding:8px 12px;font-size:12px;line-height:1.6;max-width:260px;display:none;z-index:5}
+#main{flex:1;position:relative;min-width:0}
+canvas{display:block;outline:none}
+#hud{position:absolute;left:12px;top:12px;display:flex;gap:8px;z-index:5;flex-wrap:wrap}
+#status,#help{background:rgba(43,36,32,.92);border:1px solid #52463a;border-radius:8px;padding:6px 12px;font-size:12px}
+#status{color:#a8d8a0}
+#help{color:#a89880;cursor:default}
+#help b{color:#cbb894}
+#tip{position:absolute;pointer-events:none;background:rgba(43,36,32,.96);border:1px solid #52463a;border-radius:8px;padding:8px 12px;font-size:12px;line-height:1.6;max-width:250px;display:none;z-index:6}
 #tip b{color:#ffd9a0}
-#info{position:absolute;right:14px;top:14px;width:250px;background:rgba(58,49,40,.97);border:1px solid #52463a;border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.7;display:none;z-index:5}
+#info{position:absolute;right:12px;top:12px;width:240px;background:rgba(58,49,40,.97);border:1px solid #52463a;border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.7;display:none;z-index:6}
 #info b{color:#ffd9a0;font-size:14px}
 #info .sz{color:#a89880;font-size:11px}
 #info button{margin-top:8px;background:#8a4a3a;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer}
-#status{position:absolute;left:14px;top:14px;background:rgba(43,36,32,.9);border-radius:8px;padding:6px 12px;font-size:12px;color:#a8d8a0;z-index:5}
+#zoom{position:absolute;right:12px;bottom:12px;display:flex;flex-direction:column;gap:6px;z-index:5}
+#zoom button{width:34px;height:34px;background:rgba(58,49,40,.95);color:#ffd9a0;border:1px solid #52463a;border-radius:8px;font-size:16px;cursor:pointer}
+@media (max-width:760px){
+  body{flex-direction:column}
+  #side{width:100%;height:150px;border-right:none;border-bottom:1px solid #52463a}
+  #list{display:flex;overflow-x:auto;overflow-y:hidden;padding:6px}
+  .b{flex:0 0 auto;flex-direction:column;gap:2px;padding:4px 8px;text-align:center}
+  .b img{width:40px;height:40px}
+  #side .hint{display:none}
+  #search{display:none}
+  #help{display:none}
+}
 </style>
 <script type="importmap">
 {"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
 </script>
 </head><body>
 <div id="side">
-  <h1>建筑放置 Demo</h1>
-  <div class="hint">点左侧选建筑 → 地面出现绿色预览 → 点击放置<br>R 旋转 · 右键/ESC 取消 · 点已放建筑查看介绍或拆除 · 拖右键/Shift+左键转视角 · 滚轮缩放</div>
+  <header><h1>🏘️ 建筑放置 Demo</h1>
+  <div class="hint"><b>左键点侧栏</b>选建筑→点地面放置 · <b>R</b> 旋转 · <b>拖动已放建筑</b>搬家 · 点建筑看介绍<br>相机：<b>右键拖</b>旋转 · <b>中键拖/WASD</b> 平移 · <b>滚轮</b>缩放 · <b>ESC</b> 取消</div></header>
+  <input id="search" placeholder="搜索建筑…">
   <div id="list"></div>
 </div>
 <div id="main">
-  <div id="status">加载模型中…</div>
+  <div id="hud"><div id="status">加载模型中…</div><div id="help">右键拖=转视角 · 中键/WASD=平移 · 滚轮=缩放</div></div>
   <div id="tip"></div>
   <div id="info"></div>
+  <div id="zoom"><button id="zin">+</button><button id="zout">−</button></div>
 </div>
 <script type="module">
 import * as THREE from 'three';
@@ -45,82 +68,113 @@ const BUILDINGS = [{"id": "watchtower", "name": "瞭望塔", "w": 2, "d": 2, "de
 const GRID = 26, CELL = 1;
 const enc = p => p.split('/').map(encodeURIComponent).join('/');
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0x87a96b);
-scene.fog = new THREE.Fog(0x87a96b, 34, 80);
-const cam = new THREE.PerspectiveCamera(45, 1, 0.1, 300);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+scene.fog = new THREE.Fog(0x87a96b, 40, 95);
 const mainEl = document.getElementById('main');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMappingExposure = 1.3;
 mainEl.appendChild(renderer.domElement);
-renderer.shadowMap.enabled = true;
-renderer.toneMappingExposure = 1.25;
-function resize(){ renderer.setSize(mainEl.clientWidth, mainEl.clientHeight); cam.aspect = mainEl.clientWidth/mainEl.clientHeight; cam.updateProjectionMatrix(); }
+const cam = new THREE.PerspectiveCamera(45, 1, 0.1, 300);
+function resize(){ const w = mainEl.clientWidth, h = mainEl.clientHeight; renderer.setSize(w, h); cam.aspect = w/h; cam.updateProjectionMatrix(); }
 addEventListener('resize', resize);
-const key = new THREE.DirectionalLight(0xfff0d8, 2.2); key.position.set(10,16,8); key.castShadow = true;
-key.shadow.mapSize.set(2048,2048); const sc=key.shadow.camera; sc.left=sc.bottom=-18; sc.right=sc.top=18;
-const back = new THREE.DirectionalLight(0xffe8cc, 0.6); back.position.set(-8,6,-10);
-scene.add(key, back, new THREE.HemisphereLight(0xfff4e2, 0x6b8a4f, 1.0), new THREE.AmbientLight(0xffffff, 0.5));
+const key = new THREE.DirectionalLight(0xfff0d8, 2.4); key.position.set(10,18,8); key.castShadow = true;
+key.shadow.mapSize.set(2048,2048); const sc = key.shadow.camera; sc.left=sc.bottom=-20; sc.right=sc.top=20; sc.far=60;
+const back = new THREE.DirectionalLight(0xffe8cc, 0.55); back.position.set(-8,6,-10);
+scene.add(key, back, new THREE.HemisphereLight(0xfff4e2, 0x6b8a4f, 1.05), new THREE.AmbientLight(0xffffff, 0.55));
 const ground = new THREE.Mesh(new THREE.PlaneGeometry(GRID*CELL, GRID*CELL), new THREE.MeshLambertMaterial({ color: 0x8fae6a }));
 ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
-const grid = new THREE.GridHelper(GRID*CELL, GRID, 0x6e8a52, 0x7d9a5e); grid.position.y = 0.01; scene.add(grid);
+const grid = new THREE.GridHelper(GRID*CELL, GRID, 0x66824c, 0x7d9a5e); grid.position.y = 0.01; scene.add(grid);
+// footprint highlight for ghost
+const fpGeo = new THREE.PlaneGeometry(1,1); fpGeo.rotateX(-Math.PI/2);
+const fpMatOK = new THREE.MeshBasicMaterial({ color:0x99ee77, transparent:true, opacity:0.35, depthWrite:false });
+const fpMatNO = new THREE.MeshBasicMaterial({ color:0xee6644, transparent:true, opacity:0.4, depthWrite:false });
+let fpMesh = null;
 
 const occ = {};
 let sel = null, rot = 0, ghost = null, gx = 0, gz = 0, placed = [], hovered = null;
+let camTarget = new THREE.Vector3(GRID*CELL/2, 0, GRID*CELL/2);
+let camTheta = Math.PI*0.15, camPhi = Math.PI*0.34, camR = 26;
+function applyCam(){
+  cam.position.set(camTarget.x + camR*Math.sin(camPhi)*Math.cos(camTheta), camR*Math.cos(camPhi), camTarget.z + camR*Math.sin(camPhi)*Math.sin(camTheta));
+  cam.lookAt(camTarget);
+}
 const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
 const groundPlane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
-function cellsFor(bx,bz,b,r){ const w=r%2?b.d:b.w, d=r%2?b.w:b.d; const out=[]; for(let i=0;i<w;i++)for(let j=0;j<d;j++)out.push((bx+i)+','+(bz+j)); return out; }
-function fits(bx,bz,b,r){ const w=r%2?b.d:b.w, d=r%2?b.w:b.d; if(bx<0||bz<0||bx+w>GRID||bz+d>GRID)return false; return cellsFor(bx,bz,b,r).every(k=>!(k in occ)); }
-const ghostOK = new THREE.MeshBasicMaterial({ color:0x88dd66, transparent:true, opacity:0.4, depthWrite:false });
-const ghostNO = new THREE.MeshBasicMaterial({ color:0xdd5544, transparent:true, opacity:0.4, depthWrite:false });
-let ghostDims = null;
-function makeGhost(b){
-  if(ghost){ scene.remove(ghost); ghost=null; }
-  const proto = protos[b.id]; if(!proto) return;
-  const g = proto.clone();
-  ghost = g; scene.add(ghost);
+function groundHit(e){
+  const r = renderer.domElement.getBoundingClientRect();
+  mouse.x = ((e.clientX-r.left)/r.width)*2-1; mouse.y = -((e.clientY-r.top)/r.height)*2+1;
+  ray.setFromCamera(mouse, cam);
+  const pt = new THREE.Vector3();
+  if(ray.ray.intersectPlane(groundPlane, pt)) return pt;
+  return null;
 }
-function updateGhost(bx,bz){
+function cellsFor(bx,bz,b,r){ const w=r%2?b.d:b.w, d=r%2?b.w:b.d; const out=[]; for(let i=0;i<w;i++)for(let j=0;j<d;j++)out.push((bx+i)+','+(bz+j)); return out; }
+function fits(bx,bz,b,r,skip){ const w=r%2?b.d:b.w, d=r%2?b.w:b.d; if(bx<0||bz<0||bx+w>GRID||bz+d>GRID)return false; return cellsFor(bx,bz,b,r).every(k=>!(k in occ)||(skip&&skip===occ[k])); }
+const gOK = new THREE.MeshBasicMaterial({ color:0xaaffaa, transparent:true, opacity:0.45, depthWrite:false });
+const gNO = new THREE.MeshBasicMaterial({ color:0xff6655, transparent:true, opacity:0.45, depthWrite:false });
+function killGhost(){ if(ghost){scene.remove(ghost);ghost=null;} if(fpMesh){scene.remove(fpMesh);fpMesh=null;} }
+function makeGhost(b){
+  killGhost();
+  const proto = protos[b.id]; if(!proto) return;
+  ghost = proto.clone(); scene.add(ghost);
+  fpMesh = new THREE.Group(); scene.add(fpMesh);
+}
+function refreshGhost(){
   if(!ghost || !sel) return;
-  gx=bx; gz=bz;
-  const ok = fits(bx,bz,sel,rot);
-  ghost.traverse(c=>{ if(c.isMesh) c.material = ok?ghostOK:ghostNO; });
+  const ok = fits(gx,gz,sel,rot);
+  ghost.traverse(c=>{ if(c.isMesh) c.material = ok?gOK:gNO; });
   const w = rot%2?sel.d:sel.w, d = rot%2?sel.w:sel.d;
-  ghostDims = {w,d};
-  ghost.position.set((bx+w/2)*CELL, 0.02, (bz+d/2)*CELL);
+  ghost.position.set((gx+w/2)*CELL, 0.02, (gz+d/2)*CELL);
   ghost.rotation.y = rot*Math.PI/2;
+  if(!fpMesh){ fpMesh = new THREE.Group(); scene.add(fpMesh); }
+  while(fpMesh.children.length) fpMesh.remove(fpMesh.children[0]);
+  for(let i=0;i<w;i++)for(let j=0;j<d;j++){
+    const p = new THREE.Mesh(fpGeo, ok?fpMatOK:fpMatNO);
+    p.position.set((gx+i+0.5)*CELL, 0.03, (gz+j+0.5)*CELL);
+    fpMesh.add(p);
+  }
 }
 const protos = {};
 const loader = new GLTFLoader();
 let loaded = 0;
+function normalize(b, root){
+  root.traverse(o=>{ if(o.isMesh){ o.castShadow = true; if(o.material) o.material.side = THREE.DoubleSide; } });
+  const box = new THREE.Box3().setFromObject(root);
+  const size = box.getSize(new THREE.Vector3());
+  const s = Math.max(b.w,b.d)*CELL / Math.max(size.x,size.z);
+  root.scale.setScalar(s);
+  const box2 = new THREE.Box3().setFromObject(root);
+  const c = box2.getCenter(new THREE.Vector3());
+  root.position.set(-c.x, -box2.min.y, -c.z);
+  const wrap = new THREE.Group(); wrap.add(root);
+  return wrap;
+}
 BUILDINGS.forEach(b => {
   loader.load(enc(b.glb)+'?v=1', g => {
-    const root = g.scene;
-    root.traverse(o=>{ if(o.isMesh){ o.castShadow = true; if(o.material) o.material.side = THREE.DoubleSide; } });
-    const box = new THREE.Box3().setFromObject(root);
-    const size = box.getSize(new THREE.Vector3());
-    const s = Math.max(b.w,b.d)*CELL / Math.max(size.x,size.z);
-    root.scale.setScalar(s);
-    const box2 = new THREE.Box3().setFromObject(root);
-    const c = box2.getCenter(new THREE.Vector3());
-    root.position.set(-c.x, -box2.min.y, -c.z);
-    const wrap = new THREE.Group(); wrap.add(root);
-    protos[b.id] = wrap;
-    thumb(b, wrap);
+    protos[b.id] = normalize(b, g.scene);
+    thumb(b);
     loaded++;
     if(loaded === BUILDINGS.length) document.getElementById('status').textContent = '已放置 0 栋';
   });
 });
-// offscreen thumbnailer
+// thumbnails (share main renderer via offscreen render target is complex; use tiny hidden renderer)
 const tw = 96;
 const tR = new THREE.WebGLRenderer({ antialias:true, preserveDrawingBuffer:true });
-tR.setSize(tw,tw); tR.toneMappingExposure = 1.35;
+tR.setSize(tw,tw); tR.toneMappingExposure = 1.4;
 const tS = new THREE.Scene(); tS.background = new THREE.Color(0xf5f1e6);
 const tC = new THREE.PerspectiveCamera(40, 1, 0.01, 100);
-const tK = new THREE.DirectionalLight(0xfff0d8, 2.2); tK.position.set(3,5,2);
+const tK = new THREE.DirectionalLight(0xfff0d8, 2.4); tK.position.set(3,5,2);
 tS.add(tK, new THREE.HemisphereLight(0xfff4e2,0x8a7358,1.0), new THREE.AmbientLight(0xffffff,0.5));
 const tQ = []; let tBusy = false;
-function thumb(b, obj){ tQ.push([b,obj.clone(),0]); pump(); }
+function thumb(b){
+  const proto = protos[b.id]; if(!proto) return;
+  tQ.push([b, proto.clone()]);
+  pump();
+}
 function pump(){
   if(tBusy || !tQ.length) return; tBusy = true;
-  const [b,obj,tries] = tQ.shift();
+  const [b,obj] = tQ.shift();
   tS.add(obj);
   const bx = new THREE.Box3().setFromObject(obj);
   const c = bx.getCenter(new THREE.Vector3()), z = bx.getSize(new THREE.Vector3());
@@ -131,94 +185,198 @@ function pump(){
   const img = document.querySelector('#b-'+b.id+' img');
   if(img) img.src = tR.domElement.toDataURL();
   tS.remove(obj);
-  setTimeout(()=>{ tBusy=false; pump(); }, 10);
+  setTimeout(()=>{ tBusy=false; pump(); }, 5);
 }
 const list = document.getElementById('list');
-BUILDINGS.forEach(b => {
+function addRow(b){
   const d = document.createElement('div'); d.className='b'; d.id='b-'+b.id;
   d.innerHTML = '<img><div><div class="nm">'+b.name+'</div><div class="sz">占地 '+b.w+'×'+b.d+'</div></div>';
   d.onclick = () => select(b);
   list.appendChild(d);
+}
+BUILDINGS.forEach(addRow);
+document.getElementById('search').addEventListener('input', e => {
+  const q = e.target.value.trim();
+  BUILDINGS.forEach(b => { document.getElementById('b-'+b.id).style.display = (!q || b.name.includes(q) || b.id.includes(q.toLowerCase())) ? 'flex' : 'none'; });
 });
 function select(b){
   document.querySelectorAll('.b').forEach(e=>e.classList.remove('sel'));
   document.getElementById('b-'+b.id).classList.add('sel');
-  sel = b; rot = 0; makeGhost(b);
-  document.getElementById('status').textContent = '放置模式：'+b.name+'（R 旋转 / 右键取消）';
+  sel = b; rot = 0; hideInfo(); makeGhost(b);
+  setStatus('放置模式：'+b.name+'（R 旋转 · 左键放置 · ESC 取消）');
 }
-function cancel(){ sel=null; if(ghost){scene.remove(ghost);ghost=null;} document.querySelectorAll('.b').forEach(e=>e.classList.remove('sel')); document.getElementById('status').textContent = '已放置 '+placed.length+' 栋'; }
+function cancelSel(){ sel=null; killGhost(); document.querySelectorAll('.b').forEach(e=>e.classList.remove('sel')); setStatus(); }
+function setStatus(t){ document.getElementById('status').textContent = t || ('已放置 '+placed.length+' 栋'); }
+function hideInfo(){ document.getElementById('info').style.display='none'; }
+function removeEntry(entry){
+  entry.cells.forEach(k=>{ if(occ[k]===entry) delete occ[k]; });
+  scene.remove(entry.inst);
+  placed = placed.filter(p=>p!==entry);
+  hideInfo(); setStatus();
+}
+window.removeSel = () => { if(hovered) removeEntry(hovered); };
+function showInfo(entry){
+  const el = document.getElementById('info');
+  window.__cur = entry;
+  el.style.display='block';
+  el.innerHTML = '<b>'+entry.b.name+'</b><br><span class="sz">占地 '+entry.b.w+'×'+entry.b.d+'</span><br>'+entry.b.desc+'<br><button onclick="removeSel()">拆除</button>';
+}
 const dom = renderer.domElement;
-dom.addEventListener('pointermove', e => {
+dom.tabIndex = 0;
+// camera interaction state
+let mode = 'none'; // none | orbit | pan | placeMove | dragBuilding
+let downX=0, downY=0, moved=false;
+let dragEntry = null, dragOrig = null;
+const keys = {};
+addEventListener('keydown', e => {
+  keys[e.key.toLowerCase()] = true;
+  if(e.key==='r'||e.key==='R'){ rot=(rot+1)%4; refreshGhost(); }
+  if(e.key==='Escape'){ cancelSel(); hideInfo(); }
+  if((e.key==='Delete'||e.key==='Backspace') && hovered) removeEntry(hovered);
+});
+addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+function pickBuilding(e){
   const r = dom.getBoundingClientRect();
   mouse.x = ((e.clientX-r.left)/r.width)*2-1; mouse.y = -((e.clientY-r.top)/r.height)*2+1;
   ray.setFromCamera(mouse, cam);
-  const pt = new THREE.Vector3();
-  if(ray.ray.intersectPlane(groundPlane, pt)){
-    const bx = Math.floor(pt.x/CELL), bz = Math.floor(pt.z/CELL);
-    if(ghost && sel) updateGhost(bx,bz);
-    const k = bx+','+bz;
+  const objs = placed.map(p=>p.inst);
+  const hits = ray.intersectObjects(objs, true);
+  if(!hits.length) return null;
+  let o = hits[0].object;
+  while(o && !placed.some(p=>p.inst===o)) o = o.parent;
+  return placed.find(p=>p.inst===o) || null;
+}
+dom.addEventListener('pointerdown', e => {
+  downX = e.clientX; downY = e.clientY; moved = false;
+  if(e.button === 2){ mode = 'orbit'; }
+  else if(e.button === 1){ mode = 'pan'; e.preventDefault(); }
+  else if(e.button === 0){
+    if(sel){ mode = 'placeMove'; }
+    else {
+      dragEntry = pickBuilding(e);
+      if(dragEntry){ mode = 'dragBuilding'; dragOrig = { x: dragEntry.inst.position.x, z: dragEntry.inst.position.z, cells: dragEntry.cells.slice() }; dragEntry.cells.forEach(k=>delete occ[k]); hideInfo(); }
+      else mode = 'none';
+    }
+  }
+});
+addEventListener('pointermove', e => {
+  if((keys['w']||keys['s']||keys['a']||keys['d']||keys['arrowup']||keys['arrowdown']||keys['arrowleft']||keys['arrowright'])){
+    const sp = camR*0.02;
+    const f = new THREE.Vector3(Math.sin(camTheta), 0, Math.sin(camTheta)).normalize();
+    const rgt = new THREE.Vector3(Math.cos(camTheta), 0, -Math.sin(camTheta)).normalize();
+    if(keys['w']||keys['arrowup']) camTarget.addScaledVector(f, -sp);
+    if(keys['s']||keys['arrowdown']) camTarget.addScaledVector(f, sp);
+    if(keys['a']||keys['arrowleft']) camTarget.addScaledVector(rgt, -sp);
+    if(keys['d']||keys['arrowright']) camTarget.addScaledVector(rgt, sp);
+    applyCam();
+  }
+  if(mode==='none'){
+    // hover tooltip
+    const pt = groundHit(e);
     const tip = document.getElementById('tip');
-    if(!sel && occ[k]){
-      const b = occ[k].b;
-      tip.style.display='block';
-      tip.style.left=(e.clientX-mainEl.getBoundingClientRect().left+14)+'px';
-      tip.style.top=(e.clientY-mainEl.getBoundingClientRect().top+10)+'px';
-      tip.innerHTML = '<b>'+b.name+'</b><br>'+b.desc+'<br><span style="color:#a89880">占地 '+b.w+'×'+b.d+' · 点击查看/拆除</span>';
-      hovered = occ[k];
-    } else { tip.style.display='none'; hovered=null; }
+    if(pt && !sel){
+      const bx = Math.floor(pt.x/CELL), bz = Math.floor(pt.z/CELL);
+      const entry = occ[bx+','+bz];
+      if(entry && entry !== dragEntry){
+        const r = dom.getBoundingClientRect(), m = mainEl.getBoundingClientRect();
+        tip.style.display='block';
+        tip.style.left = Math.min(e.clientX-m.left+14, m.width-260)+'px';
+        tip.style.top = Math.min(e.clientY-m.top+10, m.height-90)+'px';
+        tip.innerHTML = '<b>'+entry.b.name+'</b><br>'+entry.b.desc+'<br><span style="color:#a89880">占地 '+entry.b.w+'×'+entry.b.d+' · 拖动搬家 · 点击详情</span>';
+        hovered = entry; return;
+      }
+    }
+    tip.style.display='none'; hovered=null;
+    return;
+  }
+  const dx = e.clientX-downX, dy = e.clientY-downY;
+  if(Math.abs(dx)>4 || Math.abs(dy)>4) moved = true;
+  if(mode==='orbit' && moved){
+    camTheta += e.movementX*0.006; camPhi = Math.min(1.45, Math.max(0.12, camPhi - e.movementY*0.004)); applyCam();
+  } else if(mode==='pan' && moved){
+    const sp = camR*0.0016;
+    const f = new THREE.Vector3(Math.sin(camTheta), 0, Math.sin(camTheta)).normalize();
+    const rgt = new THREE.Vector3(Math.cos(camTheta), 0, -Math.sin(camTheta)).normalize();
+    camTarget.addScaledVector(rgt, -e.movementX*sp);
+    camTarget.addScaledVector(f, e.movementY*sp);
+    camTarget.x = Math.min(GRID*CELL*1.2, Math.max(-GRID*CELL*0.2, camTarget.x));
+    camTarget.z = Math.min(GRID*CELL*1.2, Math.max(-GRID*CELL*0.2, camTarget.z));
+    applyCam();
+  } else if((mode==='placeMove'||mode==='dragBuilding')){
+    const pt = groundHit(e);
+    if(pt){
+      gx = Math.floor(pt.x/CELL); gz = Math.floor(pt.z/CELL);
+      if(mode==='placeMove') refreshGhost();
+      else {
+        const b = dragEntry.b;
+        const ok = fits(gx,gz,b,rot);
+        const w = rot%2?b.d:b.w, d = rot%2?b.w:b.d;
+        dragEntry.inst.position.set((gx+w/2)*CELL, 0.05, (gz+d/2)*CELL);
+        dragEntry.inst.rotation.y = rot*Math.PI/2;
+        dragEntry.inst.traverse(c=>{ if(c.isMesh) c.material = ok?gOK:gNO; });
+        dragEntry.dragOK = ok; dragEntry.gx=gx; dragEntry.gz=gz;
+      }
+    }
   }
 });
-dom.addEventListener('click', e => {
-  if(e.button!==0) return;
-  if(hovered && !sel){ showInfo(hovered); return; }
-  if(sel && ghost){
-    updateGhost(gx,gz);
-    if(!fits(gx,gz,sel,rot)) return;
-    const inst = protos[sel.id].clone();
-    const w = rot%2?sel.d:sel.w, d = rot%2?sel.w:sel.d;
-    inst.position.set((gx+w/2)*CELL, 0, (gz+d/2)*CELL);
-    inst.rotation.y = rot*Math.PI/2;
-    scene.add(inst);
-    const entry = { b:sel, inst, cells:cellsFor(gx,gz,sel,rot) };
-    entry.cells.forEach(k=>occ[k]=entry);
-    placed.push(entry);
-    document.getElementById('status').textContent = '已放置 '+placed.length+' 栋';
+addEventListener('pointerup', e => {
+  const wasClick = !moved && Math.abs(e.clientX-downX)<5 && Math.abs(e.clientY-downY)<5;
+  if(mode==='orbit' && wasClick && e.button===2){ cancelSel(); }
+  if(mode==='placeMove' && wasClick && e.button===0 && sel){
+    refreshGhost();
+    if(fits(gx,gz,sel,rot)){
+      const inst = protos[sel.id].clone();
+      const w = rot%2?sel.d:sel.w, d = rot%2?sel.w:sel.d;
+      inst.position.set((gx+w/2)*CELL, 0, (gz+d/2)*CELL);
+      inst.rotation.y = rot*Math.PI/2;
+      scene.add(inst);
+      const entry = { b:sel, inst, cells:cellsFor(gx,gz,sel,rot) };
+      entry.cells.forEach(k=>occ[k]=entry);
+      placed.push(entry); setStatus();
+    }
   }
+  if(mode==='dragBuilding' && dragEntry){
+    if(wasClick){ // 单击=查看详情（未拖动）
+      dragEntry.cells.forEach(k=>occ[k]=dragEntry);
+      showInfo(dragEntry);
+      dragEntry=null; mode='none'; return;
+    }
+    const b = dragEntry.b;
+    if(dragEntry.dragOK){
+      dragEntry.inst.traverse(c=>{ if(c.isMesh && c.material!==gOK && c.material.isMeshStandardMaterial===undefined){} });
+      // restore real materials
+      dragEntry.inst.traverse(c=>{ if(c.isMesh){ if(!c.userData.origMat) c.userData.origMat = null; } });
+      const proto = protos[b.id];
+      const idx = dragEntry.inst;
+      // simplest: replace with fresh clone from proto
+      scene.remove(idx);
+      const inst = proto.clone();
+      const w = rot%2?b.d:b.w, d = rot%2?b.w:b.d;
+      inst.position.set((dragEntry.gx+w/2)*CELL, 0, (dragEntry.gz+d/2)*CELL);
+      inst.rotation.y = rot*Math.PI/2;
+      scene.add(inst);
+      dragEntry.inst = inst;
+      dragEntry.cells = cellsFor(dragEntry.gx, dragEntry.gz, b, rot);
+      dragEntry.cells.forEach(k=>occ[k]=dragEntry);
+    } else {
+      // bounce back
+      scene.remove(dragEntry.inst);
+      const inst = protos[b.id].clone();
+      const b0 = dragOrig;
+      inst.position.set(b0.x, 0, b0.z);
+      scene.add(inst);
+      dragEntry.inst = inst;
+      dragEntry.cells = dragOrig.cells;
+      dragEntry.cells.forEach(k=>occ[k]=dragEntry);
+    }
+    dragEntry = null;
+  }
+  mode = 'none';
 });
-dom.addEventListener('contextmenu', e => { e.preventDefault(); cancel(); });
-addEventListener('keydown', e => {
-  if(e.key==='r'||e.key==='R'){ rot=(rot+1)%4; if(sel&&ghost) updateGhost(gx,gz); }
-  if(e.key==='Escape') cancel();
-  if((e.key==='Delete'||e.key==='Backspace') && hovered) removeB(hovered);
-});
-function removeB(entry){
-  entry.cells.forEach(k=>delete occ[k]);
-  scene.remove(entry.inst);
-  placed = placed.filter(p=>p!==entry);
-  document.getElementById('info').style.display='none';
-  document.getElementById('status').textContent = '已放置 '+placed.length+' 栋';
-}
-window.removeB = removeB;
-function showInfo(entry){
-  const el = document.getElementById('info');
-  el.style.display='block';
-  window.__cur = entry;
-  el.innerHTML = '<b>'+entry.b.name+'</b><br><span class="sz">占地 '+entry.b.w+'×'+entry.b.d+'</span><br>'+entry.b.desc+'<br><button onclick="removeB(window.__cur)">拆除</button>';
-}
-let camTheta = Math.PI*0.25, camPhi = Math.PI*0.32, camR = 30;
-function applyCam(){
-  cam.position.set(GRID*CELL/2 + camR*Math.sin(camPhi)*Math.cos(camTheta), camR*Math.cos(camPhi), GRID*CELL/2 + camR*Math.sin(camPhi)*Math.sin(camTheta));
-  cam.lookAt(GRID*CELL/2, 0, GRID*CELL/2);
-}
+dom.addEventListener('contextmenu', e => e.preventDefault());
+dom.addEventListener('wheel', e => { e.preventDefault(); camR = Math.min(55, Math.max(7, camR + e.deltaY*0.02)); applyCam(); }, {passive:false});
+document.getElementById('zin').onclick = () => { camR = Math.max(7, camR-4); applyCam(); };
+document.getElementById('zout').onclick = () => { camR = Math.min(55, camR+4); applyCam(); };
 applyCam(); resize();
-dom.addEventListener('wheel', e => { e.preventDefault(); camR = Math.min(60, Math.max(8, camR + e.deltaY*0.02)); applyCam(); }, {passive:false});
-const dragBtns = {};
-dom.addEventListener('pointerdown', e => { if(e.button===2 || (e.button===0&&e.shiftKey)) dragBtns[e.button]=true; });
-addEventListener('pointerup', e => { dragBtns[e.button]=false; });
-dom.addEventListener('pointermove', e => {
-  if(dragBtns[2] || (e.buttons&2) || (e.buttons&1 && e.shiftKey)){
-    camTheta += e.movementX*0.005; camPhi = Math.min(1.4, Math.max(0.15, camPhi - e.movementY*0.004)); applyCam();
-  }
-});
 (function loop(){ requestAnimationFrame(loop); renderer.render(scene, cam); })();
 </script></body></html>
