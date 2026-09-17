@@ -40,6 +40,8 @@
   #zoom{position:absolute;right:12px;bottom:12px;display:flex;flex-direction:column;gap:6px;z-index:5}
   #zoom button{width:34px;height:34px;background:rgba(58,49,40,.95);color:var(--gold);border:1px solid var(--line);
     border-radius:8px;font-size:16px;cursor:pointer}
+  #rot{position:absolute;left:12px;bottom:12px;z-index:5;background:rgba(58,49,40,.95);color:var(--gold);
+    border:1px solid var(--line);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer}
   @media (max-width:760px){
     body{flex-direction:column}
     #side{width:100%;height:150px;border-right:none;border-bottom:1px solid var(--line)}
@@ -71,6 +73,7 @@
   <div id="tip"></div>
   <div id="info"></div>
   <div id="zoom"><button id="zin">+</button><button id="zout">−</button></div>
+  <button id="rot">⟳ 旋转建筑 (R)</button>
 </div>
 <script type="module">
 import * as THREE from 'three';
@@ -226,20 +229,63 @@ BUILDINGS.forEach(b => {
     if (++loadCount === BUILDINGS.length) setStatus();
   });
 });
-function placeInstance(b, x, z, rot) {
+/* ================= 脚印地垫（统一底座与地面的色调过渡） ================= */
+const matPad = new THREE.MeshLambertMaterial({ color: 0x9db972 });   // 地面邻近色，略亮
+const matPadEdge = new THREE.MeshLambertMaterial({ color: 0x8fae63 }); // 边缘略深
+const padGeo = new THREE.PlaneGeometry(0.98, 0.98).rotateX(-Math.PI / 2);
+const SINK = 0.045; // 底座下沉，遮接缝防 z-fighting
+function makePad(b, rot) {
+  const g = new THREE.Group();
+  const [w, d] = footprint(b, rot);
+  for (let i = 0; i < w; i++) for (let j = 0; j < d; j++) {
+    const edge = (i === 0 || j === 0 || i === w - 1 || j === d - 1);
+    const p = new THREE.Mesh(padGeo, edge ? matPadEdge : matPad);
+    p.position.set(i + 0.5, 0.006, j + 0.5);
+    p.receiveShadow = true;
+    g.add(p);
+  }
+  return g;
+}
+/* 落下 + 尘土缩放动画 */
+const anims = [];
+function dropAnim(inst) {
+  inst.userData.anim = { t: 0, fromY: 1.1 };
+  anims.push(inst);
+}
+function stepAnims(dt) {
+  for (let i = anims.length - 1; i >= 0; i--) {
+    const inst = anims[i];
+    const a = inst.userData.anim;
+    a.t = Math.min(1, a.t + dt * 5);
+    const e = 1 - Math.pow(1 - a.t, 3);   // easeOutCubic
+    const baseY = inst.userData.baseY || 0;
+    inst.position.y = baseY + (a.fromY - baseY) * (1 - e);
+    const s = a.t < 0.3 ? 1 + 0.12 * Math.sin(a.t / 0.3 * Math.PI) : 1;
+    inst.scale.setScalar(s);
+    if (a.t >= 1) { inst.position.y = baseY; inst.scale.setScalar(1); anims.splice(i, 1); }
+  }
+}
+function placeInstance(b, x, z, rot, animate) {
+  const pad = makePad(b, rot);
+  pad.position.set(x, 0, z);
+  scene.add(pad);
   const inst = protos[b.id].clone();
   const [w, d] = footprint(b, rot);
   inst.position.set(x + w / 2, 0, z + d / 2);
   inst.rotation.y = rot * Math.PI / 2;
+  inst.position.y = SINK;
+  inst.userData.baseY = SINK;
   scene.add(inst);
-  const entry = { b, inst, x, z, rot };
+  const entry = { b, inst, pad, x, z, rot };
   cellsOf(b, x, z, rot).forEach(k => S.occ.set(k, entry));
   S.placed.push(entry);
+  if (animate) dropAnim(inst);
   return entry;
 }
 function removeEntry(entry) {
   cellsOf(entry.b, entry.x, entry.z, entry.rot).forEach(k => { if (S.occ.get(k) === entry) S.occ.delete(k); });
   scene.remove(entry.inst);
+  scene.remove(entry.pad);
   S.placed = S.placed.filter(p => p !== entry);
   hideInfo(); setStatus();
 }
@@ -270,7 +316,7 @@ function updateGhost() {
   const ok = canPlace(b, x, z, rot);
   if (ghost.grp) {
     ghost.grp.traverse(o => { if (o.isMesh) o.material = ok ? matGhostOK : matGhostNO; });
-    ghost.grp.position.set(x + w / 2, 0.02, z + d / 2);
+    ghost.grp.position.set(x + w / 2, SINK + 0.02, z + d / 2);
     ghost.grp.rotation.y = rot * Math.PI / 2;
   }
   if (ghost.fp) {
@@ -486,7 +532,7 @@ addEventListener('pointerup', e => {
   if (listDrag) {
     if (listDrag.active) {
       if (isOverCanvas(e) && S.sel && canPlace(S.sel, S.cell.x, S.cell.z, S.rot)) {
-        placeInstance(S.sel, S.cell.x, S.cell.z, S.rot);
+        placeInstance(S.sel, S.cell.x, S.cell.z, S.rot, true);
       }
       stopPlacing();
       setTimeout(() => { listDrag = null; }, 0);
@@ -499,18 +545,22 @@ addEventListener('pointerup', e => {
                             && Math.abs(e.clientY - S.downAt.y) < DRAG_THRESHOLD;
   if (S.mode === 'placing' && wasClick && e.button === 0 && S.sel) {
     if (canPlace(S.sel, S.cell.x, S.cell.z, S.rot)) {
-      placeInstance(S.sel, S.cell.x, S.cell.z, S.rot);
+      placeInstance(S.sel, S.cell.x, S.cell.z, S.rot, true);
       setStatus();
     }
   } else if (S.mode === 'movingBuilding' && S.moving) {
     const m = S.moving, b = m.b;
-    scene.remove(m.inst);
+    scene.remove(m.inst, m.pad);
     m.inst = protos[b.id].clone();
     if (m.valid) { m.x = S.cell.x; m.z = S.cell.z; m.rot = S.rot; }
     const [w, d] = footprint(b, m.rot);
-    m.inst.position.set(m.x + w / 2, 0, m.z + d / 2);
+    m.inst.position.set(m.x + w / 2, SINK, m.z + d / 2);
     m.inst.rotation.y = m.rot * Math.PI / 2;
-    scene.add(m.inst);
+    m.inst.userData.baseY = SINK;
+    m.pad = makePad(b, m.rot);
+    m.pad.position.set(m.x, 0, m.z);
+    scene.add(m.inst, m.pad);
+    dropAnim(m.inst);
     cellsOf(b, m.x, m.z, m.rot).forEach(k => S.occ.set(k, m));
     S.moving = null;
     if (wasClick) showInfo(m);
@@ -552,10 +602,80 @@ dom.addEventListener('wheel', e => {
   camCtl.r = THREE.MathUtils.clamp(camCtl.r + e.deltaY * 0.02, 7, 55);
   camCtl.apply();
 }, { passive: false });
+document.getElementById('rot').onclick = () => { if (S.sel) { S.rot = (S.rot + 1) % 4; S.cell = clampCell(S.sel, S.cell.x, S.cell.z, S.rot); updateGhost(); } };
 document.getElementById('zin').onclick = () => { camCtl.r = Math.max(7, camCtl.r - 4); camCtl.apply(); };
 document.getElementById('zout').onclick = () => { camCtl.r = Math.min(55, camCtl.r + 4); camCtl.apply(); };
 
-/* ================= 主循环 ================= */
+/* ================= NPC：KayKit 人物路径游走（避开占格） ================= */
+const NPCS = [];
+const CHAR_FILES = ['char-knight.glb', 'char-mage.glb', 'char-rogue.glb'];
+function randomFreeCell() {
+  for (let tries = 0; tries < 40; tries++) {
+    const x = 2 + Math.floor(Math.random() * (GRID - 4));
+    const z = 2 + Math.floor(Math.random() * (GRID - 4));
+    if (!S.occ.has(key(x, z))) return { x, z };
+  }
+  return { x: 1, z: 1 };
+}
+function spawnNpc(file, idx) {
+  loader.load(enc('ai3d-mirror/' + file) + '?v=1', g => {
+    const root = g.scene;
+    root.traverse(o => { if (o.isMesh && o.material) { o.material.side = THREE.DoubleSide; o.castShadow = true; } });
+    const box = new THREE.Box3().setFromObject(root);
+    const h = box.max.y - box.min.y;
+    const wrap = new THREE.Group();
+    wrap.scale.setScalar(0.85 / h);                       // 身高约 0.85 格（缩放放外层，不覆盖 GLB 自带 scale）
+    wrap.add(root);
+    const box2 = new THREE.Box3().setFromObject(wrap);
+    const c = box2.getCenter(new THREE.Vector3());
+    root.position.set(-c.x, -box2.min.y, -c.z);
+    const start = randomFreeCell();
+    wrap.position.set(start.x + 0.5, 0, start.z + 0.5);
+    scene.add(wrap);
+    let mixer = null;
+    if (g.animations && g.animations.length) {
+      mixer = new THREE.AnimationMixer(root);
+      mixer.clipAction(g.animations[0]).play();
+    }
+    NPCS.push({ obj: wrap, mixer, target: pickNpcTarget(wrap), speed: 0.9 + Math.random() * 0.5, waitT: 0, bobPhase: Math.random() * 6,
+      bob: (t, walking) => { root.position.y = walking ? Math.abs(Math.sin(t * 9)) * 0.04 : 0; } });
+    if (NPCS.length === 1) setStatus();
+  });
+}
+function pickNpcTarget(npc) {
+  // 选一个 NPC 当前位置附近 3~7 格、且整条直线大概率无建筑的自由格
+  const px = Math.floor(npc.position.x), pz = Math.floor(npc.position.z);
+  for (let tries = 0; tries < 20; tries++) {
+    const ang = Math.random() * Math.PI * 2;
+    const dist = 3 + Math.random() * 5;
+    const tx = Math.round(px + Math.cos(ang) * dist);
+    const tz = Math.round(pz + Math.sin(ang) * dist);
+    if (tx < 1 || tz < 1 || tx >= GRID - 1 || tz >= GRID - 1) continue;
+    if (S.occ.has(key(tx, tz))) continue;
+    return new THREE.Vector3(tx + 0.5, 0, tz + 0.5);
+  }
+  return new THREE.Vector3(px + 0.5, 0, pz + 0.5);
+}
+function stepNpcs(dt, t) {
+  for (const n of NPCS) {
+    if (n.mixer) n.mixer.update(dt);
+    if (n.waitT > 0) { n.waitT -= dt; n.bob(t, 0); continue; }
+    const tgt = n.target;
+    const dx = tgt.x - n.obj.position.x, dz = tgt.z - n.obj.position.z;
+    const dist = Math.hypot(dx, dz);
+    if (dist < 0.08) { n.target = pickNpcTarget(n.obj); n.waitT = 0.6 + Math.random() * 2.2; continue; }
+    const vx = dx / dist * n.speed * dt, vz = dz / dist * n.speed * dt;
+    // 前方一格若被占，换目标（轻量避让）
+    const nx = n.obj.position.x + vx, nz = n.obj.position.z + vz;
+    if (S.occ.has(key(Math.floor(nx), Math.floor(nz)))) { n.target = pickNpcTarget(n.obj); continue; }
+    n.obj.position.set(nx, 0, nz);
+    n.obj.rotation.y = Math.atan2(dx, dz);
+    n.bob(t, 1);
+  }
+}
+CHAR_FILES.forEach(spawnNpc);
+
+
 function resize() {
   const w = mainEl.clientWidth, h = mainEl.clientHeight;
   renderer.setSize(w, h);
@@ -565,9 +685,14 @@ function resize() {
 addEventListener('resize', resize);
 camCtl.apply();
 resize();
+const clock = new THREE.Clock();
 (function loop() {
   requestAnimationFrame(loop);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t = clock.elapsedTime;
   camKeys();
+  stepAnims(dt);
+  stepNpcs(dt, t);
   renderer.render(scene, cam);
 })();
 </script>
