@@ -93,6 +93,7 @@ window.addEventListener('error',e=>{window.__errs.push(e.message+' @'+e.lineno)}
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 /* ============ 数值 ============ */
 const DAY_SECONDS = 50, WINTER_DAY = 8, END_DAY = 11;
@@ -132,10 +133,32 @@ const DEFS = [
  {id:'watchpost',name:'哨位',w:2,d:2,cat:'装饰',cost:{wood:4},role:'deco',desc:'装饰。'},
 ];
 DEFS.forEach(d => d.glb = 'ai3d-mirror/wc-' + d.id + '-paint.glb');
+// 自产小物件（prop 管线），作为可建造装饰
+[
+  { id:'fence',    name:'木栅栏', w:1,d:1, cat:'装饰', cost:{wood:1}, role:'deco', desc:'围出你的院子。' },
+  { id:'barrel',   name:'木桶',   w:1,d:1, cat:'装饰', cost:{wood:1}, role:'deco', desc:'装点什么好呢。' },
+  { id:'crate',    name:'木箱',   w:1,d:1, cat:'装饰', cost:{wood:1}, role:'deco', desc:'结实的储物箱。' },
+  { id:'lantern',  name:'灯笼',   w:1,d:1, cat:'装饰', cost:{wood:1}, role:'deco', desc:'夜晚的暖光。' },
+  { id:'signpost', name:'路牌',   w:1,d:1, cat:'装饰', cost:{wood:1}, role:'deco', desc:'指向家的方向。' },
+  { id:'campfire', name:'篝火',   w:1,d:1, cat:'装饰', cost:{wood:2}, role:'deco', desc:'聚会的中心。' },
+  { id:'haystack', name:'草垛',   w:1,d:1, cat:'装饰', cost:{wood:2}, role:'deco', desc:'秋收的气息。' },
+  { id:'cart',     name:'手推车', w:1,d:1, cat:'装饰', cost:{wood:2}, role:'deco', desc:'运货好帮手。' },
+].forEach(p => { p.glb = 'ai3d-mirror/prop-' + p.id + '.glb'; DEFS.push(p); });
+// 纯装饰散布（无碰撞，不占格）
+const SCATTER_DEFS = {
+  flowers:    'ai3d-mirror/prop-flowers.glb',
+  grass_tuft: 'ai3d-mirror/prop-grass_tuft.glb',
+  mushrooms:  'ai3d-mirror/prop-mushrooms.glb',
+  rocks_small:'ai3d-mirror/prop-rocks_small.glb',
+  rock_big:   'ai3d-mirror/prop-rock_big.glb',
+  stump:      'ai3d-mirror/prop-stump.glb',
+};
 const NATURE_DEFS = {
-  tree: { glb: 'ai3d-mirror/nat-CommonTree_1.glb', name: '树', yield: 'wood', amt: TREE_YIELD, hp: TREE_HP, work: WORK_RATE },
-  tree2:{ glb: 'ai3d-mirror/nat-Pine_1.glb', name: '松树', yield: 'wood', amt: TREE_YIELD, hp: TREE_HP, work: WORK_RATE },
-  bush: { glb: 'ai3d-mirror/nat-Bush_Common_Flowers.glb', name: '浆果丛', yield: 'food', amt: BUSH_FOOD, hp: 3, work: WORK_RATE, regrow: 3 },
+  tree: { glb: 'ai3d-mirror/prop-tree_oak.glb', name: '橡树', yield: 'wood', amt: TREE_YIELD, hp: TREE_HP, work: WORK_RATE },
+  tree2:{ glb: 'ai3d-mirror/prop-tree_pine.glb', name: '松树', yield: 'wood', amt: TREE_YIELD, hp: TREE_HP, work: WORK_RATE },
+  tree3:{ glb: 'ai3d-mirror/prop-tree_blossom.glb', name: '花树', yield: 'wood', amt: TREE_YIELD, hp: TREE_HP, work: WORK_RATE },
+  dead: { glb: 'ai3d-mirror/prop-tree_dead.glb', name: '枯木', yield: 'wood', amt: 2, hp: 2, work: WORK_RATE },
+  bush: { glb: 'ai3d-mirror/prop-berry_bush.glb', name: '浆果丛', yield: 'food', amt: BUSH_FOOD, hp: 3, work: WORK_RATE, regrow: 3 },
 };
 
 const GRID = 26, CELL = 1;
@@ -209,7 +232,10 @@ const pay = def => Object.entries(def.cost).forEach(([r, v]) => G.res[r] -= v);
 /* ============ 加载 ============ */
 const protos = {};
 const loader = new GLTFLoader();
-let pend = DEFS.length + Object.keys(NATURE_DEFS).length + 3;
+const draco = new DRACOLoader();
+draco.setDecoderPath('https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/');
+loader.setDRACOLoader(draco);
+let pend = DEFS.length + Object.keys(NATURE_DEFS).length + Object.keys(SCATTER_DEFS).length + 3;
 function done1() { if (--pend === 0) startGame(); }
 DEFS.forEach(def => loader.load(enc(def.glb) + '?v=1', g => {
   const root = g.scene;
@@ -235,7 +261,19 @@ Object.entries(NATURE_DEFS).forEach(([id, nd]) => loader.load(enc(nd.glb) + '?v=
   const wrap = new THREE.Group(); wrap.add(root);
   protos['nat_' + id] = wrap; done1();
 }));
-const CHAR_FILES = ['char-knight.glb', 'char-mage.glb', 'char-rogue.glb'];
+Object.entries(SCATTER_DEFS).forEach(([id, glb]) => loader.load(enc(glb) + '?v=1', g => {
+  const root = g.scene;
+  root.traverse(o => { if (o.isMesh) { o.castShadow = true; if (o.material) o.material.side = THREE.DoubleSide; } });
+  const box = new THREE.Box3().setFromObject(root);
+  const size = box.getSize(new THREE.Vector3());
+  root.scale.setScalar(0.55 / Math.max(size.x, size.z));
+  const box2 = new THREE.Box3().setFromObject(root);
+  const c = box2.getCenter(new THREE.Vector3());
+  root.position.set(-c.x, -box2.min.y, -c.z);
+  const wrap = new THREE.Group(); wrap.add(root);
+  protos['deco_' + id] = wrap; done1();
+}));
+const CHAR_FILES = ['prop-villager_m.glb', 'prop-villager_f.glb', 'prop-villager_old.glb'];
 const VNAMES = ['阿岚', '小满', '石头', '阿枣', '春妮', '大川', '阿槐', '小蝶'];
 CHAR_FILES.forEach((f, i) => loader.load(enc('ai3d-mirror/' + f) + '?v=1', g => {
   const root = g.scene;
@@ -247,7 +285,7 @@ CHAR_FILES.forEach((f, i) => loader.load(enc('ai3d-mirror/' + f) + '?v=1', g => 
 function scatterNature() {
   const center = GRID / 2;
   let tries = 0;
-  const want = { tree: 26, tree2: 10, bush: 14 };
+  const want = { tree: 22, tree2: 8, tree3: 6, dead: 4, bush: 14 };
   for (const [type, n] of Object.entries(want)) {
     let placedN = 0;
     while (placedN < n && tries++ < 800) {
@@ -268,6 +306,22 @@ function scatterNature() {
       G.nature.push(node);
       G.occ.set(key(x, z), node);
       placedN++;
+    }
+  }
+}
+function scatterDeco() {
+  // 纯装饰小物：不占格、无碰撞，贴边与林间随机点缀
+  const want = { grass_tuft: 26, flowers: 16, mushrooms: 10, rocks_small: 12, rock_big: 5, stump: 6 };
+  for (const [type, n] of Object.entries(want)) {
+    for (let i = 0, tries = 0; i < n && tries < 300; tries++) {
+      const x = Math.random() * (GRID - 1), z = Math.random() * (GRID - 1);
+      if (G.occ.has(key(Math.floor(x), Math.floor(z)))) continue;
+      const inst = protos['deco_' + type].clone();
+      inst.position.set(x, 0, z);
+      inst.rotation.y = Math.random() * Math.PI * 2;
+      inst.scale.setScalar(.7 + Math.random() * .6);
+      scene.add(inst);
+      i++;
     }
   }
 }
@@ -842,6 +896,7 @@ document.getElementById('zout').onclick = () => { camCtl.r = Math.min(55, camCtl
 /* ============ 启动与主循环 ============ */
 function startGame() {
   scatterNature();
+  scatterDeco();
   spawnVillagers(3);
   DEFS.forEach(queueThumb);
   refreshUI();

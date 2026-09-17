@@ -1,0 +1,53 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><title>体检：概念图 vs 3D</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"PingFang SC",sans-serif;background:#2b2420;color:#f0e6d8;padding:20px}
+h1{color:#ffd9a0;font-size:18px;margin-bottom:4px}
+.sub{color:#a89880;font-size:12px;margin-bottom:14px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#3a3128;border-radius:10px;overflow:hidden;margin-bottom:10px;max-width:760px}
+.pair img,.pair canvas{width:100%;aspect-ratio:1/1;display:block;background:#2b2420;object-fit:contain}
+h3{color:#ffd9a0;font-size:14px;padding:8px 10px 0}
+#status{color:#a8d8a0;font-size:13px;margin-bottom:10px}
+</style>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+</head><body>
+<h1>体检：左=概念图 45° · 右=3D 成品快照</h1>
+<div class="sub" id="status">生成快照中…</div>
+<div id="list"></div>
+<canvas id="work" width="512" height="512" style="display:none"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const enc=p=>p.split('/').map(encodeURIComponent).join('/');
+const ROWS=[["apiary", "concept-apiary.png", "paint-batch-apiary.glb"], ["bakery", "concept-bakery.png", "paint-batch-bakery.glb"], ["bathhouse", "concept-bathhouse.png", "paint-batch-bathhouse.glb"], ["brewery", "concept-brewery.png", "paint-batch-brewery.glb"], ["bridge", "concept-bridge.png", "paint-batch-bridge.glb"], ["clinic", "concept-clinic.png", "paint-batch-clinic.glb"], ["cottage_a", "concept-cottage_a.png", "paint-batch-cottage_a.glb"], ["cottage_b", "concept-cottage_b.png", "paint-batch-cottage_b.glb"], ["dovecote", "concept-dovecote.png", "paint-batch-dovecote.glb"], ["farmhouse", "concept-farmhouse.png", "paint-batch-farmhouse.glb"], ["fountain", "concept-fountain.png", "paint-batch-fountain.glb"], ["granary", "concept-granary.png", "paint-batch-granary.glb"], ["greenhouse", "concept-greenhouse.png", "paint-batch-greenhouse.glb"], ["home_large", "concept-home_large.png", "paint-batch-home_large.glb"], ["home_small", "concept-home_small.png", "paint-batch-home_small.glb"], ["hut", "concept-hut.png", "paint-batch-hut.glb"], ["laundry", "concept-laundry.png", "paint-batch-laundry.glb"], ["lighthouse", "concept-lighthouse.png", "paint-batch-lighthouse.glb"], ["marketstall", "concept-marketstall.png", "paint-batch-marketstall.glb"], ["school", "concept-school.png", "paint-batch-school.glb"], ["shipyard", "concept-shipyard.png", "paint-batch-shipyard.glb"], ["stable", "concept-stable.png", "paint-batch-stable.glb"], ["tollgate", "concept-tollgate.png", "paint-batch-tollgate.glb"], ["warehouse", "concept-warehouse.png", "paint-batch-warehouse.glb"], ["watchpost", "concept-watchpost.png", "paint-batch-watchpost.glb"], ["watchtower", "concept-watchtower.png", "paint-batch-watchtower.glb"], ["wellhouse", "concept-wellhouse.png", "paint-batch-wellhouse.glb"]];
+const status=document.getElementById('status');
+const workCv=document.getElementById('work');
+const renderer=new THREE.WebGLRenderer({canvas:workCv,antialias:true,preserveDrawingBuffer:true});
+renderer.setSize(512,512,false);renderer.toneMappingExposure=1.15;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x2b2420);
+const k=new THREE.DirectionalLight(0xfff0d8,1.9);k.position.set(3,5,2);
+const b=new THREE.DirectionalLight(0xffe8cc,0.7);b.position.set(-3,-2,-4);
+scene.add(k,b,new THREE.HemisphereLight(0xfff4e2,0x8a7358,0.85),new THREE.AmbientLight(0xffffff,0.35));
+const cam=new THREE.PerspectiveCamera(45,1,0.01,100);
+const loader=new GLTFLoader();
+let i=0;
+function next(){
+  if(i>=ROWS.length){status.textContent='全部完成（'+ROWS.length+' 栋）';renderer.forceContextLoss();return;}
+  const [name,concept,mesh]=ROWS[i++];
+  status.textContent='快照 '+i+' / '+ROWS.length+' : '+name;
+  const d=document.createElement('div');
+  d.innerHTML=`<h3>${name}</h3><div class="pair"><img src="${enc('ai3d-mirror/'+concept)}"><img id="snap-${name}"></div>`;
+  document.getElementById('list').appendChild(d);
+  loader.load(enc('ai3d-mirror/'+mesh)+'?v=1',g=>{
+    scene.add(g.scene);
+    const bx=new THREE.Box3().setFromObject(g.scene),c=bx.getCenter(new THREE.Vector3()),z=bx.getSize(new THREE.Vector3());
+    g.scene.position.sub(c);const dd=Math.max(z.x,z.y,z.z)*2.2;
+    cam.position.set(dd*0.8,dd*0.6,dd*0.8);cam.lookAt(0,0,0);cam.far=dd*10;cam.updateProjectionMatrix();
+    renderer.render(scene,cam);
+    document.getElementById('snap-'+name).src=workCv.toDataURL();
+    scene.remove(g.scene);
+    setTimeout(next,30);
+  },undefined,()=>{document.getElementById('snap-'+name).alt='LOAD FAIL';setTimeout(next,30);});
+}
+next();
+</script></body></html>
