@@ -129,7 +129,10 @@ export const UI = {
     document.getElementById('r-happy').textContent = Math.round(G.happy);
     document.getElementById('r-pop').textContent = G.villagers.length;
     document.getElementById('r-cap').textContent = '/' + houseCapacity();
-    document.getElementById('daybox').textContent = `第 ${G.day} 天 · ${SEASONS(G.day)} · ${Math.floor(G.time / DAY_SECONDS * 100)}%`;
+    // 季节进度：把"这一天过了多少"换算成"这个季节过了多少"
+    const seg = G.day < 4 ? [1, 4, '秋'] : G.day < 8 ? [4, 8, '深秋'] : G.day < 11 ? [8, 11, '冬'] : [11, 12, '春'];
+    const sp = Math.min(100, Math.floor(((G.day - seg[0]) + G.time / DAY_SECONDS) / (seg[1] - seg[0]) * 100));
+    document.getElementById('daybox').textContent = `第 ${G.day} 天 · ${seg[2]} ${sp}%${G.day >= 8 && G.day < 11 ? ' ❄' : ''}`;
     const vl = document.getElementById('vlist');
     vl.innerHTML = G.villagers.map(v => {
       const t = v.task;

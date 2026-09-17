@@ -119,7 +119,9 @@ export function stepVillager(v, dt, t) {
     v.task.workT = 0;
     if (v.task.kind === 'chop') {
       const node = v.task.target;
-      spawnDrop(node.def.yield, node.def.amt, node.inst.position);
+      // 冬季野外食物大减（浆果/蘑菇凋零），木石照常——冬天砍柴更重要
+      const amt = (node.def.yield === 'food' && G.day >= WINTER_DAY) ? Math.max(1, node.def.amt - 1) : node.def.amt;
+      spawnDrop(node.def.yield, amt, node.inst.position);
       chopDone(node);
     }
     // 'work'：建筑产出走天结算，出勤即可
@@ -150,12 +152,14 @@ export function productionPerDay() {
 }
 /* ---- 配方生产：在岗村民按配方消耗库存原料 → 成品入库 ---- */
 export function stepProduction(dt) {
+  const winter = G.day >= WINTER_DAY;
   for (const p of G.placed) {
     const rc = RECIPES[p.def.id];
     if (!rc) continue;
     const n = G.villagers.filter(v => v.task && v.task.kind === 'work' && v.task.target === p).length;
     if (!n) { p.prodT = 0; continue; }
-    p.prodT = (p.prodT || 0) + dt * Math.min(n, 2);
+    // 冬季作坊效率减半（室内活，不至于像露天那样 ×0.3）
+    p.prodT = (p.prodT || 0) + dt * Math.min(n, 2) * (winter ? 0.5 : 1);
     while (p.prodT >= rc.time) {
       if (!Object.entries(rc.in).every(([r, v]) => G.res[r] >= v)) { p.prodT = rc.time; break; }   // 缺原料：保持满格待料
       Object.entries(rc.in).forEach(([r, v]) => G.res[r] -= v);
@@ -167,7 +171,9 @@ export function stepProduction(dt) {
   }
 }
 export function nightSettlement() {
-  let need = G.villagers.length;
+  const winter = G.day >= WINTER_DAY;
+  const pop = G.villagers.length;
+  let need = pop * (winter ? 2 : 1);                 // 冬季寒冷，饭量加倍
   const eatBread = Math.min(G.res.bread || 0, need);   // 面包优先上桌，省下生食
   G.res.bread -= eatBread; need -= eatBread;
   if (G.res.food >= need) G.res.food -= need;
@@ -176,7 +182,17 @@ export function nightSettlement() {
     const leaver = G.villagers.pop();
     if (leaver) { scene.remove(leaver.obj); G.selected.delete(leaver); ctx.toast(`😢 ${leaver.name} 饿坏了，离开了村庄`); }
   }
-  if (G.day >= WINTER_DAY) G.happy -= 6; else G.happy = Math.min(100, G.happy + 4);
+  if (winter) {
+    // 冬季燃料：每人烧 1 木/天，篝火旁过冬省一半
+    const fire = G.placed.some(p => p.def.id === 'campfire');
+    const fuelNeed = Math.ceil(G.villagers.length * (fire ? 0.5 : 1));
+    if (G.res.wood >= fuelNeed) G.res.wood -= fuelNeed;
+    else {
+      G.res.wood = 0; G.happy -= 12;
+      ctx.toast(`🥶 燃料不足，村民受冻（快乐 -12，建篝火可省一半木柴）`);
+    }
+    G.happy -= 6;
+  } else G.happy = Math.min(100, G.happy + 4);
   const roll = Math.random();
   if (roll < 0.22 && G.day >= 3) {
     if (!G.placed.some(p => p.def.role === 'tower')) {
@@ -192,6 +208,14 @@ export function nightSettlement() {
   G.day++;
   regrow();
   if (G.day === WINTER_DAY) ctx.toast('❄ 冬天来了！露天产出大减，温室/囤粮是关键');
+  else if (G.day + 1 === WINTER_DAY) {
+    // 入冬前一天：官网口径的过冬判定（柴≥8/人 且 粮≥5/人）
+    const p = G.villagers.length;
+    const ok = G.res.wood >= p * 8 && G.res.food >= p * 5;
+    ctx.toast(ok
+      ? `❄ 明日入冬：储备达标（柴 ${Math.floor(G.res.wood)}/需${p * 8}，粮 ${Math.floor(G.res.food)}/需${p * 5}），稳了`
+      : `⚠ 明日入冬：储备不足！建议 柴≥${p * 8} 粮≥${p * 5}（现 柴 ${Math.floor(G.res.wood)}，粮 ${Math.floor(G.res.food)}）`);
+  }
   if (G.day >= END_DAY) { endGame(); return; }
   ctx.UI && ctx.UI.refresh();
 }
