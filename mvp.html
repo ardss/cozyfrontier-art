@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>暖境边陲 · MVP v2</title>
+<title>暖境边陲 · MVP v4</title>
 <style>
-  :root{ --bg:#2b2420; --panel:#3a3128; --line:#52463a; --gold:#ffd9a0; --dim:#a89880; --ok:#a8d8a0; --bad:#e0a8a0; }
+  :root{ --bg:#2b2420; --panel:#3a3128; --line:#52463a; --gold:#ffd9a0; --dim:#a89880; --ok:#a8d8a0; }
   *{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-user-select:none;-webkit-user-drag:none}
   html,body{height:100%;overflow:hidden}
   body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:#f0e6d8;display:flex;flex-direction:column}
@@ -64,7 +64,7 @@ window.addEventListener('error',e=>{window.__errs.push(e.message+' @'+e.lineno)}
 </head>
 <body>
 <div id="top">
-  <span class="logo">🏘️ 暖境边陲 · MVP v2</span>
+  <span class="logo">🏘️ 暖境边陲 · MVP</span>
   <span class="res">🪵 <b id="r-wood">0</b></span>
   <span class="res">🍎 <b id="r-food">0</b></span>
   <span class="res">😊 <b id="r-happy">70</b></span>
@@ -95,46 +95,43 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
-/* ============ 数值 ============ */
+/* =====================================================================
+ * 1. 配置 —— 全部数值与数据表
+ * ===================================================================*/
 const DAY_SECONDS = 50, WINTER_DAY = 8, END_DAY = 11;
 const SEASONS = d => d < 4 ? '秋' : d < WINTER_DAY ? '深秋' : d < END_DAY ? '冬 ❄' : '春';
-const TREE_WOOD = 4, TREE_HP = 3;      // 每棵树砍 3 斧，共得 4×3=12 木？过强 → 树总产 6 木
-const TREE_YIELD = 2;                   // 每斧 +2 木
-const BUSH_FOOD = 3;                    // 每次采 +3 食
-const WORK_RATE = 2.2;                  // 每斧/采集耗时秒
+const TREE_YIELD = 2, TREE_HP = 3, BUSH_FOOD = 3, WORK_RATE = 2.2;
+const GRID = 26, CELL_SINK = 0.045, DRAG_TOLERANCE = 5;
+
 const DEFS = [
- {id:'hut',name:'窝棚',w:2,d:2,cat:'住房',cost:{wood:4},role:'house',cap:2,desc:'最便宜的容身之所。'},
- {id:'cottage_a',name:'村舍',w:2,d:2,cat:'住房',cost:{wood:5},role:'house',cap:2,desc:'双人小屋。'},
- {id:'cottage_b',name:'猎户村舍',w:2,d:2,cat:'住房',cost:{wood:5},role:'house',cap:2,desc:'双人小屋。'},
- {id:'home_small',name:'小民居',w:2,d:2,cat:'住房',cost:{wood:7},role:'house',cap:3,desc:'三人民居。'},
- {id:'farmhouse',name:'农舍',w:3,d:2,cat:'住房',cost:{wood:9},role:'house',cap:3,desc:'三人农舍。'},
- {id:'home_large',name:'大民居',w:3,d:2,cat:'住房',cost:{wood:13},role:'house',cap:4,desc:'四人宅邸。'},
- {id:'sawmill',name:'锯木厂',w:3,d:2,cat:'生产',cost:{wood:6},role:'wood',out:4,desc:'派村民上工：稳定产木（比砍树省心）。'},
- {id:'apiary',name:'蜂箱架',w:1,d:1,cat:'生产',cost:{wood:3},role:'food',out:2,desc:'派村民照看：产蜂蜜。'},
- {id:'bakery',name:'面包房',w:2,d:2,cat:'生产',cost:{wood:8},role:'food',out:3,desc:'派村民烤面包产食。'},
- {id:'greenhouse',name:'温室',w:2,d:2,cat:'生产',cost:{wood:10},role:'food',out:4,desc:'冬季不停产。'},
- {id:'granary',name:'粮仓',w:2,d:3,cat:'设施',cost:{wood:5},role:'granary',desc:'食物上限 +25。'},
- {id:'well',name:'水井',w:1,d:1,cat:'设施',cost:{wood:3},role:'well',desc:'住房 6 格内无井 → 村民效率减半。'},
- {id:'marketstall',name:'市集',w:2,d:1,cat:'设施',cost:{wood:5},role:'market',desc:'详情面板 4 木换 5 食。'},
- {id:'fountain',name:'喷泉',w:2,d:2,cat:'设施',cost:{wood:8},role:'happy',add:10,desc:'快乐 +10。'},
- {id:'brewery',name:'酿酒厂',w:3,d:2,cat:'设施',cost:{wood:9},role:'happy',add:15,desc:'快乐 +15。'},
- {id:'watchtower',name:'瞭望塔',w:2,d:2,cat:'设施',cost:{wood:7},role:'tower',desc:'夜间防狼。'},
- {id:'bridge',name:'石桥',w:3,d:1,cat:'装饰',cost:{wood:2},role:'deco',desc:'装饰。'},
- {id:'tollgate',name:'关卡',w:3,d:1,cat:'装饰',cost:{wood:2},role:'deco',desc:'装饰。'},
- {id:'stable',name:'马厩',w:3,d:2,cat:'装饰',cost:{wood:6},role:'deco',desc:'装饰。'},
- {id:'lighthouse',name:'灯塔',w:2,d:2,cat:'装饰',cost:{wood:6},role:'deco',desc:'装饰。'},
- {id:'bathhouse',name:'澡堂',w:2,d:2,cat:'装饰',cost:{wood:8},role:'deco',desc:'装饰。'},
- {id:'school',name:'学堂',w:2,d:2,cat:'装饰',cost:{wood:8},role:'deco',desc:'装饰。'},
- {id:'clinic',name:'诊所',w:2,d:2,cat:'装饰',cost:{wood:8},role:'deco',desc:'装饰。'},
- {id:'dovecote',name:'鸽房',w:1,d:1,cat:'装饰',cost:{wood:2},role:'deco',desc:'装饰。'},
- {id:'laundry',name:'晾晒场',w:2,d:1,cat:'装饰',cost:{wood:2},role:'deco',desc:'装饰。'},
- {id:'shipyard',name:'造船厂',w:4,d:3,cat:'装饰',cost:{wood:12},role:'deco',desc:'装饰。'},
- {id:'warehouse',name:'仓库',w:3,d:2,cat:'装饰',cost:{wood:7},role:'deco',desc:'装饰。'},
- {id:'watchpost',name:'哨位',w:2,d:2,cat:'装饰',cost:{wood:4},role:'deco',desc:'装饰。'},
-];
-DEFS.forEach(d => d.glb = 'ai3d-mirror/wc-' + d.id + '-paint.glb');
-// 自产小物件（prop 管线），作为可建造装饰
-[
+  { id:'hut',       name:'窝棚',   w:1,d:1, cat:'住房', cost:{wood:4},  role:'house', cap:1, desc:'最简单的栖身之所。' },
+  { id:'cottage_a', name:'村舍',   w:2,d:1, cat:'住房', cost:{wood:5},  role:'house', cap:2, desc:'温暖的小家。' },
+  { id:'cottage_b', name:'猎户村舍',w:2,d:1, cat:'住房', cost:{wood:5},  role:'house', cap:2, desc:'猎户的家。' },
+  { id:'home_small',name:'小民居', w:2,d:2, cat:'住房', cost:{wood:7},  role:'house', cap:3, desc:'舒适民居。' },
+  { id:'home_large',name:'大民居', w:2,d:2, cat:'住房', cost:{wood:13}, role:'house', cap:4, desc:'宽敞民居。' },
+  { id:'farmhouse', name:'农舍',   w:2,d:2, cat:'生产', cost:{wood:9},  role:'food',  out:4, desc:'村民主产食物。' },
+  { id:'sawmill',   name:'锯木厂', w:2,d:2, cat:'生产', cost:{wood:6},  role:'wood',  out:4, desc:'村民主产木材。' },
+  { id:'apiary',    name:'蜂箱架', w:1,d:1, cat:'生产', cost:{wood:3},  role:'food',  out:2, desc:'产蜂蜜小屋。' },
+  { id:'bakery',    name:'面包房', w:2,d:1, cat:'生产', cost:{wood:8},  role:'food',  out:3, desc:'把粮变面包。' },
+  { id:'greenhouse',name:'温室',   w:2,d:2, cat:'生产', cost:{wood:10}, role:'food',  out:3, desc:'冬天也能产食物。' },
+  { id:'granary',   name:'粮仓',   w:2,d:2, cat:'设施', cost:{wood:5},  role:'granary',desc:'食物上限 +25。' },
+  { id:'wellhouse', name:'水井',   w:1,d:1, cat:'设施', cost:{wood:3},  role:'well',  desc:'附近民居更满意。' },
+  { id:'fountain',  name:'喷泉',   w:1,d:1, cat:'设施', cost:{wood:4},  role:'happy', add:5, desc:'快乐 +5。' },
+  { id:'marketstall',name:'市集',  w:2,d:1, cat:'设施', cost:{wood:5},  role:'market',desc:'4 木换 5 食。' },
+  { id:'watchtower',name:'瞭望塔', w:2,d:2, cat:'设施', cost:{wood:7},  role:'tower', desc:'夜间防狼。' },
+  { id:'bridge',    name:'石桥',   w:3,d:1, cat:'装饰', cost:{wood:2},  role:'deco', desc:'装饰。' },
+  { id:'tollgate',  name:'关卡',   w:3,d:1, cat:'装饰', cost:{wood:2},  role:'deco', desc:'装饰。' },
+  { id:'stable',    name:'马厩',   w:3,d:2, cat:'装饰', cost:{wood:6},  role:'deco', desc:'装饰。' },
+  { id:'lighthouse',name:'灯塔',   w:2,d:2, cat:'装饰', cost:{wood:6},  role:'deco', desc:'装饰。' },
+  { id:'bathhouse', name:'澡堂',   w:2,d:2, cat:'装饰', cost:{wood:8},  role:'deco', desc:'装饰。' },
+  { id:'school',    name:'学堂',   w:2,d:2, cat:'装饰', cost:{wood:8},  role:'deco', desc:'装饰。' },
+  { id:'clinic',    name:'诊所',   w:2,d:2, cat:'装饰', cost:{wood:8},  role:'deco', desc:'装饰。' },
+  { id:'dovecote',  name:'鸽房',   w:1,d:1, cat:'装饰', cost:{wood:2},  role:'deco', desc:'装饰。' },
+  { id:'laundry',   name:'晾晒场', w:2,d:1, cat:'装饰', cost:{wood:2},  role:'deco', desc:'装饰。' },
+  { id:'shipyard',  name:'造船厂', w:4,d:3, cat:'装饰', cost:{wood:12}, role:'deco', desc:'装饰。' },
+  { id:'warehouse', name:'仓库',   w:3,d:2, cat:'装饰', cost:{wood:7},  role:'deco', desc:'装饰。' },
+  { id:'watchpost', name:'哨位',   w:2,d:2, cat:'装饰', cost:{wood:4},  role:'deco', desc:'装饰。' },
+  // 自产小物件（prop 管线）
   { id:'fence',    name:'木栅栏', w:1,d:1, cat:'装饰', cost:{wood:1}, role:'deco', desc:'围出你的院子。' },
   { id:'barrel',   name:'木桶',   w:1,d:1, cat:'装饰', cost:{wood:1}, role:'deco', desc:'装点什么好呢。' },
   { id:'crate',    name:'木箱',   w:1,d:1, cat:'装饰', cost:{wood:1}, role:'deco', desc:'结实的储物箱。' },
@@ -143,8 +140,24 @@ DEFS.forEach(d => d.glb = 'ai3d-mirror/wc-' + d.id + '-paint.glb');
   { id:'campfire', name:'篝火',   w:1,d:1, cat:'装饰', cost:{wood:2}, role:'deco', desc:'聚会的中心。' },
   { id:'haystack', name:'草垛',   w:1,d:1, cat:'装饰', cost:{wood:2}, role:'deco', desc:'秋收的气息。' },
   { id:'cart',     name:'手推车', w:1,d:1, cat:'装饰', cost:{wood:2}, role:'deco', desc:'运货好帮手。' },
-].forEach(p => { p.glb = 'ai3d-mirror/prop-' + p.id + '.glb'; DEFS.push(p); });
-// 纯装饰散布（无碰撞，不占格）
+];
+DEFS.forEach(d => d.glb = d.glb || `ai3d-mirror/wc-${d.id}-paint.glb`);
+// 文件名与 id 不一致的特例
+const wellDef = DEFS.find(d => d.id === 'wellhouse');
+if (wellDef) wellDef.glb = 'ai3d-mirror/wc-well-paint.glb';
+// 自产小物件改用 prop 管线的模型
+['fence','barrel','crate','lantern','signpost','campfire','haystack','cart'].forEach(id => {
+  const d = DEFS.find(x => x.id === id);
+  if (d) d.glb = `ai3d-mirror/prop-${id}.glb`;
+});
+
+const NATURE_DEFS = {
+  tree:  { glb: 'ai3d-mirror/prop-tree_oak.glb',  name: '橡树', yield: 'wood', amt: TREE_YIELD, hp: TREE_HP, work: WORK_RATE },
+  tree2: { glb: 'ai3d-mirror/prop-tree_pine.glb', name: '松树', yield: 'wood', amt: TREE_YIELD, hp: TREE_HP, work: WORK_RATE },
+  tree3: { glb: 'ai3d-mirror/prop-tree_blossom.glb', name: '花树', yield: 'wood', amt: TREE_YIELD, hp: TREE_HP, work: WORK_RATE },
+  dead:  { glb: 'ai3d-mirror/prop-tree_dead.glb', name: '枯木', yield: 'wood', amt: 2, hp: 2, work: WORK_RATE },
+  bush:  { glb: 'ai3d-mirror/prop-berry_bush.glb', name: '浆果丛', yield: 'food', amt: BUSH_FOOD, hp: 3, work: WORK_RATE, regrow: 3 },
+};
 const SCATTER_DEFS = {
   flowers:    'ai3d-mirror/prop-flowers.glb',
   grass_tuft: 'ai3d-mirror/prop-grass_tuft.glb',
@@ -153,18 +166,51 @@ const SCATTER_DEFS = {
   rock_big:   'ai3d-mirror/prop-rock_big.glb',
   stump:      'ai3d-mirror/prop-stump.glb',
 };
-const NATURE_DEFS = {
-  tree: { glb: 'ai3d-mirror/prop-tree_oak.glb', name: '橡树', yield: 'wood', amt: TREE_YIELD, hp: TREE_HP, work: WORK_RATE },
-  tree2:{ glb: 'ai3d-mirror/prop-tree_pine.glb', name: '松树', yield: 'wood', amt: TREE_YIELD, hp: TREE_HP, work: WORK_RATE },
-  tree3:{ glb: 'ai3d-mirror/prop-tree_blossom.glb', name: '花树', yield: 'wood', amt: TREE_YIELD, hp: TREE_HP, work: WORK_RATE },
-  dead: { glb: 'ai3d-mirror/prop-tree_dead.glb', name: '枯木', yield: 'wood', amt: 2, hp: 2, work: WORK_RATE },
-  bush: { glb: 'ai3d-mirror/prop-berry_bush.glb', name: '浆果丛', yield: 'food', amt: BUSH_FOOD, hp: 3, work: WORK_RATE, regrow: 3 },
-};
+const SCATTER_COUNTS = { grass_tuft: 26, flowers: 16, mushrooms: 10, rocks_small: 12, rock_big: 5, stump: 6 };
+const NATURE_COUNTS  = { tree: 22, tree2: 8, tree3: 6, dead: 4, bush: 14 };
+const CHAR_FILES = ['prop-villager_m.glb', 'prop-villager_f.glb', 'prop-villager_old.glb'];
+const VNAMES = ['阿岚', '小满', '石头', '阿枣', '春妮', '大川', '阿槐', '小蝶'];
+const CATS = ['全部', '住房', '生产', '设施', '装饰'];
 
-const GRID = 26, CELL = 1;
+/* =====================================================================
+ * 2. 资产 —— 统一的 GLB 加载与原型规范化
+ * ===================================================================*/
 const enc = p => p.split('/').map(encodeURIComponent).join('/');
+const loader = new GLTFLoader();
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/');
+loader.setDRACOLoader(dracoLoader);
 
-/* ============ 场景 ============ */
+const protos = {};   // id -> 归一化的 Group（原点=脚印中心，脚底贴地）
+let pendingLoads = 0, onAllLoaded = null;
+
+function loadProto(id, glb, fit) {
+  pendingLoads++;
+  const done = () => { if (--pendingLoads === 0 && onAllLoaded) onAllLoaded(); };
+  loader.load(enc(glb) + '?v=4', g => {
+    const root = g.scene;
+    root.traverse(o => { if (o.isMesh) { o.castShadow = true; if (o.material) o.material.side = THREE.DoubleSide; } });
+    const box = new THREE.Box3().setFromObject(root);
+    const size = box.getSize(new THREE.Vector3());
+    root.scale.setScalar(fit(size));
+    const box2 = new THREE.Box3().setFromObject(root);
+    const c = box2.getCenter(new THREE.Vector3());
+    root.position.set(-c.x, -box2.min.y, -c.z);
+    const wrap = new THREE.Group();
+    wrap.add(root);
+    protos[id] = wrap;
+    done();
+  }, undefined, err => { console.error('load fail', glb, err); done(); });
+}
+// 建筑适配 w×d 脚印；自然物/散布物/村民适配目标尺寸
+DEFS.forEach(d => loadProto(d.id, d.glb, s => Math.min(d.w / s.x, d.d / s.z, Math.max(d.w, d.d) / Math.max(s.x, s.z))));
+Object.entries(NATURE_DEFS).forEach(([id, nd]) => loadProto('nat_' + id, nd.glb, s => 1.15 / Math.max(s.x, s.z)));
+Object.entries(SCATTER_DEFS).forEach(([id, glb]) => loadProto('deco_' + id, glb, s => 0.55 / Math.max(s.x, s.z)));
+CHAR_FILES.forEach((f, i) => loadProto('char' + i, 'ai3d-mirror/' + f, s => 0.8 / s.y));
+
+/* =====================================================================
+ * 3. 场景 —— 渲染器、灯光、地面、相机 rig
+ * ===================================================================*/
 const mainEl = document.getElementById('main');
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -172,24 +218,50 @@ renderer.shadowMap.enabled = true;
 renderer.toneMappingExposure = 1.3;
 mainEl.appendChild(renderer.domElement);
 const dom = renderer.domElement;
+
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87a96b);
 scene.fog = new THREE.Fog(0x87a96b, 40, 95);
+
 const cam = new THREE.PerspectiveCamera(45, 1, 0.1, 300);
 const sun = new THREE.DirectionalLight(0xfff0d8, 2.4);
-sun.position.set(10, 18, 8); sun.castShadow = true;
+sun.position.set(10, 18, 8);
+sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -20, right: 20, top: 20, bottom: -20, far: 60 });
 scene.add(sun, new THREE.HemisphereLight(0xfff4e2, 0x6b8a4f, 1.05), new THREE.AmbientLight(0xffffff, 0.55));
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(GRID, GRID), new THREE.MeshLambertMaterial({ color: 0x8fae6a }));
-ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
-const gridHelper = new THREE.GridHelper(GRID, GRID, 0x66824c, 0x7d9a5e);
-gridHelper.position.y = 0.01; scene.add(gridHelper);
+
+// 地面：水彩草地纹理平铺（纹理加载前用纯色兜底）
+const groundMat = new THREE.MeshLambertMaterial({ color: 0x8fae6a });
+new THREE.TextureLoader().load(enc('ai3d-mirror/ground-grass.png') + '?v=1', tex => {
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(GRID / 6.5, GRID / 6.5);
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  groundMat.map = tex;
+  groundMat.color.set(0xe4ecd2);
+  groundMat.needsUpdate = true;
+});
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(GRID, GRID), groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.position.set(GRID / 2, 0, GRID / 2);
+ground.receiveShadow = true;
+scene.add(ground);
+
+// 建造网格：平时隐藏，进入建造/搬移模式才显示
+const buildGrid = new THREE.GridHelper(GRID, GRID, 0x5d7a45, 0x74925a);
+buildGrid.position.set(GRID / 2, 0.02, GRID / 2);
+buildGrid.visible = false;
+scene.add(buildGrid);
 
 const camCtl = {
-  target: new THREE.Vector3(GRID / 2, 0, GRID / 2), theta: Math.PI * 0.15, phi: Math.PI * 0.34, r: 26,
+  target: new THREE.Vector3(GRID / 2, 0, GRID / 2),
+  theta: Math.PI * 0.15, phi: Math.PI * 0.34, r: 26,
   apply() {
-    cam.position.set(this.target.x + this.r * Math.sin(this.phi) * Math.cos(this.theta), this.r * Math.cos(this.phi), this.target.z + this.r * Math.sin(this.phi) * Math.sin(this.theta));
+    cam.position.set(
+      this.target.x + this.r * Math.sin(this.phi) * Math.cos(this.theta),
+      this.r * Math.cos(this.phi),
+      this.target.z + this.r * Math.sin(this.phi) * Math.sin(this.theta));
     cam.lookAt(this.target);
   },
   pan(dx, dz) {
@@ -197,11 +269,13 @@ const camCtl = {
     this.target.z = THREE.MathUtils.clamp(this.target.z + dz, -GRID * .3, GRID * 1.3);
     this.apply();
   },
-  fwd() { return new THREE.Vector3(-Math.cos(this.theta), 0, -Math.sin(this.theta)); },
-  right() { return new THREE.Vector3(Math.sin(this.theta), 0, -Math.cos(this.theta)); },
+  fwd()   { return new THREE.Vector3(-Math.cos(this.theta), 0, -Math.sin(this.theta)); },
+  right() { return new THREE.Vector3( Math.sin(this.theta), 0, -Math.cos(this.theta)); },
 };
 
-/* ============ 状态 ============ */
+/* =====================================================================
+ * 4. 世界状态
+ * ===================================================================*/
 const G = {
   res: { wood: 10, food: 10 }, foodCap: 30, happy: 70,
   day: 1, time: 0, over: false,
@@ -209,8 +283,6 @@ const G = {
   selected: new Set(),
 };
 const key = (x, z) => x + ',' + z;
-const S = { mode: 'idle', sel: null, rot: 0, cell: { x: 0, z: 0 }, moving: null, hovered: null, downAt: null, boxStart: null };
-const keys = {};
 function footprint(b, rot) { return (rot % 2) ? [b.d, b.w] : [b.w, b.d]; }
 function cellsOf(b, x, z, rot) {
   const [w, d] = footprint(b, rot), out = [];
@@ -229,78 +301,26 @@ function clampCell(b, x, z, rot) {
 const canAfford = def => Object.entries(def.cost).every(([r, v]) => G.res[r] >= v);
 const pay = def => Object.entries(def.cost).forEach(([r, v]) => G.res[r] -= v);
 
-/* ============ 加载 ============ */
-const protos = {};
-const loader = new GLTFLoader();
-const draco = new DRACOLoader();
-draco.setDecoderPath('https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/');
-loader.setDRACOLoader(draco);
-let pend = DEFS.length + Object.keys(NATURE_DEFS).length + Object.keys(SCATTER_DEFS).length + 3;
-function done1() { if (--pend === 0) startGame(); }
-DEFS.forEach(def => loader.load(enc(def.glb) + '?v=1', g => {
-  const root = g.scene;
-  root.traverse(o => { if (o.isMesh) { o.castShadow = true; if (o.material) o.material.side = THREE.DoubleSide; } });
-  const box = new THREE.Box3().setFromObject(root);
-  const size = box.getSize(new THREE.Vector3());
-  root.scale.setScalar(Math.min(def.w / size.x, def.d / size.z, Math.max(def.w, def.d) / Math.max(size.x, size.z)));
-  const box2 = new THREE.Box3().setFromObject(root);
-  const c = box2.getCenter(new THREE.Vector3());
-  root.position.set(-c.x, -box2.min.y, -c.z);
-  const wrap = new THREE.Group(); wrap.add(root);
-  protos[def.id] = wrap; done1();
-}));
-Object.entries(NATURE_DEFS).forEach(([id, nd]) => loader.load(enc(nd.glb) + '?v=1', g => {
-  const root = g.scene;
-  root.traverse(o => { if (o.isMesh) { o.castShadow = true; if (o.material) o.material.side = THREE.DoubleSide; } });
-  const box = new THREE.Box3().setFromObject(root);
-  const size = box.getSize(new THREE.Vector3());
-  root.scale.setScalar(1.15 / Math.max(size.x, size.z));
-  const box2 = new THREE.Box3().setFromObject(root);
-  const c = box2.getCenter(new THREE.Vector3());
-  root.position.set(-c.x, -box2.min.y, -c.z);
-  const wrap = new THREE.Group(); wrap.add(root);
-  protos['nat_' + id] = wrap; done1();
-}));
-Object.entries(SCATTER_DEFS).forEach(([id, glb]) => loader.load(enc(glb) + '?v=1', g => {
-  const root = g.scene;
-  root.traverse(o => { if (o.isMesh) { o.castShadow = true; if (o.material) o.material.side = THREE.DoubleSide; } });
-  const box = new THREE.Box3().setFromObject(root);
-  const size = box.getSize(new THREE.Vector3());
-  root.scale.setScalar(0.55 / Math.max(size.x, size.z));
-  const box2 = new THREE.Box3().setFromObject(root);
-  const c = box2.getCenter(new THREE.Vector3());
-  root.position.set(-c.x, -box2.min.y, -c.z);
-  const wrap = new THREE.Group(); wrap.add(root);
-  protos['deco_' + id] = wrap; done1();
-}));
-const CHAR_FILES = ['prop-villager_m.glb', 'prop-villager_f.glb', 'prop-villager_old.glb'];
-const VNAMES = ['阿岚', '小满', '石头', '阿枣', '春妮', '大川', '阿槐', '小蝶'];
-CHAR_FILES.forEach((f, i) => loader.load(enc('ai3d-mirror/' + f) + '?v=1', g => {
-  const root = g.scene;
-  root.traverse(o => { if (o.isMesh && o.material) { o.material.side = THREE.DoubleSide; o.castShadow = true; } });
-  protos['char' + i] = root; done1();
-}));
-
-/* ============ 自然资源 ============ */
+/* =====================================================================
+ * 5. 自然资源与地表装饰
+ * ===================================================================*/
 function scatterNature() {
   const center = GRID / 2;
   let tries = 0;
-  const want = { tree: 22, tree2: 8, tree3: 6, dead: 4, bush: 14 };
-  for (const [type, n] of Object.entries(want)) {
+  for (const [type, n] of Object.entries(NATURE_COUNTS)) {
     let placedN = 0;
     while (placedN < n && tries++ < 800) {
       const x = 1 + Math.floor(Math.random() * (GRID - 2));
       const z = 1 + Math.floor(Math.random() * (GRID - 2));
       if (G.occ.has(key(x, z))) continue;
       const dc = Math.hypot(x - center, z - center);
-      if (dc < 3.5) continue;   // 中心留空地给村庄
-      if (type !== 'bush' && dc > 4 && dc < 5.2 && Math.random() < .7) continue; // 别围死中心
+      if (dc < 3.5) continue;                                     // 中心留空地给村庄
+      if (type !== 'bush' && dc > 4 && dc < 5.2 && Math.random() < .7) continue;
       const nd = NATURE_DEFS[type];
       const inst = protos['nat_' + type].clone();
-      const jitter = .25;
-      inst.position.set(x + .5 + (Math.random() - .5) * jitter, 0, z + .5 + (Math.random() - .5) * jitter);
+      inst.position.set(x + .5 + (Math.random() - .5) * .25, 0, z + .5 + (Math.random() - .5) * .25);
       inst.rotation.y = Math.random() * Math.PI * 2;
-      const s = .8 + Math.random() * .45; inst.scale.setScalar(s);
+      inst.scale.setScalar(.8 + Math.random() * .45);
       scene.add(inst);
       const node = { type, def: nd, inst, x, z, hp: nd.hp, alive: true, respawnDay: 0 };
       G.nature.push(node);
@@ -310,9 +330,7 @@ function scatterNature() {
   }
 }
 function scatterDeco() {
-  // 纯装饰小物：不占格、无碰撞，贴边与林间随机点缀
-  const want = { grass_tuft: 26, flowers: 16, mushrooms: 10, rocks_small: 12, rock_big: 5, stump: 6 };
-  for (const [type, n] of Object.entries(want)) {
+  for (const [type, n] of Object.entries(SCATTER_COUNTS)) {
     for (let i = 0, tries = 0; i < n && tries < 300; tries++) {
       const x = Math.random() * (GRID - 1), z = Math.random() * (GRID - 1);
       if (G.occ.has(key(Math.floor(x), Math.floor(z)))) continue;
@@ -344,37 +362,29 @@ function regrow() {
   }
 }
 
-/* ============ 村民 ============ */
+/* =====================================================================
+ * 6. 村民
+ * ===================================================================*/
 function spawnVillagers(n) {
   for (let i = 0; i < n; i++) {
-    const proto = protos['char' + (G.villagers.length % CHAR_FILES.length)];
-    const root = proto.clone();
+    const root = protos['char' + (G.villagers.length % CHAR_FILES.length)].clone();
     const wrap = new THREE.Group();
-    // 关键：先把 clone 摆正（原点=脚底中心），再给 wrap 统一缩放
-    const box = new THREE.Box3().setFromObject(root);
-    const h = box.max.y - box.min.y;
+    const h = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3()).y;
     wrap.scale.setScalar(0.8 / h);
     wrap.add(root);
-    const box2 = new THREE.Box3().setFromObject(wrap);
-    const c = box2.getCenter(new THREE.Vector3());
-    root.position.sub(new THREE.Vector3(c.x, box2.min.y, c.z));
+    const c = new THREE.Box3().setFromObject(wrap).getCenter(new THREE.Vector3());
+    root.position.sub(new THREE.Vector3(c.x, 0, c.z));
     wrap.position.set(GRID / 2 + (Math.random() - .5) * 3, 0, GRID / 2 + (Math.random() - .5) * 3);
-    // 选中圈
     const ring = new THREE.Mesh(new THREE.RingGeometry(.28, .36, 24).rotateX(-Math.PI / 2),
       new THREE.MeshBasicMaterial({ color: 0x8fc0ff, transparent: true, opacity: .9, depthWrite: false }));
     ring.position.y = .02; ring.visible = false;
     wrap.add(ring);
     scene.add(wrap);
-    G.villagers.push({
-      name: VNAMES[G.villagers.length % VNAMES.length], obj: wrap, root, ring,
-      task: null, // {kind:'move'|'chop'|'work', target, workT}
-      walkT: 0,
-    });
+    G.villagers.push({ name: VNAMES[G.villagers.length % VNAMES.length], obj: wrap, root, ring, task: null });
   }
 }
-function command(v, kind, target) {
-  v.task = { kind, target, workT: 0 };
-}
+function command(v, kind, target) { v.task = { kind, target, workT: 0 }; }
+
 function stepVillager(v, dt, t) {
   const speed = 1.5;
   let dest = null, arriveR = .6;
@@ -388,77 +398,74 @@ function stepVillager(v, dt, t) {
       dest = v.task.target.inst.position; arriveR = 1.3;
     }
   }
-  if (dest) {
-    const dx = dest.x - v.obj.position.x, dz = dest.z - v.obj.position.z;
-    const dist = Math.hypot(dx, dz);
-    if (dist > arriveR) {
-      const nx = v.obj.position.x + dx / dist * speed * dt;
-      const nz = v.obj.position.z + dz / dist * speed * dt;
-      const blocker = G.occ.get(key(Math.floor(nx), Math.floor(nz)));
-      // 建筑挡路就绕（简单 sidestep），自然资源可穿
-      if (blocker && blocker.inst && G.placed.includes(blocker)) {
-        v.obj.position.x += dz / dist * speed * dt * (v._side || (v._side = Math.random() < .5 ? 1 : -1));
-      } else { v.obj.position.x = nx; v.obj.position.z = nz; v._side = 0; }
-      v.obj.rotation.y = Math.atan2(dx, dz);
-      v.root.position.y = Math.abs(Math.sin(t * 10)) * .05;
-      return;
+  if (!dest) { v.root.rotation.x = 0; v.root.position.y = 0; return; }
+  const dx = dest.x - v.obj.position.x, dz = dest.z - v.obj.position.z;
+  const dist = Math.hypot(dx, dz);
+  if (dist > arriveR) {
+    const nx = v.obj.position.x + dx / dist * speed * dt;
+    const nz = v.obj.position.z + dz / dist * speed * dt;
+    const blocker = G.occ.get(key(Math.floor(nx), Math.floor(nz)));
+    if (blocker && blocker.inst && G.placed.includes(blocker)) {
+      // 建筑挡路：沿切线绕行
+      v.obj.position.x += dz / dist * speed * dt * (v._side || (v._side = Math.random() < .5 ? 1 : -1));
+    } else { v.obj.position.x = nx; v.obj.position.z = nz; v._side = 0; }
+    v.obj.rotation.y = Math.atan2(dx, dz);
+    v.root.position.y = Math.abs(Math.sin(t * 10)) * .05;   // 走路弹跳
+    return;
+  }
+  if (v.task.kind === 'move') { v.task = null; return; }
+  v.task.workT += dt;
+  v.root.rotation.x = Math.sin(t * 12) * .12;               // 干活摆动
+  if (v.task.workT >= v.task.target.def.work) {
+    v.task.workT = 0;
+    if (v.task.kind === 'chop') {
+      const node = v.task.target;
+      G.res[node.def.yield] = Math.min(node.def.yield === 'food' ? G.foodCap : 9999, G.res[node.def.yield] + node.def.amt);
+      chopDone(node);
     }
-    // 到岗：干活
-    if (v.task.kind === 'move') { v.task = null; return; }
-    v.task.workT += dt;
-    // 干活摆动
-    v.root.rotation.x = Math.sin(t * 12) * .12;
-    if (v.task.workT >= v.task.target.def.work) {
-      v.task.workT = 0;
-      if (v.task.kind === 'chop') {
-        const node = v.task.target;
-        G.res[v.task.target.def.yield] = Math.min(v.task.target.def.yield === 'food' ? G.foodCap : 9999, G.res[v.task.target.def.yield] + v.task.target.def.amt);
-        chopDone(node);
-      } else if (v.task.kind === 'work') {
-        // 建筑产出走天结算，这里只算出勤
-      }
-    }
-  } else {
-    v.root.rotation.x = 0;
-    v.root.position.y = 0;
+    // 'work'：建筑产出走天结算，出勤即可
   }
 }
 
-/* ============ 建筑放置（保留） ============ */
-const matPad = new THREE.MeshLambertMaterial({ color: 0x9db972 });
-const matPadEdge = new THREE.MeshLambertMaterial({ color: 0x8fae63 });
-const padGeo = new THREE.PlaneGeometry(0.98, 0.98).rotateX(-Math.PI / 2);
-const SINK = 0.045;
+/* =====================================================================
+ * 7. 建筑 —— 地垫、落下动画、放置/移除、幽灵预览
+ * ===================================================================*/
+const padMat = new THREE.MeshLambertMaterial({ color: 0x9db972 });
+const padGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
 function makePad(b, rot) {
-  const g = new THREE.Group(); const [w, d] = footprint(b, rot);
-  for (let i = 0; i < w; i++) for (let j = 0; j < d; j++) {
-    const p = new THREE.Mesh(padGeo, (i === 0 || j === 0 || i === w - 1 || j === d - 1) ? matPadEdge : matPad);
-    p.position.set(i + .5, 0.006, j + .5); p.receiveShadow = true; g.add(p);
-  }
+  const [w, d] = footprint(b, rot);
+  const pad = new THREE.Mesh(padGeo, padMat);
+  pad.scale.set(w * .99, 1, d * .99);
+  pad.position.set(w / 2, .006, d / 2);
+  pad.receiveShadow = true;
+  const g = new THREE.Group();
+  g.add(pad);
   return g;
 }
-const anims = [];
-function dropAnim(inst) { inst.userData.anim = { t: 0, fromY: 1.1 }; anims.push(inst); }
-function stepAnims(dt) {
-  for (let i = anims.length - 1; i >= 0; i--) {
-    const inst = anims[i], a = inst.userData.anim;
+const dropAnims = [];
+function startDropAnim(inst) { inst.userData.anim = { t: 0, fromY: 1.1 }; dropAnims.push(inst); }
+function stepDropAnims(dt) {
+  for (let i = dropAnims.length - 1; i >= 0; i--) {
+    const inst = dropAnims[i], a = inst.userData.anim;
     a.t = Math.min(1, a.t + dt * 5);
-    inst.position.y = (inst.userData.baseY || 0) + (a.fromY - (inst.userData.baseY || 0)) * (1 - Math.pow(1 - a.t, 3));
-    if (a.t >= 1) { inst.position.y = inst.userData.baseY || 0; anims.splice(i, 1); }
+    inst.position.y = (inst.userData.baseY || 0) + a.fromY * Math.pow(1 - a.t, 3);
+    if (a.t >= 1) { inst.position.y = inst.userData.baseY || 0; dropAnims.splice(i, 1); }
   }
 }
 function placeInstance(def, x, z, rot, animate) {
-  const pad = makePad(def, rot); pad.position.set(x, 0, z); scene.add(pad);
+  const pad = makePad(def, rot);
+  pad.position.set(x, 0, z);
+  scene.add(pad);
   const inst = protos[def.id].clone();
   const [w, d] = footprint(def, rot);
-  inst.position.set(x + w / 2, SINK, z + d / 2);
+  inst.position.set(x + w / 2, CELL_SINK, z + d / 2);
   inst.rotation.y = rot * Math.PI / 2;
-  inst.userData.baseY = SINK;
+  inst.userData.baseY = CELL_SINK;
   scene.add(inst);
-  const entry = { def, inst, pad, x, z, rot, workers: [] };
+  const entry = { def, inst, pad, x, z, rot };
   cellsOf(def, x, z, rot).forEach(k => G.occ.set(k, entry));
   G.placed.push(entry);
-  if (animate) dropAnim(inst);
+  if (animate) startDropAnim(inst);
   if (def.role === 'happy') G.happy += def.add;
   if (def.role === 'granary') G.foodCap += 25;
   return entry;
@@ -470,58 +477,60 @@ function removeEntry(entry) {
   G.villagers.forEach(v => { if (v.task && v.task.target === entry) v.task = null; });
   if (entry.def.role === 'happy') G.happy -= entry.def.add;
   if (entry.def.role === 'granary') G.foodCap -= 25;
-  refreshUI();
+  UI.refresh();
 }
-/* 幽灵 */
-const matOK = new THREE.MeshBasicMaterial({ color: 0xaaffaa, transparent: true, opacity: .5, depthWrite: false });
-const matNO = new THREE.MeshBasicMaterial({ color: 0xff6655, transparent: true, opacity: .5, depthWrite: false });
-const ghost = { grp: null, fp: null };
-const fpUnit = new THREE.PlaneGeometry(0.96, 0.96).rotateX(-Math.PI / 2);
-function buildGhost() {
-  killGhost();
-  if (!S.sel || !protos[S.sel.id]) return;
-  ghost.grp = protos[S.sel.id].clone();
-  ghost.grp.traverse(o => { if (o.isMesh) o.material = matOK; });
+
+// 幽灵预览：半透明模型 + 脚印格
+const ghostOK  = new THREE.MeshBasicMaterial({ color: 0xaaffaa, transparent: true, opacity: .5, depthWrite: false });
+const ghostBad = new THREE.MeshBasicMaterial({ color: 0xff6655, transparent: true, opacity: .5, depthWrite: false });
+const fpUnitGeo = new THREE.PlaneGeometry(0.96, 0.96).rotateX(-Math.PI / 2);
+const ghost = { model: null, fp: null };
+function showGhost(def) {
+  hideGhost();
+  if (!protos[def.id]) return;
+  ghost.model = protos[def.id].clone();
   ghost.fp = new THREE.Group();
-  scene.add(ghost.grp, ghost.fp);
-  updateGhost();
+  scene.add(ghost.model, ghost.fp);
 }
-function killGhost() { if (ghost.grp) scene.remove(ghost.grp); if (ghost.fp) scene.remove(ghost.fp); ghost.grp = ghost.fp = null; }
-function updateGhost() {
-  if (!S.sel) return;
-  const def = S.sel, { x, z } = S.cell, rot = S.rot;
+function hideGhost() {
+  if (ghost.model) scene.remove(ghost.model);
+  if (ghost.fp) scene.remove(ghost.fp);
+  ghost.model = ghost.fp = null;
+}
+function updateGhost(def, cell, rot) {
+  if (!ghost.model) return;
   const [w, d] = footprint(def, rot);
-  const ok = canPlace(def, x, z, rot) && canAfford(def);
-  if (ghost.grp) {
-    ghost.grp.traverse(o => { if (o.isMesh) o.material = ok ? matOK : matNO; });
-    ghost.grp.position.set(x + w / 2, SINK + .02, z + d / 2);
-    ghost.grp.rotation.y = rot * Math.PI / 2;
-  }
-  if (ghost.fp) {
-    ghost.fp.clear();
-    for (let i = 0; i < w; i++) for (let j = 0; j < d; j++) {
-      const p = new THREE.Mesh(fpUnit, ok ? matOK : matNO);
-      p.position.set(x + i + .5, .03, z + j + .5); ghost.fp.add(p);
-    }
+  const ok = canPlace(def, cell.x, cell.z, rot) && canAfford(def);
+  const mat = ok ? ghostOK : ghostBad;
+  ghost.model.traverse(o => { if (o.isMesh) o.material = mat; });
+  ghost.model.position.set(cell.x + w / 2, CELL_SINK + .02, cell.z + d / 2);
+  ghost.model.rotation.y = rot * Math.PI / 2;
+  ghost.fp.clear();
+  for (let i = 0; i < w; i++) for (let j = 0; j < d; j++) {
+    const p = new THREE.Mesh(fpUnitGeo, mat);
+    p.position.set(cell.x + i + .5, .03, cell.z + j + .5);
+    ghost.fp.add(p);
   }
 }
 
-/* ============ 拾取 ============ */
+/* =====================================================================
+ * 8. 拾取
+ * ===================================================================*/
 const raycaster = new THREE.Raycaster(), ndc = new THREE.Vector2();
 const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-function toGround(e) {
+function setRay(e) {
   const r = dom.getBoundingClientRect();
   ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
   raycaster.setFromCamera(ndc, cam);
+}
+function toGround(e) {
+  setRay(e);
   const pt = new THREE.Vector3();
   return raycaster.ray.intersectPlane(groundPlane, pt) ? pt : null;
 }
 function pickAt(e, list, filterAlive) {
-  const r = dom.getBoundingClientRect();
-  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
-  raycaster.setFromCamera(ndc, cam);
-  const objs = list.map(p => p.inst || p.obj);
-  const hits = raycaster.intersectObjects(objs, true);
+  setRay(e);
+  const hits = raycaster.intersectObjects(list.map(p => p.inst || p.obj), true);
   for (const h of hits) {
     let o = h.object;
     while (o) {
@@ -533,109 +542,292 @@ function pickAt(e, list, filterAlive) {
   return null;
 }
 
-/* ============ 侧栏 ============ */
-const CATS = ['全部', '住房', '生产', '设施', '装饰'];
-let curCat = '全部';
-const catsEl = document.getElementById('cats');
-CATS.forEach(c => {
-  const b = document.createElement('button');
-  b.textContent = c; if (c === curCat) b.className = 'on';
-  b.onclick = () => { curCat = c; [...catsEl.children].forEach(x => x.className = ''); b.className = 'on'; renderList(); };
-  catsEl.appendChild(b);
-});
-const listEl = document.getElementById('list');
-DEFS.forEach(def => {
-  const row = document.createElement('div');
-  row.className = 'b'; row.id = 'b-' + def.id;
-  row.innerHTML = `<img draggable="false"><div class="tx"><div class="nm">${def.name}</div><div class="cost">${Object.entries(def.cost).map(([r,v])=>v+'木').join(' ')}</div></div>`;
-  row.onclick = () => { if (canAfford(def)) startPlacing(def); else toast('木材不够：需 ' + def.cost.wood + ' 木'); };
-  listEl.appendChild(row);
-});
-function renderList() {
-  DEFS.forEach(def => {
-    const row = document.getElementById('b-' + def.id);
-    row.style.display = (curCat === '全部' || def.cat === curCat) ? 'flex' : 'none';
-    row.classList.toggle('poor', !canAfford(def));
-  });
-}
-const thumbR = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-thumbR.setSize(96, 96); thumbR.toneMappingExposure = 1.4;
-const thumbScene = new THREE.Scene(); thumbScene.background = new THREE.Color(0xf5f1e6);
-const thumbCam = new THREE.PerspectiveCamera(40, 1, .01, 100);
-const tl = new THREE.DirectionalLight(0xfff0d8, 2.4); tl.position.set(3, 5, 2);
-thumbScene.add(tl, new THREE.HemisphereLight(0xfff4e2, 0x8a7358, 1), new THREE.AmbientLight(0xffffff, .5));
-const thumbQ = [];
-function queueThumb(def) { thumbQ.push(def); if (thumbQ.length === 1) pumpThumb(); }
-function pumpThumb() {
-  const def = thumbQ.shift(); if (!def) return;
-  const obj = protos[def.id].clone();
-  thumbScene.add(obj);
-  const box = new THREE.Box3().setFromObject(obj);
-  const c = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
-  obj.position.sub(new THREE.Vector3(c.x, box.min.y, c.z));
-  const dd = Math.max(size.x, size.y, size.z) * 1.9;
-  thumbCam.position.set(dd * .75, dd * .65, dd * .75);
-  thumbCam.lookAt(0, size.y * .35, 0); thumbCam.far = dd * 10; thumbCam.updateProjectionMatrix();
-  thumbR.render(thumbScene, thumbCam);
-  const img = document.querySelector('#b-' + def.id + ' img');
-  if (img) img.src = thumbR.domElement.toDataURL();
-  thumbScene.remove(obj);
-  requestAnimationFrame(pumpThumb);
-}
+/* =====================================================================
+ * 9. 输入状态机
+ *    idle → maybeSelect → boxSelect
+ *    idle → placing（建造）
+ *    idle → movingBuilding（搬移）
+ *    any  → panning（中键）
+ * ===================================================================*/
+const S = {
+  mode: 'idle',            // idle | maybeSelect | boxSelect | placing | movingBuilding | panning
+  placingDef: null,        // 建造中的建筑定义
+  rot: 0, cell: { x: 0, z: 0 },
+  moving: null,            // 搬移中的建筑 entry
+  downAt: null,
+};
+const keys = {};
 
-/* ============ 选择与指令 ============ */
-function setSelRing(v) { v.ring.visible = G.selected.has(v); }
-function clearSel() { G.selected.forEach(v => v.ring.visible = false); G.selected.clear(); selUI(); }
-function selUI() {
-  const el = document.getElementById('selbox');
-  el.style.display = G.selected.size ? 'inline' : 'none';
-  el.textContent = '已选 ' + G.selected.size + ' 人';
-  document.getElementById('vlist').querySelectorAll('.v').forEach((row, i) => row.classList.toggle('sel', G.selected.has(G.villagers[i])));
-  if (G.selected.size === 1) showVillagerInfo([...G.selected][0]);
-}
-function showVillagerInfo(v) {
-  window.__v = v;
-  const el = document.getElementById('info');
-  el.style.display = 'block';
-  const t = v.task;
-  const taskTxt = !t ? '🚶 待命' : t.kind === 'move' ? '🚶 移动中' : t.kind === 'chop' ? (t.target.def.yield === 'wood' ? '🪓 砍' : '🍎 采') + t.target.def.name : '🏭 ' + (t.target.def?.name || '');
-  el.innerHTML = `<b>${v.name}</b><br><span style="color:#a89880;font-size:11px">村民</span><br>当前：${taskTxt}<br><button onclick="__stop()">取消任务</button>`;
-}
-window.__stop = () => { if (window.__v) { window.__v.task = null; showVillagerInfo(window.__v); } };
+function setBuildGridVisible(on) { buildGrid.visible = on; }
 
-function commandAt(e) {
-  if (!G.selected.size) return false;
-  const nat = pickAt(e, G.nature, true);
-  if (nat) {
-    G.selected.forEach(v => command(v, 'chop', nat));
-    toast(`${nat.def.name} ×${G.selected.size} 人前往（${nat.def.yield === 'wood' ? '砍伐' : '采集'}）`);
-    return true;
+function startPlacing(def) {
+  cancelPlacing();
+  S.placingDef = def;
+  S.rot = 0;
+  S.mode = 'placing';
+  setBuildGridVisible(true);
+  showGhost(def);
+  document.querySelectorAll('.b').forEach(e => e.classList.remove('sel'));
+  document.getElementById('b-' + def.id).classList.add('sel');
+  dom.style.cursor = 'copy';
+}
+function cancelPlacing() {
+  S.placingDef = null;
+  if (S.mode === 'placing') S.mode = 'idle';
+  setBuildGridVisible(false);
+  hideGhost();
+  document.querySelectorAll('.b').forEach(e => e.classList.remove('sel'));
+  dom.style.cursor = 'default';
+}
+function startMoving(entry) {
+  cancelPlacing();
+  S.moving = entry;
+  S.rot = entry.rot;
+  S.mode = 'movingBuilding';
+  setBuildGridVisible(true);
+}
+function finishMoving(commit) {
+  const m = S.moving;
+  if (!m) return;
+  if (commit && S.movingValid) {
+    cellsOf(m.def, m.x, m.z, m.rot).forEach(k => { if (G.occ.get(k) === m) G.occ.delete(k); });
+    m.x = S.cell.x; m.z = S.cell.z; m.rot = S.rot;
+    const [w, d] = footprint(m.def, m.rot);
+    m.inst.position.set(m.x + w / 2, CELL_SINK, m.z + d / 2);
+    m.inst.rotation.y = m.rot * Math.PI / 2;
+    m.pad.position.set(m.x, 0, m.z);
+    m.pad.clear();
+    m.pad.add(makePad(m.def, m.rot).children[0].clone());
+    cellsOf(m.def, m.x, m.z, m.rot).forEach(k => G.occ.set(k, m));
+  } else {
+    m.inst.position.set(m.x + footprint(m.def, m.rot)[0] / 2, CELL_SINK, m.z + footprint(m.def, m.rot)[1] / 2);
+    m.inst.rotation.y = m.rot * Math.PI / 2;
   }
+  m.inst.traverse(o => { if (o.isMesh && o.userData.origMat) o.material = o.userData.origMat; });
+  S.moving = null;
+  S.mode = 'idle';
+  setBuildGridVisible(false);
+}
+function beginDragMove(e, entry) {
+  startMoving(entry);
+  entry.inst.traverse(o => { if (o.isMesh) { o.userData.origMat = o.material; o.material = ghostOK; } });
+  stepDragMove(e);
+}
+function stepDragMove(e) {
+  if (e && e.clientX !== undefined) S.lastMoveEv = e;
+  const m = S.moving;
+  if (!m) return;
+  const pt = toGround(S.lastMoveEv || e);
+  if (!pt) return;
+  S.cell = clampCell(m.def, Math.floor(pt.x), Math.floor(pt.z), S.rot);
+  const [w, d] = footprint(m.def, S.rot);
+  m.inst.position.set(S.cell.x + w / 2, .05, S.cell.z + d / 2);
+  m.inst.rotation.y = S.rot * Math.PI / 2;
+  S.movingValid = canPlace(m.def, S.cell.x, S.cell.z, S.rot, m);
+  const mat = S.movingValid ? ghostOK : ghostBad;
+  m.inst.traverse(o => { if (o.isMesh && o.userData.origMat) o.material = mat; });
+}
+
+const selrect = document.getElementById('selrect');
+function inMainViewport(e) {
+  const r = dom.getBoundingClientRect();
+  return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+}
+
+addEventListener('pointerdown', e => {
+  if (e.target !== dom || G.over) return;
+  S.downAt = { x: e.clientX, y: e.clientY };
+  try { dom.setPointerCapture(e.pointerId); } catch (_) {}
+  if (e.button === 2) return;                       // 右键在 up 时发指令
+  if (e.button === 1) { S.mode = 'panning'; e.preventDefault(); return; }
+  if (e.button !== 0) return;
+  if (S.mode === 'placing') return;
+  // 按在建筑上 → 待定（拖拽=搬移，点击=信息面板）
   const bld = pickAt(e, G.placed);
-  if (bld && (bld.def.role === 'wood' || bld.def.role === 'food')) {
-    G.selected.forEach(v => command(v, 'work', bld));
-    toast(`派 ${G.selected.size} 人到 ${bld.def.name} 上工`);
-    return true;
+  if (bld) { S.mode = 'maybeMove'; S.moving = bld; S.rot = bld.rot; return; }
+  S.mode = 'maybeSelect';
+});
+addEventListener('pointermove', e => {
+  if (G.over) return;
+  if ((S.mode === 'maybeSelect' || S.mode === 'maybeMove') && S.downAt &&
+      (Math.abs(e.clientX - S.downAt.x) > DRAG_TOLERANCE || Math.abs(e.clientY - S.downAt.y) > DRAG_TOLERANCE)) {
+    if (S.mode === 'maybeMove') beginDragMove(e, S.moving);
+    else S.mode = 'boxSelect';
   }
-  const pt = toGround(e);
-  if (pt) {
-    const t = new THREE.Vector3(pt.x, 0, pt.z);
-    // 散开一点避免叠一起
-    let i = 0;
-    G.selected.forEach(v => {
-      const a = (i++ / G.selected.size) * Math.PI * 2;
-      command(v, 'move', t.clone().add(new THREE.Vector3(Math.cos(a) * .5, 0, Math.sin(a) * .5)));
-    });
-    return true;
+  switch (S.mode) {
+    case 'boxSelect': {
+      const m = mainEl.getBoundingClientRect();
+      selrect.style.display = 'block';
+      selrect.style.left = Math.min(S.downAt.x, e.clientX) - m.left + 'px';
+      selrect.style.top = Math.min(S.downAt.y, e.clientY) - m.top + 'px';
+      selrect.style.width = Math.abs(e.clientX - S.downAt.x) + 'px';
+      selrect.style.height = Math.abs(e.clientY - S.downAt.y) + 'px';
+      return;
+    }
+    case 'movingBuilding': stepDragMove(e); return;
+    case 'placing': {
+      if (!inMainViewport(e)) return;
+      const pt = toGround(e);
+      if (pt && S.placingDef) {
+        S.cell = clampCell(S.placingDef, Math.floor(pt.x), Math.floor(pt.z), S.rot);
+        updateGhost(S.placingDef, S.cell, S.rot);
+      }
+      return;
+    }
+    case 'panning': {
+      if (e.movementX || e.movementY) {
+        const sp = camCtl.r * .0016, f = camCtl.fwd(), r = camCtl.right();
+        camCtl.pan(-e.movementX * sp * r.x + e.movementY * sp * f.x,
+                   -e.movementX * sp * r.z + e.movementY * sp * f.z);
+      }
+      return;
+    }
+    case 'idle': {
+      if (!inMainViewport(e)) return;
+      UI.hoverTip(e);
+      return;
+    }
   }
-  return false;
+});
+addEventListener('pointerup', e => {
+  if (G.over) return;
+  selrect.style.display = 'none';
+  const wasClick = S.downAt && Math.abs(e.clientX - S.downAt.x) < DRAG_TOLERANCE && Math.abs(e.clientY - S.downAt.y) < DRAG_TOLERANCE;
+
+  if (e.button === 2) {
+    if (S.mode === 'movingBuilding') { finishMoving(false); }
+    else if (G.selected.size) Input.issueCommand(e);
+    S.mode = S.placingDef ? 'placing' : 'idle';
+    S.downAt = null;
+    return;
+  }
+  if (S.mode === 'boxSelect') {
+    Input.selectInScreenRect(S.downAt, e);
+  } else if (S.mode === 'maybeSelect' && wasClick && e.button === 0) {
+    Input.clickSelect(e);
+  } else if (S.mode === 'maybeMove' && wasClick && e.button === 0) {
+    UI.showBuildingInfo(S.moving);                   // 点建筑：信息面板
+    S.moving = null;
+  } else if (S.mode === 'movingBuilding') {
+    finishMoving(true);                              // 拖拽搬移：提交新位置
+  } else if (S.mode === 'placing' && wasClick && e.button === 0 && S.placingDef) {
+    if (canPlace(S.placingDef, S.cell.x, S.cell.z, S.rot) && canAfford(S.placingDef)) {
+      pay(S.placingDef);
+      placeInstance(S.placingDef, S.cell.x, S.cell.z, S.rot, true);
+      toast('🔨 ' + S.placingDef.name + ' 建成');
+      cancelPlacing();
+      UI.refresh();
+    }
+  }
+  if (S.mode !== 'panning') S.mode = S.placingDef ? 'placing' : 'idle';
+  S.downAt = null;
+});
+addEventListener('dragstart', e => e.preventDefault());
+dom.addEventListener('contextmenu', e => e.preventDefault());
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k === 'escape') { cancelPlacing(); Input.clearSelection(); UI.hideInfo(); return; }
+  if (['w','a','s','d','q','e','r'].includes(k)) e.preventDefault();
+  keys[k] = true;
+  if (k === 'r' && S.placingDef) {
+    S.rot = (S.rot + 1) % 4;
+    S.cell = clampCell(S.placingDef, S.cell.x, S.cell.z, S.rot);
+    updateGhost(S.placingDef, S.cell, S.rot);
+  }
+  if (k === 'r' && S.mode === 'movingBuilding' && S.moving) {
+    S.rot = (S.rot + 1) % 4;
+    stepDragMove();                                  // 用上次指针位置重算
+  }
+});
+addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+dom.addEventListener('wheel', e => {
+  e.preventDefault();
+  camCtl.r = THREE.MathUtils.clamp(camCtl.r + e.deltaY * .02, 7, 55);
+  camCtl.apply();
+}, { passive: false });
+document.getElementById('zin').onclick  = () => { camCtl.r = Math.max(7, camCtl.r - 4); camCtl.apply(); };
+document.getElementById('zout').onclick = () => { camCtl.r = Math.min(55, camCtl.r + 4); camCtl.apply(); };
+
+// 键盘相机
+function stepCameraKeys() {
+  const sp = camCtl.r * .02, f = camCtl.fwd(), r = camCtl.right();
+  if (keys.w) camCtl.pan( f.x * sp,  f.z * sp);
+  if (keys.s) camCtl.pan(-f.x * sp, -f.z * sp);
+  if (keys.d) camCtl.pan( r.x * sp,  r.z * sp);
+  if (keys.a) camCtl.pan(-r.x * sp, -r.z * sp);
+  if (keys.q) { camCtl.theta += .03; camCtl.apply(); }
+  if (keys.e) { camCtl.theta -= .03; camCtl.apply(); }
 }
 
-/* ============ 经济与日程 ============ */
-function capacity() { return G.placed.filter(p => p.def.role === 'house').reduce((s, p) => s + p.def.cap, 0); }
+// 指令与选择（从输入事件里剥离出来的游戏语义）
+const Input = {
+  issueCommand(e) {
+    const nat = pickAt(e, G.nature, true);
+    if (nat) {
+      G.selected.forEach(v => command(v, 'chop', nat));
+      toast(`${nat.def.name} ×${G.selected.size} 人前往（${nat.def.yield === 'wood' ? '砍伐' : '采集'}）`);
+      return;
+    }
+    const bld = pickAt(e, G.placed);
+    if (bld && (bld.def.role === 'wood' || bld.def.role === 'food')) {
+      G.selected.forEach(v => command(v, 'work', bld));
+      toast(`派 ${G.selected.size} 人到 ${bld.def.name} 上工`);
+      return;
+    }
+    const pt = toGround(e);
+    if (pt) {
+      let i = 0;
+      G.selected.forEach(v => {
+        const a = (i++ / G.selected.size) * Math.PI * 2;
+        command(v, 'move', new THREE.Vector3(pt.x + Math.cos(a) * .5, 0, pt.z + Math.sin(a) * .5));
+      });
+    }
+  },
+  selectInScreenRect(downAt, e) {
+    const r = dom.getBoundingClientRect();
+    const x1 = Math.min(downAt.x, e.clientX), x2 = Math.max(downAt.x, e.clientX);
+    const y1 = Math.min(downAt.y, e.clientY), y2 = Math.max(downAt.y, e.clientY);
+    this.clearSelection();
+    const p = new THREE.Vector3();
+    for (const v of G.villagers) {
+      p.copy(v.obj.position); p.y = .5; p.project(cam);
+      const sx = r.left + (p.x + 1) / 2 * r.width, sy = r.top + (1 - p.y) / 2 * r.height;
+      if (sx >= x1 && sx <= x2 && sy >= y1 && sy <= y2) { G.selected.add(v); v.ring.visible = true; }
+    }
+    UI.selectionChanged();
+    if (G.selected.size) toast('已选中 ' + G.selected.size + ' 人，右键派活');
+  },
+  clickSelect(e) {
+    const vil = pickAt(e, G.villagers);
+    if (vil) {
+      if (e.shiftKey) {
+        G.selected.has(vil) ? (G.selected.delete(vil), vil.ring.visible = false) : (G.selected.add(vil), vil.ring.visible = true);
+      } else {
+        this.clearSelection(); G.selected.add(vil); vil.ring.visible = true;
+      }
+      UI.selectionChanged();
+      return;
+    }
+    const bld = pickAt(e, G.placed);
+    if (bld) { UI.showBuildingInfo(bld); return; }
+    this.clearSelection();
+    UI.hideInfo();
+  },
+  clearSelection() {
+    G.selected.forEach(v => v.ring.visible = false);
+    G.selected.clear();
+    UI.selectionChanged();
+  },
+};
+
+/* =====================================================================
+ * 10. 模拟 —— 经济、日程、夜晚结算
+ * ===================================================================*/
+function houseCapacity() { return G.placed.filter(p => p.def.role === 'house').reduce((s, p) => s + p.def.cap, 0); }
 function houseHappiness() {
   const houses = G.placed.filter(p => p.def.role === 'house');
-  const good = houses.filter(p => G.placed.some(w => w.def.role === 'well' && Math.abs(w.x - p.x) <= 6 && Math.abs(w.z - p.z) <= 6)).reduce((s, p) => s + p.def.cap, 0);
+  const good = houses.filter(p => G.placed.some(w => w.def.role === 'well' && Math.abs(w.x - p.x) <= 6 && Math.abs(w.z - p.z) <= 6))
+                     .reduce((s, p) => s + p.def.cap, 0);
   const total = houses.reduce((s, p) => s + p.def.cap, 0);
   return total ? good / total : 1;
 }
@@ -653,7 +845,7 @@ function productionPerDay() {
   }
   return { wood, food };
 }
-function night() {
+function nightSettlement() {
   const need = G.villagers.length;
   if (G.res.food >= need) G.res.food -= need;
   else {
@@ -669,14 +861,16 @@ function night() {
       G.res.food -= loss;
       toast(`🐺 狼群偷粮！损失 ${loss} 食（建瞭望塔可防）`);
     } else toast('🐺 狼群被瞭望塔吓退了');
-  } else if (roll < 0.4 && capacity() > G.villagers.length && G.res.food >= G.villagers.length) {
-    spawnVillagers(1); toast(`🎉 旅行者加入村庄（现 ${G.villagers.length} 人）`);
+  } else if (roll < 0.4 && houseCapacity() > G.villagers.length && G.res.food >= G.villagers.length) {
+    spawnVillagers(1);
+    toast(`🎉 旅行者加入村庄（现 ${G.villagers.length} 人）`);
   } else if (roll < 0.5) { G.res.wood += 3; toast('🌊 河水送来浮木 +3 木'); }
   G.happy = Math.max(0, G.happy);
-  G.day++; regrow();
+  G.day++;
+  regrow();
   if (G.day === WINTER_DAY) toast('❄ 冬天来了！露天产出大减，温室/囤粮是关键');
   if (G.day >= END_DAY) { endGame(); return; }
-  refreshUI();
+  UI.refresh();
 }
 function endGame() {
   G.over = true;
@@ -684,231 +878,217 @@ function endGame() {
   document.getElementById('end').style.display = 'flex';
   if (pop >= 3) {
     document.getElementById('end-title').textContent = '🌸 春天来了——活过了冬天！';
-    document.getElementById('end-desc').textContent = `最终人口 ${pop}，余粮 ${Math.floor(G.res.food)}，快乐 ${Math.round(G.happy)}。闭环成立：选人→派工→采集→建造→备冬。`;
+    document.getElementById('end-desc').textContent = `最终人口 ${pop}，余粮 ${Math.floor(G.res.food)}，快乐 ${Math.round(G.happy)}。`;
   } else {
     document.getElementById('end-title').textContent = '❄ 村庄没能撑过冬天';
     document.getElementById('end-desc').textContent = `春天只剩 ${pop} 人（需 ≥3）。多囤粮、早建温室、盯紧快乐。`;
   }
 }
 
-/* ============ UI ============ */
-function refreshUI() {
-  document.getElementById('r-wood').textContent = Math.floor(G.res.wood);
-  document.getElementById('r-food').textContent = Math.floor(G.res.food);
-  document.getElementById('r-happy').textContent = Math.round(G.happy);
-  document.getElementById('r-pop').textContent = G.villagers.length;
-  document.getElementById('r-cap').textContent = '/' + capacity();
-  document.getElementById('daybox').textContent = `第 ${G.day} 天 · ${SEASONS(G.day)} · ${Math.floor(G.time / DAY_SECONDS * 100)}%`;
-  const vl = document.getElementById('vlist');
-  vl.innerHTML = G.villagers.map(v => {
-    const t = v.task;
-    const st = !t ? '待命' : t.kind === 'move' ? '移动' : t.kind === 'chop' ? (t.target.def.yield === 'wood' ? '🪓' : '🍎') : '🏭';
-    return `<div class="v" data-n="${v.name}"><span>${v.name}</span><span>${st}</span></div>`;
-  }).join('');
-  vl.querySelectorAll('.v').forEach(row => {
-    row.onclick = () => {
-      const v = G.villagers.find(x => x.name === row.dataset.n);
-      if (!v) return;
-      clearSel(); G.selected.add(v); v.ring.visible = true; selUI();
-      camCtl.target.copy(v.obj.position); camCtl.apply();
-    };
-  });
-  vl.querySelectorAll('.v').forEach((row, i) => row.classList.toggle('sel', G.selected.has(G.villagers[i])));
-  renderList();
-}
+/* =====================================================================
+ * 11. UI —— 侧栏、缩略图、选择面板、提示
+ * ===================================================================*/
 function toast(msg) {
   const t = document.createElement('div');
-  t.className = 'toast'; t.textContent = msg;
+  t.className = 'toast';
+  t.textContent = msg;
   document.getElementById('toast').appendChild(t);
   setTimeout(() => t.remove(), 4200);
 }
-function showInfo(entry) {
-  window.__cur = entry;
-  const el = document.getElementById('info');
-  el.style.display = 'block';
-  const d = entry.def;
-  const workers = G.villagers.filter(v => v.task && v.task.target === entry).length;
-  const trade = d.role === 'market' && G.res.wood >= 4 ? '<br><button onclick="__trade()">4 木换 5 食</button>' : '';
-  el.innerHTML = `<b>${d.name}</b><br><span style="color:#a89880;font-size:11px">${d.cat} · ${d.w}×${d.d}</span><br>${d.desc}<br>在岗：${workers} 人${trade}<button onclick="__del()">拆除</button>`;
-}
-window.__trade = () => { if (G.res.wood >= 4) { G.res.wood -= 4; G.res.food = Math.min(G.foodCap, G.res.food + 5); toast('🛒 -4 木 +5 食'); refreshUI(); } };
-window.__del = () => { if (window.__cur) removeEntry(window.__cur); document.getElementById('info').style.display = 'none'; };
 
-/* ============ 交互 ============ */
-function startPlacing(def) {
-  S.sel = def; S.rot = 0; S.mode = 'placing';
-  document.querySelectorAll('.b').forEach(e => e.classList.remove('sel'));
-  document.getElementById('b-' + def.id).classList.add('sel');
-  buildGhost(); dom.style.cursor = 'copy';
-}
-function stopPlacing() {
-  S.sel = null; S.mode = 'idle';
-  document.querySelectorAll('.b').forEach(e => e.classList.remove('sel'));
-  killGhost(); dom.style.cursor = 'default';
-}
-const DRAG_T = 5;
-const selrect = document.getElementById('selrect');
-addEventListener('pointerdown', e => {
-  if (e.target !== dom || G.over) return;
-  S.downAt = { x: e.clientX, y: e.clientY };
-  try { dom.setPointerCapture(e.pointerId); } catch (_) {}
-  if (e.button === 2) return;              // 右键在 up 时发指令
-  if (e.button === 1) { S.mode = 'panning'; e.preventDefault(); return; }
-  if (e.button !== 0) return;
-  if (S.mode === 'placing') return;
-  // 左键：先记 down，up 时区分 点选/框选/点建筑
-  S.mode = 'maybeSelect';
-});
-addEventListener('pointermove', e => {
-  if (G.over) return;
-  const over = (() => { const r = dom.getBoundingClientRect(); return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; })();
-  // 框选绘制
-  if (S.mode === 'maybeSelect' && S.downAt && (Math.abs(e.clientX - S.downAt.x) > DRAG_T || Math.abs(e.clientY - S.downAt.y) > DRAG_T)) {
-    S.mode = 'boxSelect';
-  }
-  if (S.mode === 'boxSelect') {
-    const m = mainEl.getBoundingClientRect();
-    const x1 = Math.min(S.downAt.x, e.clientX) - m.left, y1 = Math.min(S.downAt.y, e.clientY) - m.top;
-    const x2 = Math.max(S.downAt.x, e.clientX) - m.left, y2 = Math.max(S.downAt.y, e.clientY) - m.top;
-    selrect.style.display = 'block';
-    selrect.style.left = x1 + 'px'; selrect.style.top = y1 + 'px';
-    selrect.style.width = (x2 - x1) + 'px'; selrect.style.height = (y2 - y1) + 'px';
-    return;
-  }
-  if (S.mode === 'movingBuilding' && S.moving) {
-    const pt = toGround(e);
-    if (pt) {
-      S.cell = clampCell(S.moving.def, Math.floor(pt.x), Math.floor(pt.z), S.rot);
-      const [w, d] = footprint(S.moving.def, S.rot);
-      S.moving.inst.position.set(S.cell.x + w / 2, .05, S.cell.z + d / 2);
-      S.moving.inst.rotation.y = S.rot * Math.PI / 2;
-      const ok = canPlace(S.moving.def, S.cell.x, S.cell.z, S.rot);
-      S.moving.inst.traverse(o => { if (o.isMesh) o.material = ok ? matOK : matNO; });
-      S.moving.valid = ok;
+const UI = {
+  curCat: '全部',
+  infoEntry: null,       // 当前展示的建筑
+  infoVillager: null,    // 当前展示的村民
+
+  initSidebar() {
+    const catsEl = document.getElementById('cats');
+    CATS.forEach(c => {
+      const b = document.createElement('button');
+      b.textContent = c;
+      if (c === this.curCat) b.className = 'on';
+      b.onclick = () => {
+        this.curCat = c;
+        [...catsEl.children].forEach(x => x.className = '');
+        b.className = 'on';
+        this.renderList();
+      };
+      catsEl.appendChild(b);
+    });
+    const listEl = document.getElementById('list');
+    DEFS.forEach(def => {
+      const row = document.createElement('div');
+      row.className = 'b';
+      row.id = 'b-' + def.id;
+      row.innerHTML = `<img draggable="false"><div class="tx"><div class="nm">${def.name}</div><div class="cost">${Object.entries(def.cost).map(([r, v]) => v + '木').join(' ')}</div></div>`;
+      row.onclick = () => {
+        if (canAfford(def)) startPlacing(def);
+        else toast('木材不够：需 ' + def.cost.wood + ' 木');
+      };
+      listEl.appendChild(row);
+    });
+  },
+
+  renderList() {
+    DEFS.forEach(def => {
+      const row = document.getElementById('b-' + def.id);
+      if (!row) return;                                   // 侧栏尚未初始化
+      row.style.display = (this.curCat === '全部' || def.cat === this.curCat) ? 'flex' : 'none';
+      row.classList.toggle('poor', !canAfford(def));
+    });
+  },
+
+  // 缩略图渲染队列（共用一个离屏渲染器）
+  thumbQueue: [],
+  startThumbs() {
+    DEFS.forEach(d => this.thumbQueue.push(d));
+    this.pumpThumb();
+  },
+  pumpThumb() {
+    const def = this.thumbQueue.shift();
+    if (!def) return;
+    try {
+    if (!UI._thumbR) {
+      const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+      r.setSize(96, 96);
+      r.toneMappingExposure = 1.4;
+      const sc = new THREE.Scene();
+      sc.background = new THREE.Color(0xf5f1e6);
+      const tl = new THREE.DirectionalLight(0xfff0d8, 2.4); tl.position.set(3, 5, 2);
+      sc.add(tl, new THREE.HemisphereLight(0xfff4e2, 0x8a7358, 1), new THREE.AmbientLight(0xffffff, .5));
+      const c = new THREE.PerspectiveCamera(40, 1, .01, 100);
+      UI._thumbR = { r, sc, c };
     }
-    return;
-  }
-  if (S.mode === 'placing') {
-    if (over) {
-      const pt = toGround(e);
-      if (pt && S.sel) { S.cell = clampCell(S.sel, Math.floor(pt.x), Math.floor(pt.z), S.rot); updateGhost(); }
-    }
-    return;
-  }
-  if (S.mode === 'panning') {
-    if (e.movementX || e.movementY) {
-      const sp = camCtl.r * .0016, f = camCtl.fwd(), r = camCtl.right();
-      camCtl.pan(-e.movementX * sp * r.x + e.movementY * sp * f.x, -e.movementX * sp * r.z + e.movementY * sp * f.z);
-    }
-    return;
-  }
-  // idle 悬停提示
-  if (S.mode === 'idle' && over) {
+    const { r, sc, c } = UI._thumbR;
+    const obj = protos[def.id].clone();
+    sc.add(obj);
+    const box = new THREE.Box3().setFromObject(obj);
+    const ctr = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
+    obj.position.sub(new THREE.Vector3(ctr.x, box.min.y, ctr.z));
+    const dd = Math.max(size.x, size.y, size.z) * 1.9;
+    c.position.set(dd * .75, dd * .65, dd * .75);
+    c.lookAt(0, size.y * .35, 0);
+    c.far = dd * 10;
+    c.updateProjectionMatrix();
+    r.render(sc, c);
+    const img = document.querySelector('#b-' + def.id + ' img');
+    if (img) img.src = r.domElement.toDataURL();
+    sc.remove(obj);
+    } catch (err) { console.error('thumb fail', def.id, err); }
+    requestAnimationFrame(() => UI.pumpThumb());
+  },
+
+  refresh() {
+    document.getElementById('r-wood').textContent = Math.floor(G.res.wood);
+    document.getElementById('r-food').textContent = Math.floor(G.res.food);
+    document.getElementById('r-happy').textContent = Math.round(G.happy);
+    document.getElementById('r-pop').textContent = G.villagers.length;
+    document.getElementById('r-cap').textContent = '/' + houseCapacity();
+    document.getElementById('daybox').textContent = `第 ${G.day} 天 · ${SEASONS(G.day)} · ${Math.floor(G.time / DAY_SECONDS * 100)}%`;
+    const vl = document.getElementById('vlist');
+    vl.innerHTML = G.villagers.map(v => {
+      const t = v.task;
+      const st = !t ? '待命' : t.kind === 'move' ? '移动' : t.kind === 'chop' ? (t.target.def.yield === 'wood' ? '🪓' : '🍎') : '🏭';
+      return `<div class="v" data-i="${G.villagers.indexOf(v)}"><span>${v.name}</span><span>${st}</span></div>`;
+    }).join('');
+    vl.querySelectorAll('.v').forEach(row => {
+      row.onclick = () => {
+        const v = G.villagers[+row.dataset.i];
+        if (!v) return;
+        Input.clearSelection();
+        G.selected.add(v);
+        v.ring.visible = true;
+        UI.selectionChanged();
+        camCtl.target.copy(v.obj.position);
+        camCtl.apply();
+      };
+    });
+    this.renderList();
+    if (this.infoEntry && !G.placed.includes(this.infoEntry)) this.hideInfo();
+  },
+
+  selectionChanged() {
+    const el = document.getElementById('selbox');
+    el.style.display = G.selected.size ? 'inline' : 'none';
+    el.textContent = '已选 ' + G.selected.size + ' 人';
+    document.getElementById('vlist').querySelectorAll('.v').forEach((row, i) => row.classList.toggle('sel', G.selected.has(G.villagers[i])));
+    if (G.selected.size === 1) this.showVillagerInfo([...G.selected][0]);
+    else if (G.selected.size === 0 && this.infoVillager) this.hideInfo();
+  },
+
+  showVillagerInfo(v) {
+    this.infoVillager = v;
+    this.infoEntry = null;
+    const el = document.getElementById('info');
+    el.style.display = 'block';
+    const t = v.task;
+    const taskTxt = !t ? '🚶 待命' : t.kind === 'move' ? '🚶 移动中'
+      : t.kind === 'chop' ? (t.target.def.yield === 'wood' ? '🪓 砍' : '🍎 采') + t.target.def.name
+      : '🏭 ' + (t.target.def?.name || '');
+    el.innerHTML = `<b>${v.name}</b><br><span style="color:#a89880;font-size:11px">村民</span><br>当前：${taskTxt}<br><button id="btn-stoptask">取消任务</button>`;
+    document.getElementById('btn-stoptask').onclick = () => { v.task = null; this.showVillagerInfo(v); };
+  },
+
+  showBuildingInfo(entry) {
+    Input.clearSelection();
+    this.infoEntry = entry;
+    this.infoVillager = null;
+    const el = document.getElementById('info');
+    el.style.display = 'block';
+    const d = entry.def;
+    const workers = G.villagers.filter(v => v.task && v.task.target === entry).length;
+    const trade = d.role === 'market' && G.res.wood >= 4 ? '<button id="btn-trade">4 木换 5 食</button>' : '';
+    el.innerHTML = `<b>${d.name}</b><br><span style="color:#a89880;font-size:11px">${d.cat} · ${d.w}×${d.d} · 拖拽可搬移</span><br>${d.desc}<br>在岗：${workers} 人${trade}<button id="btn-del">拆除</button>`;
+    document.getElementById('btn-del').onclick = () => { removeEntry(entry); this.hideInfo(); };
+    const bt = document.getElementById('btn-trade');
+    if (bt) bt.onclick = () => {
+      if (G.res.wood >= 4) { G.res.wood -= 4; G.res.food = Math.min(G.foodCap, G.res.food + 5); toast('🛒 -4 木 +5 食'); UI.refresh(); }
+    };
+  },
+
+  hideInfo() { document.getElementById('info').style.display = 'none'; this.infoEntry = this.infoVillager = null; },
+
+  hoverTip(e) {
     const tip = document.getElementById('tip');
     const nat = pickAt(e, G.nature, true);
     const bld = nat ? null : pickAt(e, G.placed);
     const vil = (nat || bld) ? null : pickAt(e, G.villagers);
-    if (nat || bld || vil) {
-      const m = mainEl.getBoundingClientRect();
-      tip.style.display = 'block';
-      tip.style.left = Math.min(e.clientX - m.left + 14, m.width - 260) + 'px';
-      tip.style.top = Math.min(e.clientY - m.top + 10, m.height - 90) + 'px';
-      if (nat) tip.innerHTML = `<b>${nat.def.name}</b><br>剩余 ${nat.hp} 次 · ${nat.def.yield === 'wood' ? '🪓' : '🍎'}+${nat.def.amt}/次<br><span style="color:#a89880">选村民后右键派工</span>`;
-      else if (bld) tip.innerHTML = `<b>${bld.def.name}</b><br>${bld.def.desc}`;
-      else tip.innerHTML = `<b>${vil.name}</b><br>${vil.task ? '忙' : '待命'} · 点击选中`;
-      return;
-    }
-    tip.style.display = 'none';
-  }
-});
-addEventListener('pointerup', e => {
-  if (G.over) return;
-  selrect.style.display = 'none';
-  const wasClick = S.downAt && Math.abs(e.clientX - S.downAt.x) < DRAG_T && Math.abs(e.clientY - S.downAt.y) < DRAG_T;
-  if (e.button === 2) {
-    // 右键 = 指令（有选中村民时），否则无操作
-    if (G.selected.size) commandAt(e);
-    S.mode = S.sel ? 'placing' : 'idle'; S.downAt = null;
-    return;
-  }
-  if (S.mode === 'boxSelect') {
-    // 屏幕矩形 → 选中范围内村民
-    const r = dom.getBoundingClientRect();
+    if (!nat && !bld && !vil) { tip.style.display = 'none'; return; }
     const m = mainEl.getBoundingClientRect();
-    const x1 = Math.min(S.downAt.x, e.clientX), x2 = Math.max(S.downAt.x, e.clientX);
-    const y1 = Math.min(S.downAt.y, e.clientY), y2 = Math.max(S.downAt.y, e.clientY);
-    clearSel();
-    const p = new THREE.Vector3();
-    for (const v of G.villagers) {
-      p.copy(v.obj.position); p.y = .5; p.project(cam);
-      const sx = r.left + (p.x + 1) / 2 * r.width, sy = r.top + (1 - p.y) / 2 * r.height;
-      if (sx >= x1 && sx <= x2 && sy >= y1 && sy <= y2) { G.selected.add(v); v.ring.visible = true; }
-    }
-    selUI();
-    if (G.selected.size) toast('已选中 ' + G.selected.size + ' 人，右键派活');
-  } else if (S.mode === 'maybeSelect' && wasClick && e.button === 0) {
-    const vil = pickAt(e, G.villagers);
-    if (vil) {
-      if (e.shiftKey) { G.selected.has(vil) ? (G.selected.delete(vil), vil.ring.visible = false) : (G.selected.add(vil), vil.ring.visible = true); selUI(); }
-      else { clearSel(); G.selected.add(vil); vil.ring.visible = true; selUI(); }
-    } else {
-      const bld = pickAt(e, G.placed);
-      if (bld) { clearSel(); showInfo(bld); }
-      else { clearSel(); document.getElementById('info').style.display = 'none'; }
-    }
-  } else if (S.mode === 'placing' && wasClick && e.button === 0 && S.sel) {
-    if (canPlace(S.sel, S.cell.x, S.cell.z, S.rot) && canAfford(S.sel)) {
-      pay(S.sel);
-      placeInstance(S.sel, S.cell.x, S.cell.z, S.rot, true);
-      toast('🔨 ' + S.sel.name + ' 建成');
-      stopPlacing(); refreshUI();
-    }
-  }
-  S.mode = S.sel ? 'placing' : 'idle';
-  S.downAt = null;
-});
-addEventListener('dragstart', e => e.preventDefault());
-dom.addEventListener('contextmenu', e => e.preventDefault());
-addEventListener('keydown', e => {
-  const k = e.key.toLowerCase();
-  if (k === 'escape') { stopPlacing(); clearSel(); document.getElementById('info').style.display = 'none'; return; }
-  if (['w','a','s','d','q','e','r'].includes(k)) e.preventDefault();
-  keys[k] = true;
-  if (k === 'r' && S.sel) { S.rot = (S.rot + 1) % 4; S.cell = clampCell(S.sel, S.cell.x, S.cell.z, S.rot); updateGhost(); }
-});
-addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
-function camKeys() {
-  const sp = camCtl.r * .02, f = camCtl.fwd(), r = camCtl.right();
-  if (keys.w) camCtl.pan(f.x * sp, f.z * sp);
-  if (keys.s) camCtl.pan(-f.x * sp, -f.z * sp);
-  if (keys.d) camCtl.pan(r.x * sp, r.z * sp);
-  if (keys.a) camCtl.pan(-r.x * sp, -r.z * sp);
-  if (keys.q) { camCtl.theta += .03; camCtl.apply(); }
-  if (keys.e) { camCtl.theta -= .03; camCtl.apply(); }
-}
-dom.addEventListener('wheel', e => {
-  e.preventDefault();
-  camCtl.r = THREE.MathUtils.clamp(camCtl.r + e.deltaY * .02, 7, 55); camCtl.apply();
-}, { passive: false });
-document.getElementById('zin').onclick = () => { camCtl.r = Math.max(7, camCtl.r - 4); camCtl.apply(); };
-document.getElementById('zout').onclick = () => { camCtl.r = Math.min(55, camCtl.r + 4); camCtl.apply(); };
+    tip.style.display = 'block';
+    tip.style.left = Math.min(e.clientX - m.left + 14, m.width - 260) + 'px';
+    tip.style.top = Math.min(e.clientY - m.top + 10, m.height - 90) + 'px';
+    if (nat) tip.innerHTML = `<b>${nat.def.name}</b><br>剩余 ${nat.hp} 次 · ${nat.def.yield === 'wood' ? '🪓' : '🍎'}+${nat.def.amt}/次<br><span style="color:#a89880">选村民后右键派工</span>`;
+    else if (bld) tip.innerHTML = `<b>${bld.def.name}</b><br>${bld.def.desc}`;
+    else tip.innerHTML = `<b>${vil.name}</b><br>${vil.task ? '忙' : '待命'} · 点击选中`;
+  },
+};
 
-/* ============ 启动与主循环 ============ */
+/* =====================================================================
+ * 12. 启动与主循环
+ * ===================================================================*/
 function startGame() {
+  UI.initSidebar();
   scatterNature();
   scatterDeco();
   spawnVillagers(3);
-  DEFS.forEach(queueThumb);
-  refreshUI();
+  UI.startThumbs();
+  UI.refresh();
   toast('🍂 目标：活到第 10 天结束人口≥3。选村民（点/框选）→ 右键树/浆果丛派工');
 }
+onAllLoaded = startGame;
+if (pendingLoads === 0) startGame();
+
 function resize() {
   const w = mainEl.clientWidth, h = mainEl.clientHeight;
-  renderer.setSize(w, h); cam.aspect = w / h; cam.updateProjectionMatrix();
+  renderer.setSize(w, h);
+  cam.aspect = w / h;
+  cam.updateProjectionMatrix();
 }
 addEventListener('resize', resize);
-camCtl.apply(); resize();
-window.__G = G; window.__THREE = THREE; window.__cam = cam;
+camCtl.apply();
+resize();
+
 const clock = new THREE.Clock();
 (function loop() {
   requestAnimationFrame(loop);
@@ -919,11 +1099,12 @@ const clock = new THREE.Clock();
     const p = productionPerDay();
     G.res.wood += p.wood * dt / DAY_SECONDS;
     G.res.food = Math.min(G.foodCap, G.res.food + p.food * dt / DAY_SECONDS);
-    if (G.time >= DAY_SECONDS) { G.time = 0; night(); }
+    if (G.time >= DAY_SECONDS) { G.time = 0; nightSettlement(); }
     for (const v of G.villagers) stepVillager(v, dt, t);
-    if (Math.floor(t * 2) !== G._uiT) { G._uiT = Math.floor(t * 2); if (!G.over) refreshUI(); }
+    if (Math.floor(t * 2) !== G._uiT) { G._uiT = Math.floor(t * 2); UI.refresh(); }
   }
-  camKeys(); stepAnims(dt);
+  stepCameraKeys();
+  stepDropAnims(dt);
   renderer.render(scene, cam);
 })();
 </script>
