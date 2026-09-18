@@ -4,6 +4,8 @@
 import * as THREE from 'three';
 import { DAY_SECONDS, RES_INFO, CARRY_CAP, DEFS, CATS, RECIPES, TECHS, MILESTONES, seasonOf, SEASON_DAYS, YEAR_DAYS, TRADE, EVENTS, isMarketDay } from './config.js';
 import { spawnVillagers } from './villagers.js';
+import { ICONS } from './icons.js';
+const ics = r => `<span class="ics">${ICONS[r] || ''}</span>`;
 import { mainEl, camCtl, pickAt } from './scene.js';
 import { G, canAfford, unlocked, houseCapacity } from './world.js';
 import { protos } from './assets.js';
@@ -43,7 +45,7 @@ export const UI = {
       const row = document.createElement('div');
       row.className = 'b';
       row.id = 'b-' + def.id;
-      row.innerHTML = `<img draggable="false"><div class="tx"><div class="nm">${def.name}</div><div class="cost">${Object.entries(def.cost).map(([r, v]) => v + RES_INFO[r].label).join(' ')}</div></div>`;
+      row.innerHTML = `<img draggable="false"><div class="tx"><div class="nm">${def.name}</div><div class="cost">${Object.entries(def.cost).map(([r, v]) => ics(r) + v).join(' ')}</div></div>`;
       row.onmouseenter = e => UI.showSideTip(def, row);
       row.onmouseleave = () => UI.hideSideTip();
       row.onclick = () => {
@@ -52,7 +54,7 @@ export const UI = {
           return;
         }
         if (canAfford(def)) ctx.startPlacing(def);
-        else toast('材料不够：需 ' + Object.entries(def.cost).map(([r, v]) => v + RES_INFO[r].label).join(' '));
+        else toast('材料不够：需 ' + Object.entries(def.cost).map(([r, v]) => ics(r) + v).join(' '));
       };
       listEl.appendChild(row);
     });
@@ -118,8 +120,8 @@ export const UI = {
   showSideTip(def, row) {
     const tip = document.getElementById('tip');
     const roleTxt = { house: '住房 · 提升人口上限', wood: '生产 · 派村民上工产木', food: '生产 · 派村民上工产食', granary: '粮仓 · 食物上限+25', well: '设施 · 附近民居更满意', happy: '设施 · 提升快乐', market: '设施 · 4木换5食', tower: '设施 · 夜间防狼', deco: '' }[def.role] || def.cat;
-    const rcTxt = RECIPES[def.id] ? '<br>⚙ 配方：' + Object.entries(RECIPES[def.id].in).map(([r, v]) => v + RES_INFO[r].icon).join(' ') + ' → ' + Object.entries(RECIPES[def.id].out).map(([r, v]) => v + RES_INFO[r].icon).join(' ') + ' / ' + RECIPES[def.id].time + '秒' : '';
-    tip.innerHTML = `<b>${def.name}</b><br><span style="color:#a8d8a0">${roleTxt}${def.cap ? ' · 容量' + def.cap : ''}${def.out ? ' · 产量' + def.out : ''}</span>${rcTxt}<br>${def.desc}<br><span style="color:#a89880">造价：${Object.entries(def.cost).map(([r, v]) => v + RES_INFO[r].label).join(' ')} · ${def.w}×${def.d}</span>`;
+    const rcTxt = RECIPES[def.id] ? '<br>⚙ 配方：' + Object.entries(RECIPES[def.id].in).map(([r, v]) => ics(r) + v).join(' ') + ' → ' + Object.entries(RECIPES[def.id].out).map(([r, v]) => ics(r) + v).join(' ') + ' / ' + RECIPES[def.id].time + '秒' : '';
+    tip.innerHTML = `<b>${def.name}</b><br><span style="color:#a8d8a0">${roleTxt}${def.cap ? ' · 容量' + def.cap : ''}${def.out ? ' · 产量' + def.out : ''}</span>${rcTxt}<br>${def.desc}<br><span style="color:#a89880">造价：${Object.entries(def.cost).map(([r, v]) => ics(r) + v).join(' ')} · ${def.w}×${def.d}</span>`;
     const m = row.getBoundingClientRect(), mm = mainEl.getBoundingClientRect();
     tip.style.display = 'block';
     tip.style.left = '12px';
@@ -128,16 +130,10 @@ export const UI = {
   hideSideTip() { document.getElementById('tip').style.display = 'none'; },
 
   refresh() {
-    document.getElementById('r-wood').textContent = Math.floor(G.res.wood);
-    document.getElementById('r-food').textContent = Math.floor(G.res.food);
-    document.getElementById('r-stone').textContent = Math.floor(G.res.stone);
-    document.getElementById('r-plank').textContent = Math.floor(G.res.plank || 0);
-    document.getElementById('r-bread').textContent = Math.floor(G.res.bread || 0);
-    document.getElementById('r-know').textContent = Math.floor(G.res.know || 0);
-    document.getElementById('r-silver').textContent = Math.floor(G.res.silver || 0);
-    document.getElementById('r-happy').textContent = Math.round(G.happy);
-    document.getElementById('r-pop').textContent = G.villagers.length;
-    document.getElementById('r-cap').textContent = '/' + houseCapacity();
+    document.getElementById('hudres').innerHTML = ['wood', 'food', 'stone', 'plank', 'bread', 'know', 'silver']
+      .map(r => `<span class="res">${ICONS[r] || ''}<b>${Math.floor(G.res[r] || 0)}</b></span>`).join('')
+      + `<span class="res">${ICONS.happy || ''}<b>${Math.round(G.happy)}</b></span>`
+      + `<span class="res">${ICONS.pop || ''}<b>${G.villagers.length}</b><span style="color:var(--dim);font-size:10px">/${houseCapacity()}</span></span>`;
     // 年历：第X年 第X天 · 季节 · 季节进度
     const din = ((G.day - 1) % YEAR_DAYS) + 1;
     const season = seasonOf(G.day);
@@ -146,8 +142,8 @@ export const UI = {
     const vl = document.getElementById('vlist');
     vl.innerHTML = G.villagers.map(v => {
       const t = v.task;
-      const st = !t ? '待命' : t.kind === 'move' ? '移动' : t.kind === 'chop' ? RES_INFO[t.target.def.yield].icon : t.kind === 'deliver' ? '📦' : t.kind === 'build' ? '🔨' : '🏭';
-      return `<div class="v" data-i="${G.villagers.indexOf(v)}"><span>${v.name}</span><span>${st}</span></div>`;
+      const st = !t ? '待命' : t.kind === 'move' ? '移动' : t.kind === 'chop' ? ics(t.target.def.yield) : t.kind === 'deliver' ? ICONS.box : t.kind === 'build' ? ICONS.hammer : ICONS.gear;
+      return `<div class="v" data-i="${G.villagers.indexOf(v)}"><span class="av">${v.name[0]}</span><span class="vn">${v.name}${v.trait ? ' <span style="color:#8a7a5e">· ' + v.trait.name + '</span>' : ''}</span><span class="st">${st}</span></div>`;
     }).join('');
     vl.querySelectorAll('.v').forEach(row => {
       row.onclick = () => {
@@ -204,13 +200,13 @@ export const UI = {
       if (!isMarketDay(G.day)) {
         trade = `<br><span style="color:#a89880">🧳 行商未到（每 3 天来一次，第 ${(Math.floor(G.day / 3) + 1) * 3} 天到访）</span>`;
       } else {
-        const sell = TRADE.sell.map((t, i) => `<button data-tr="s${i}" ${G.res[t.res] >= t.n ? '' : 'disabled'}>${t.n}${RES_INFO[t.res].icon} → ${t.silver}🪙</button>`).join('');
-        const buy = TRADE.buy.map((t, i) => `<button class="alt" data-tr="b${i}" ${(G.res.silver || 0) >= t.silver ? '' : 'disabled'}>${t.silver}🪙 → ${t.n}${RES_INFO[t.res].icon}</button>`).join('');
+        const sell = TRADE.sell.map((t, i) => `<button data-tr="s${i}" ${G.res[t.res] >= t.n ? '' : 'disabled'}>${ics(t.res)}${t.n} → ${t.silver}${ics('silver')}</button>`).join('');
+        const buy = TRADE.buy.map((t, i) => `<button class="alt" data-tr="b${i}" ${(G.res.silver || 0) >= t.silver ? '' : 'disabled'}>${t.silver}${ics('silver')} → ${ics(t.res)}${t.n}</button>`).join('');
         trade = `<br>🧳 <b style="color:var(--ok)">行商到访！</b><br>卖出：${sell}<br>买入：${buy}`;
       }
     }
     const rc = RECIPES[d.id];
-    const rcTxt = rc ? '⚙ 配方：' + Object.entries(rc.in).map(([r, v]) => v + RES_INFO[r].icon).join(' ') + ' → ' + Object.entries(rc.out).map(([r, v]) => v + RES_INFO[r].icon).join(' ') + ' / ' + rc.time + '秒<br>进度 ' + Math.floor(((entry.prodT || 0) / rc.time) * 100) + '%<br>' : '';
+    const rcTxt = rc ? '⚙ 配方：' + Object.entries(rc.in).map(([r, v]) => ics(r) + v).join(' ') + ' → ' + Object.entries(rc.out).map(([r, v]) => ics(r) + v).join(' ') + ' / ' + rc.time + '秒<br>进度 ' + Math.floor(((entry.prodT || 0) / rc.time) * 100) + '%<br>' : '';
     const assignBtn = rc && G.selected.size ? `<button id="btn-assign">派选中 ${G.selected.size} 人上工</button>` : '';
     el.innerHTML = `<b>${d.name}</b><br><span style="color:#a89880;font-size:11px">${d.cat} · ${d.w}×${d.d} · 拖拽可搬移</span><br>${d.desc}<br>${rcTxt}在岗：${workers} 人${trade}${assignBtn}<button id="btn-del">拆除</button>`;
     document.getElementById('btn-del').onclick = () => { removeEntry(entry); this.hideInfo(); };
@@ -272,10 +268,10 @@ export const UI = {
   },
   renderTech() {
     const el = document.getElementById('tech');
-    el.innerHTML = `<b>🔬 科技（知识 ${Math.floor(G.res.know || 0)}）</b>` + TECHS.map(t => {
+    el.innerHTML = `<b>${ICONS.gear} 科技（知识 ${ics('know')}${Math.floor(G.res.know || 0)}）</b>` + TECHS.map(t => {
       const done = G.tech.has(t.id);
       const can = !done && (G.res.know || 0) >= t.cost;
-      return `<div class="trow ${done ? 'done' : can ? 'can' : ''}"><span>${done ? '✓' : '📘' + t.cost} ${t.name}</span><span style="color:var(--dim);font-size:10px">${t.desc}</span>${done ? '' : `<button data-t="${t.id}" ${can ? '' : 'disabled'}>研究</button>`}</div>`;
+      return `<div class="trow ${done ? 'done' : can ? 'can' : ''}"><span>${done ? '✓' : ics('know') + t.cost} ${t.name}</span><span style="color:var(--dim);font-size:10px">${t.desc}</span>${done ? '' : `<button data-t="${t.id}" ${can ? '' : 'disabled'}>研究</button>`}</div>`;
     }).join('') + `<b style="display:block;margin-top:8px">🏆 里程碑 ${G.milestones.size}/${MILESTONES.length}</b>` + MILESTONES.map(m =>
       `<div class="trow ${G.milestones.has(m.id) ? 'done' : ''}"><span>${G.milestones.has(m.id) ? '✓' : '○'} ${m.name}</span><span style="color:var(--dim);font-size:10px">${m.desc}</span></div>`
     ).join('') + `<div style="text-align:right"><button id="btn-techclose">关闭</button></div>`;
@@ -309,7 +305,7 @@ export const UI = {
     else if (nat) tip.innerHTML = `<b>${nat.def.name}</b><br>剩余 ${nat.hp} 次 · ${RES_INFO[nat.def.yield].icon}+${nat.def.amt}/次<br><span style="color:#a89880">选村民后右键或框选派工</span>`;
     else if (bld) {
       const rc = RECIPES[bld.def.id];
-      const rcTxt = rc ? '<br>⚙ ' + Object.entries(rc.in).map(([r, v]) => v + RES_INFO[r].icon).join(' ') + ' → ' + Object.entries(rc.out).map(([r, v]) => v + RES_INFO[r].icon).join(' ') + '（缺原料会停工）' : '';
+      const rcTxt = rc ? '<br>⚙ ' + Object.entries(rc.in).map(([r, v]) => ics(r) + v).join(' ') + ' → ' + Object.entries(rc.out).map(([r, v]) => ics(r) + v).join(' ') + '（缺原料会停工）' : '';
       tip.innerHTML = `<b>${bld.def.name}</b><br>${bld.def.desc}${rcTxt}<br><span style="color:#a89880">点击看详情 · 拖拽可搬移${bld.def.role === 'wood' || bld.def.role === 'food' ? ' · 选村民右键它=上工' : ''}</span>`;
     }
     else tip.innerHTML = `<b>${vil.name}</b><br>${vil.task ? '忙' : '待命'} · 点击选中`;

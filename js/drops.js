@@ -3,6 +3,7 @@
  * ===================================================================*/
 import * as THREE from 'three';
 import { GRID, RES_INFO } from './config.js';
+import { ICONS } from './icons.js';
 import { scene, cam, dom, mainEl } from './scene.js';
 import { G } from './world.js';
 
@@ -43,7 +44,7 @@ export function deliverCarry(v) {
     if (!n) continue;
     const cap = res === 'food' ? G.foodCap : 9999;
     G.res[res] = Math.min(cap, G.res[res] + n);
-    got.push('+' + n + RES_INFO[res].icon);
+    got.push('+' + n + ' ' + (ICONS[res] || ''));
   }
   if (got.length) floatText(got.join(' '), v.obj.position);
   v.carry = {};
@@ -91,7 +92,7 @@ export function floatText(text, worldPos) {
   const r = dom.getBoundingClientRect();
   const el = document.createElement('div');
   el.className = 'float';
-  el.textContent = text;
+  el.innerHTML = text;
   el.style.left = (r.left + (p.x + 1) / 2 * r.width) + 'px';
   el.style.top = (r.top + (1 - p.y) / 2 * r.height) + 'px';
   mainEl.appendChild(el);

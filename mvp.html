@@ -9,22 +9,29 @@
   *{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-user-select:none;-webkit-user-drag:none}
   html,body{height:100%;overflow:hidden}
   body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:#f0e6d8;display:flex;flex-direction:column}
-  #top{display:flex;align-items:center;gap:12px;background:var(--panel);border-bottom:1px solid var(--line);padding:8px 14px;flex-wrap:wrap}
-  #top .logo{font-size:15px;color:var(--gold);font-weight:700}
-  .res{font-size:13px;background:#2b2420;border:1px solid var(--line);border-radius:8px;padding:4px 10px}
-  .res b{color:var(--gold)}
-  #daybox{font-size:13px;color:var(--ok)}
+  #top{display:flex;align-items:center;gap:10px;background:linear-gradient(180deg,#4a3c2c,#3a2f22);border-bottom:2px solid #1f1913;box-shadow:0 2px 8px rgba(0,0,0,.45);padding:6px 14px;flex-wrap:wrap;position:relative;z-index:10}
+  #top .logo{font-size:17px;color:var(--gold);font-weight:700;letter-spacing:3px;text-shadow:0 2px 0 rgba(0,0,0,.5);padding-right:8px;border-right:1px solid #5a4a36}
+  .ic{width:1.15em;height:1.15em;vertical-align:-.22em}
+  .ics{display:inline-block;width:14px;height:14px;vertical-align:-2.5px;margin-right:1px}
+  .ics svg{width:14px;height:14px}
+  #hudres{display:flex;gap:6px;flex-wrap:wrap}
+  .res{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(180deg,#2f2820,#241e17);border:1px solid #1a140e;border-top-color:#5a4a36;border-radius:9px;padding:3px 10px 3px 6px;box-shadow:inset 0 1px 0 rgba(255,235,200,.06)}
+  .res .ic{width:17px;height:17px;vertical-align:middle}
+  .res b{color:var(--gold);font-size:13px;min-width:16px}
+  #btn-tech{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(180deg,#3a4a32,#2c3a26);color:#c8d8b8;border:1px solid #1a140e;border-top-color:#6a8a5a;border-radius:9px;padding:4px 13px;font-size:13px;cursor:pointer;letter-spacing:1px}
+  #btn-tech:hover{color:#fff}
+  #daybox{font-size:12px;color:var(--ok);background:#241e17;border:1px solid #1a140e;border-top-color:#5a4a36;border-radius:9px;padding:4px 11px}
   #selbox{font-size:12px;color:#cfe0ff;display:none}
   #body{flex:1;display:flex;min-height:0}
-  #side{width:240px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column}
-  #side h3{font-size:13px;color:var(--gold);padding:10px 12px 4px}
-  #cats{display:flex;flex-wrap:wrap;gap:4px;padding:0 12px 6px}
-  #cats button{background:#2b2420;color:var(--dim);border:1px solid var(--line);border-radius:6px;font-size:11px;padding:3px 8px;cursor:pointer}
-  #cats button.on{color:var(--gold);border-color:var(--gold)}
+  #side{width:238px;background:linear-gradient(180deg,#3f3527,#332b1f);border-right:2px solid #1f1913;display:flex;flex-direction:column}
+  #side h3{font-size:12px;color:var(--gold);padding:9px 12px 4px;letter-spacing:2px;border-bottom:1px solid #52463a33}
+  #cats{display:flex;flex-wrap:wrap;gap:4px;padding:6px 12px}
+  #cats button{background:#241e17;color:var(--dim);border:1px solid #1a140e;border-top-color:#5a4a36;border-radius:6px;font-size:11px;padding:3px 9px;cursor:pointer}
+  #cats button.on{color:var(--gold);border-color:#c9a227;background:#3a2f22}
   #list{flex:1;overflow-y:auto;padding:4px 8px}
   .b{display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:8px;cursor:pointer;border:1px solid transparent;margin-bottom:2px}
   .b:hover{background:#463a2e}
-  .b.sel{border-color:var(--gold);background:#4a3d2c}
+  .b.sel{border-color:#c9a227;background:#4a3d2c}
   .b.poor{opacity:.45}
   .b.locked{opacity:.35}
   .b .lk{pointer-events:none}
@@ -32,10 +39,14 @@
   .b .tx{pointer-events:none;flex:1}
   .b .nm{font-size:12px}
   .b .cost{font-size:10px;color:var(--dim)}
-  #vlist{padding:6px 12px 10px;font-size:11px;color:var(--dim);line-height:1.9;max-height:150px;overflow-y:auto;border-top:1px solid var(--line)}
-  #vlist .v{display:flex;justify-content:space-between;cursor:pointer;border-radius:4px;padding:0 4px}
+  #vlist{padding:6px 10px 10px;font-size:11px;color:var(--dim);line-height:1.4;max-height:170px;overflow-y:auto;border-top:2px solid #1f1913}
+  #vlist .v{display:flex;align-items:center;gap:7px;cursor:pointer;border-radius:8px;padding:3px 5px;margin-bottom:2px}
   #vlist .v:hover{background:#463a2e}
-  #vlist .v.sel{background:#4a5a6a;color:#fff}
+  #vlist .v .av{width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#c8a06a,#8a6a42);color:#2b2016;font-weight:700;font-size:12px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;border:1.5px solid #1f1913}
+  #vlist .v .vn{flex:1;color:#d8ccb8}
+  #vlist .v .st{font-size:10px;color:var(--dim)}
+  #vlist .v.sel{background:#4a5a6a}
+  #vlist .v.sel .vn{color:#fff}
   #main{flex:1;position:relative;min-width:0}
   #main canvas{display:block;outline:none;touch-action:none}
   #tip{position:absolute;pointer-events:none;background:rgba(43,36,32,.96);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:12px;line-height:1.6;max-width:250px;display:none;z-index:6}
@@ -87,18 +98,11 @@ window.addEventListener('error',e=>{window.__errs.push(e.message+' @'+e.lineno)}
 </head>
 <body>
 <div id="top">
-  <span class="logo">🏘️ 暖境边陲</span>
-  <span class="res">🪵 <b id="r-wood">0</b></span>
-  <span class="res">🍎 <b id="r-food">0</b></span>
-  <span class="res">🪨 <b id="r-stone">0</b></span>
-  <span class="res">🟫 <b id="r-plank">0</b></span>
-  <span class="res">🍞 <b id="r-bread">0</b></span>
-  <span class="res">📘 <b id="r-know">0</b></span>
-  <span class="res">🪙 <b id="r-silver">5</b></span>
-  <button id="btn-tech" style="background:#2b2420;color:var(--gold);border:1px solid var(--line);border-radius:8px;padding:4px 12px;font-size:13px;cursor:pointer">🔬 科技</button>
-  <span class="res">😊 <b id="r-happy">70</b></span>
-  <span class="res">👥 <b id="r-pop">0</b><span style="color:var(--dim);font-size:10px" id="r-cap"></span></span>
-  <span id="daybox">第 1 天 · 秋</span>
+  <span class="logo">暖境边陲</span>
+  <div id="hudres"></div>
+  <span style="flex:1"></span>
+  <button id="btn-tech"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3.5 L13.4 6.2 L16.3 5.3 L16.6 8.3 L19.5 9 L18.2 11.7 L20.5 13.7 L18.2 15.7 L19.5 18.4 L16.6 19.1 L16.3 22.1 L13.4 21.2 L12 23 L10.6 21.2 L7.7 22.1 L7.4 19.1 L4.5 18.4 L5.8 15.7 L3.5 13.7 L5.8 11.7 L4.5 9 L7.4 8.3 L7.7 5.3 L10.6 6.2 Z" fill="#9ab08a"/><circle cx="12" cy="12" r="3.1" fill="#2b2420"/></svg> 科技</button>
+  <span id="daybox">第 1 年 第1天 · 春</span>
   <span id="selbox">已选 0 人</span>
 </div>
 <div id="body">

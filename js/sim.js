@@ -2,6 +2,7 @@
  * 10. 模拟 —— 村民行为步进、经济、日程、夜晚结算
  * ===================================================================*/
 import { GRID, RES_INFO, CARRY_CAP, RECIPES, isWinterDay, seasonOf, SEASON_DAYS, YEAR_DAYS, MILESTONES, EVENTS, isMarketDay, TRAITS, FESTIVALS, traitOf } from './config.js';
+import { ICONS } from './icons.js';
 const carryCap = v => CARRY_CAP + (traitOf(v).carryBonus || 0);
 import { scene } from './scene.js';
 import { G, houseCapacity } from './world.js';
@@ -21,7 +22,7 @@ export function stepVillager(v, dt, t) {
       v.carry[d.res] = (v.carry[d.res] || 0) + d.amt;
       scene.remove(d.mesh);
       G.drops.splice(i, 1);
-      floatText('+' + d.amt + ' ' + RES_INFO[d.res].icon, v.obj.position);
+      floatText('+' + d.amt + ' ' + (ICONS[d.res] || ''), v.obj.position);
     }
   }
   // 携满（任意任务中）→ 立即送货
@@ -168,7 +169,7 @@ export function stepProduction(dt) {
       Object.entries(rc.out).forEach(([r, v]) => G.res[r] = (G.res[r] || 0) + v);
       p.prodT -= rc.time;
       const [res, amt] = Object.entries(rc.out)[0];
-      floatText('+' + amt + ' ' + RES_INFO[res].icon, p.inst.position);
+      floatText('+' + amt + ' ' + (ICONS[res] || ''), p.inst.position);
     }
   }
 }
