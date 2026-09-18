@@ -158,3 +158,15 @@ export const EVENTS = [
     { label: '办！（-2 木当柴，快乐 +8）', fx: { wood: -2, happy: 8 } },
     { label: '改天吧', fx: {} } ] },
 ];
+
+/* ---- 村民性格特质：出生随机分配，影响效率/搬运/饭量/情绪（R8） ---- */
+export const TRAITS = [
+  { id: 'diligent', name: '勤劳',   desc: '干活速度 +15%',       workMul: 1.15 },
+  { id: 'slow',     name: '慢性子', desc: '干活速度 -10%',       workMul: 0.9 },
+  { id: 'strong',   name: '大力',   desc: '搬运上限 +2',         carryBonus: 2 },
+  { id: 'sunny',    name: '乐观',   desc: '每晚给村子带来 1 快乐', sunny: 1 },
+  { id: 'hungry',   name: '口馋',   desc: '每晚多吃 1 份粮',      extraFood: 1 },
+];
+export const traitOf = v => v.trait || {};
+/* ---- 四季节日：每季第一天，全村欢聚（R8） ---- */
+export const FESTIVALS = { '春': '春播节 🌱', '夏': '夏收节 ☀️', '秋': '秋酿节 🍶', '冬': '冬炉节 🔥' };

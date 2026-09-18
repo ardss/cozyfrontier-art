@@ -186,7 +186,7 @@ export const UI = {
       : t.kind === 'build' ? '🔨 建造 ' + (t.target.def?.name || '')
       : '🏭 ' + (t.target.def?.name || '');
     const carryTxt = carryTotal(v) ? '携带：' + Object.entries(v.carry).filter(([,n])=>n).map(([r,n]) => RES_INFO[r].icon + n).join(' ') : '';
-    el.innerHTML = `<b>${v.name}</b><br><span style="color:#a89880;font-size:11px">村民 · 搬运上限 ${CARRY_CAP}</span><br>当前：${taskTxt}<br>${carryTxt}<button id="btn-stoptask">取消任务</button>`;
+    el.innerHTML = `<b>${v.name}</b> <span style="color:#c9b48a;font-size:11px">${v.trait ? '【' + v.trait.name + '】' + v.trait.desc : ''}</span><br><span style="color:#a89880;font-size:11px">村民 · 搬运上限 ${CARRY_CAP + (v.trait?.carryBonus || 0)}</span><br>当前：${taskTxt}<br>${carryTxt}<button id="btn-stoptask">取消任务</button>`;
     document.getElementById('btn-stoptask').onclick = () => { v.task = null; this.showVillagerInfo(v); };
   },
 

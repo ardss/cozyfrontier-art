@@ -1,7 +1,8 @@
 /* =====================================================================
  * 10. 模拟 —— 村民行为步进、经济、日程、夜晚结算
  * ===================================================================*/
-import { GRID, RES_INFO, CARRY_CAP, RECIPES, isWinterDay, seasonOf, SEASON_DAYS, YEAR_DAYS, MILESTONES, EVENTS, isMarketDay } from './config.js';
+import { GRID, RES_INFO, CARRY_CAP, RECIPES, isWinterDay, seasonOf, SEASON_DAYS, YEAR_DAYS, MILESTONES, EVENTS, isMarketDay, TRAITS, FESTIVALS, traitOf } from './config.js';
+const carryCap = v => CARRY_CAP + (traitOf(v).carryBonus || 0);
 import { scene } from './scene.js';
 import { G, houseCapacity } from './world.js';
 import { cellFree, findPath, losFree } from './pathfinding.js';
@@ -16,7 +17,7 @@ export function stepVillager(v, dt, t) {
   // 路过掉落物顺手拾取
   for (let i = G.drops.length - 1; i >= 0; i--) {
     const d = G.drops[i];
-    if (carryTotal(v) < CARRY_CAP && Math.hypot(d.x - v.obj.position.x, d.z - v.obj.position.z) < .8) {
+    if (carryTotal(v) < carryCap(v) && Math.hypot(d.x - v.obj.position.x, d.z - v.obj.position.z) < .8) {
       v.carry[d.res] = (v.carry[d.res] || 0) + d.amt;
       scene.remove(d.mesh);
       G.drops.splice(i, 1);
@@ -24,12 +25,12 @@ export function stepVillager(v, dt, t) {
     }
   }
   // 携满（任意任务中）→ 立即送货
-  if (v.task && v.task.kind !== 'deliver' && carryTotal(v) >= CARRY_CAP) {
+  if (v.task && v.task.kind !== 'deliver' && carryTotal(v) >= carryCap(v)) {
     if (v.task.kind === 'chop' && v.task.target.alive) v.resume = { kind: 'chop', target: v.task.target };
     startDeliver(v);
   }
   // 闲置且附近有掉落物 → 主动去捡
-  if (!v.task && carryTotal(v) < CARRY_CAP) {
+  if (!v.task && carryTotal(v) < carryCap(v)) {
     let near = null, nd = 8;
     for (const d of G.drops) {
       const dist = Math.hypot(d.x - v.obj.position.x, d.z - v.obj.position.z);
@@ -39,7 +40,7 @@ export function stepVillager(v, dt, t) {
     else if (carryTotal(v) > 0) startDeliver(v);      // 没更多掉落物了，把货送了
   }
   // 砍伐目标耗尽且身上有货 → 送去入库（完事回来继续砍）
-  if (v.task && v.task.kind === 'chop' && carryTotal(v) > 0 && (carryTotal(v) >= CARRY_CAP || !v.task.target.alive)) {
+  if (v.task && v.task.kind === 'chop' && carryTotal(v) > 0 && (carryTotal(v) >= carryCap(v) || !v.task.target.alive)) {
     const depot = findDepot(v);
     v.resume = v.task.target.alive ? { kind: 'chop', target: v.task.target } : null;
     v.task = depot ? { kind: 'deliver', target: depot } : { kind: 'deliver', target: { x: GRID / 2 + 1.5, z: GRID / 2 + 1.5 } };
@@ -100,7 +101,7 @@ export function stepVillager(v, dt, t) {
   if (v.task.kind === 'move' || v.task.kind === 'fetch') { v.task = null; return; }
   if (v.task.kind === 'build') {
     const site = v.task.target;
-    v.task.workT += dt;
+    v.task.workT += dt * (traitOf(v).workMul || 1);
     site.progress += dt;
     animWork(v, t);
     updateSiteVisuals(site);
@@ -113,7 +114,7 @@ export function stepVillager(v, dt, t) {
     v.resume = null;
     return;
   }
-  v.task.workT += dt;
+  v.task.workT += dt * (traitOf(v).workMul || 1);
   animWork(v, t);
   if (v.task.workT >= v.task.target.def.work) {
     v.task.workT = 0;
@@ -177,7 +178,8 @@ function decorBonus() {
 export function nightSettlement() {
   const winter = isWinterDay(G.day);
   const pop = G.villagers.length;
-  let need = pop * (winter ? 2 : 1);                 // 冬季寒冷，饭量加倍
+  const glutton = G.villagers.filter(x => traitOf(x).extraFood).length;
+  let need = pop * (winter ? 2 : 1) + glutton;       // 冬季饭量加倍；口馋村民多吃一份
   const eatBread = Math.min(G.res.bread || 0, need);   // 面包优先上桌，省下生食
   G.res.bread -= eatBread; need -= eatBread;
   if (G.res.food >= need) G.res.food -= need;
@@ -232,6 +234,14 @@ export function nightSettlement() {
       ? `❄ 明日入冬：储备达标（柴 ${Math.floor(G.res.wood)}/需${p * 8}，粮 ${Math.floor(G.res.food)}/需${p * 5}），稳了`
       : `⚠ 明日入冬：储备不足！建议 柴≥${p * 8} 粮≥${p * 5}（现 柴 ${Math.floor(G.res.wood)}，粮 ${Math.floor(G.res.food)}）`);
   }
+  const din2 = ((G.day - 1) % YEAR_DAYS) + 1;
+  if (din2 % SEASON_DAYS === 1) {
+    const bonus = G.placed.some(p => p.def.id === 'campfire') ? 14 : 10;
+    G.happy = Math.min(100, G.happy + bonus);
+    ctx.toast(`🎉 ${FESTIVALS[seasonOf(G.day)]}！全村欢聚一堂（快乐 +${bonus}` + (bonus > 10 ? '，篝火添了彩' : '') + '）');
+  }
+  const sunny = G.villagers.filter(x => traitOf(x).sunny).length;
+  if (sunny) G.happy = Math.min(100, G.happy + sunny);
   if (isMarketDay(G.day)) ctx.toast('🧳 行商到访！今天去市集可以买卖货物');
   if (Math.random() < 0.3 && ctx.UI && ctx.UI.showEvent) ctx.UI.showEvent(EVENTS[Math.floor(Math.random() * EVENTS.length)]);
   checkMilestones();
