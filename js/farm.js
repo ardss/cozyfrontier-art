@@ -105,7 +105,7 @@ export function harvestDone(v) {
   if (!f || f.state !== 'ready') return;
   f.state = 'grow'; f.stage = 0; f.t = 0;
   updateCrops(e);
-  spawnDrop('food', HARVEST_FOOD, e.inst.position);
+  spawnDrop('food', Math.round(HARVEST_FOOD * (G.farmYieldMul ? G.farmYieldMul(e) : 1)), e.inst.position);   // S14 堆肥加成：产量在此生成，sim.js 无法外部拦截，故仅此 1 行接入 G.farmYieldMul（sim.js 注入，默认 1）
   floatText('🌾 +' + HARVEST_FOOD + ' 食', e.inst.position);
 }
 

@@ -178,4 +178,6 @@ DEFS.push(
   { id:'coop', name:'鸡舍', w:2,d:1, cat:'农牧', cost:{wood:6},  role:'pasture', desc:'内置 3 只鸡：每天白天产蛋，空闲村民自动捡蛋 +3 食；冬季停产。' },
   { id:'fish', name:'渔档', w:2,d:1, cat:'农牧', cost:{wood:5,stone:2}, role:'food', desc:'临水而建（地图边缘）。派村民上工垂钓：约 20 秒 +2 食，冬季减半。' },
   { id:'hunt', name:'猎屋', w:2,d:1, cat:'农牧', cost:{wood:6},  role:'pasture', desc:'村缘出没 1-2 只野鹿。空闲村民自动狩猎：+5 食 +1 石，鹿 3 天后刷新。' },
+  // S14 回收堆肥：借用木桶模型，sim.js 结算肥料状态与农田加成
+  { id:'compost', name:'堆肥箱', w:1,d:1, cat:'设施', cost:{wood:3,stone:2}, role:'deco', glb:'ai3d-mirror/prop-barrel.glb', desc:'回收堆肥：每 2 天消耗 3 食沤肥（无粮则失效），肥料生效时 10 格内农田产出 +15%。' },
 );

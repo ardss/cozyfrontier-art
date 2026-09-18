@@ -252,6 +252,16 @@ function nearestIdle(entry) {
   return near;
 }
 
+/* ---- S25 存档补全：恢复畜牧状态（蛋/鹿计时、鹿数量），save.js 调用 ---- */
+export function pastureRestore(list) {
+  (list || []).forEach((s, i) => {
+    const p = G.placed.filter(q => q.pasture)[i];
+    if (!p || p.def.id !== s.id) return;
+    if (p.pasture.birds) { p.pasture.eggReady = !!s.e; p.pasture.lastDay = s.ld || G.day; }
+    if (p.pasture.deer) { p.pasture.respawnDay = s.rd || 0; const ex = (s.dn || 1) - p.pasture.deer.length; if (ex > 0) spawnDeer(p, ex); while (p.pasture.deer.length > (s.dn || 1)) { const d = p.pasture.deer.pop(); scene.remove(d); const ai = allAnimals.findIndex(a => a.mesh === d); if (ai >= 0) allAnimals.splice(ai, 1); } }
+  });
+}
+
 /* ---- 点击面板：仿 initFarm 装饰器注入状态文案 ---- */
 export function initPasture() {
   if (!ctx.UI || ctx.UI.__pastureHooked) return;

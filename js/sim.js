@@ -1,6 +1,7 @@
 /* =====================================================================
  * 10. 模拟 —— 村民行为步进、经济、日程、夜晚结算
  * ===================================================================*/
+import * as THREE from 'three';
 import { GRID, RES_INFO, CARRY_CAP, RECIPES, isWinterDay, seasonOf, SEASON_DAYS, YEAR_DAYS, MILESTONES, EVENTS, isMarketDay, TRAITS, FESTIVALS, traitOf } from './config.js';
 import { ICONS } from './icons.js';
 const carryCap = v => CARRY_CAP + (traitOf(v).carryBonus || 0);
@@ -16,6 +17,73 @@ import { eggCollected, huntDone } from './pasture.js';
 import { depositEfficiency, productionBoost } from './storage.js';
 import { Repute, gainExp, skillMul } from './repute.js';
 import { ctx } from './context.js';
+
+/* =====================================================================
+ * S23 疾病系统：冻伤 →（次日）→ 生病 →（3 天自愈 / 诊所治愈）
+ *   冻伤：冬季燃料不足的夜里随机 1-2 名村民冻伤，效率 ×0.75
+ *   生病：效率 ×0.5；人数 ≥2 触发流行病（全体效率再 ×0.9，每晚快乐 -1）
+ * ===================================================================*/
+export const SICK_MUL = 0.5, FROST_MUL = 0.75, EPIDEMIC_MUL = 0.9, SICK_DAYS = 3;
+/* 疾病效率系数：生病优先于冻伤；流行病再乘全体衰减（温和惩罚） */
+function illnessMul(v) {
+  return (v.sick ? SICK_MUL : v.frostbite ? FROST_MUL : 1) * (G.sickCount >= 2 ? EPIDEMIC_MUL : 1);
+}
+/* 头顶绿色小状态点（动态加/删节点，不动 villagers.js） */
+const dotGeo = new THREE.SphereGeometry(.09, 8, 6);
+const dotMat = new THREE.MeshBasicMaterial({ color: 0x66d06a });
+function updateSickDots() {
+  for (const v of G.villagers) {
+    if (v.sick && !v._sickDot) {
+      const dot = new THREE.Mesh(dotGeo, dotMat);
+      dot.position.y = 1.55;                 // 村民模型头顶（wrap 局部坐标，随整体缩放）
+      v.obj.add(dot);
+      v._sickDot = dot;
+    } else if (!v.sick && v._sickDot) {
+      v.obj.remove(v._sickDot); v._sickDot = null;
+    }
+  }
+}
+/* 夜间疾病结算：冻伤转病 → 诊所治病 → 自愈倒计时 → 流行病判定 */
+function stepDisease() {
+  for (const v of G.villagers) {
+    if (v.frostbite) { v.frostbite = false; v.sick = true; v.sickT = SICK_DAYS; ctx.toast(`🤒 ${v.name} 的冻伤恶化成了病，需要休息或就医`); }
+  }
+  // 诊所升级：有村民在岗（被指派到诊所做工）时，每天治愈 1 名病人
+  const clinicStaffed = G.placed.some(p => p.def.id === 'clinic') &&
+    G.villagers.some(v => v.task && v.task.kind === 'work' && v.task.target && v.task.target.def && v.task.target.def.id === 'clinic');
+  if (clinicStaffed) {
+    const patient = G.villagers.find(v => v.sick);
+    if (patient) { patient.sick = false; patient.sickT = 0; ctx.toast(`💊 诊所治好了 ${patient.name} 的病`); }
+  }
+  for (const v of G.villagers) {
+    if (!v.sick) continue;
+    if (--v.sickT <= 0) { v.sick = false; ctx.toast(`😊 ${v.name} 痊愈了`); }
+  }
+  G.sickCount = G.villagers.filter(v => v.sick).length;
+  if (G.sickCount >= 2) {
+    G.happy -= 1;
+    ctx.toast(`🤢 流行病！${G.sickCount} 名村民病倒了（全体效率 ×0.9，快乐 -1，诊所可治病）`);
+  }
+  updateSickDots();
+}
+/* ---- S14 堆肥箱：肥料状态下的堆肥箱给 10 格内农田 +15% 产出（farm.js 收割处读取） ---- */
+const COMPOST_RANGE = 10, COMPOST_BOOST = 1.15;
+G.farmYieldMul = entry => {
+  for (const p of G.placed) {
+    if (p.def.id !== 'compost' || !p.fert) continue;
+    if (Math.hypot(p.x - entry.x, p.z - entry.z) <= COMPOST_RANGE) return COMPOST_BOOST;
+  }
+  return 1;
+};
+/* 每 2 天：每个堆肥箱消耗 3 食保持肥料状态；无粮则失效（温和，不倒扣） */
+function stepCompost() {
+  if (G.day % 2 !== 0) return;
+  for (const p of G.placed) {
+    if (p.def.id !== 'compost') continue;
+    if (G.res.food >= 3) { G.res.food -= 3; if (!p.fert) ctx.toast('🍃 堆肥箱开始沤肥：10 格内农田产出 +15%'); p.fert = true; }
+    else p.fert = false;
+  }
+}
 
 export function stepVillager(v, dt, t) {
   const speed = 1.5;
@@ -115,7 +183,7 @@ export function stepVillager(v, dt, t) {
   if (v.task.kind === 'move' || v.task.kind === 'fetch') { v.task = null; return; }
   if (v.task.kind === 'build') {
     const site = v.task.target;
-    v.task.workT += dt * (traitOf(v).workMul || 1) * skillMul(v, 'work');
+    v.task.workT += dt * (traitOf(v).workMul || 1) * skillMul(v, 'work') * illnessMul(v);
     site.progress += dt;
     animWork(v, t);
     updateSiteVisuals(site);
@@ -129,7 +197,7 @@ export function stepVillager(v, dt, t) {
     return;
   }
   const sKey = v.task.kind === 'chop' ? 'chop' : v.task.kind === 'harvest' ? 'harvest' : 'work';
-  v.task.workT += dt * (traitOf(v).workMul || 1) * skillMul(v, sKey);
+  v.task.workT += dt * (traitOf(v).workMul || 1) * skillMul(v, sKey) * illnessMul(v);
   animWork(v, t);
   if (v.task.workT >= (v.task.target.def.work || FARM_WORK)) {
     v.task.workT = 0;
@@ -206,6 +274,7 @@ function decorBonus() {
 }
 export function nightSettlement() {
   const winter = isWinterDay(G.day);
+  stepCompost();                                       // S14 堆肥箱：每 2 天 3 食换肥料状态
   const pop = G.villagers.length;
   const glutton = G.villagers.filter(x => traitOf(x).extraFood).length;
   let need = pop * (winter ? 2 : 1) + glutton;       // 冬季饭量加倍；口馋村民多吃一份
@@ -234,9 +303,14 @@ export function nightSettlement() {
       fed = false;
       G.res.wood = 0; G.happy -= G.placed.some(p => p.def.id === 'bathhouse') ? 6 : 12;   // 澡堂：暖身更抗冻
       ctx.toast(`🥶 燃料不足，村民受冻${G.placed.some(p => p.def.id === 'bathhouse') ? '（澡堂帮大家缓了缓）' : '（快乐 -12，建篝火可省一半木柴）'}`);
+      // S23 冻伤：燃料短缺的寒夜，随机 1-2 名健康村民冻伤（次日转生病）
+      const healthy = G.villagers.filter(v => !v.frostbite && !v.sick);
+      const n = Math.min(healthy.length, 1 + Math.floor(Math.random() * 2));
+      for (let i = 0; i < n; i++) healthy.splice(Math.floor(Math.random() * healthy.length), 1)[0].frostbite = true;
     }
     G.happy -= 6;
   } else G.happy = Math.min(100, G.happy + 4 + Math.round(decorBonus() * 0.2));   // 装饰设施：每天小幅回情绪
+  stepDisease();                                       // S23 冻伤转病 / 诊所治病 / 自愈 / 流行病
   const roll = Math.random();
   const guarded = G.placed.some(p => p.def.role === 'tower' || p.def.id === 'watchpost');
   if (roll < 0.22 && G.day >= 3) {

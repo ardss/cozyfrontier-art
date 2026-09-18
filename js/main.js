@@ -23,7 +23,9 @@ import { gameState, setupControls } from './controls.js';
 import { stepWeather } from './weather.js';
 import { Sfx } from './audio.js';
 import { Deco } from './deco.js';
+import { Stories } from './stories.js';   // S25 村民小故事
 import { Repute } from './repute.js';   // S39 声望
+import { dayTick as letterDayTick } from './letters.js';   // S27 远方来信
 
 // —— 主模块注入：ui/input/buildings/sim 通过 ctx 反向调用，避免循环依赖 ——
 ctx.UI = UI;
@@ -53,8 +55,9 @@ document.getElementById('hudres').addEventListener('click', e => {
 let nightTick = () => { };           // 下方包装为"夜间结算 + 自动存档"（不改 sim.js）
 (function () {
   const raw = nightSettlement;
-  nightTick = (...a) => { raw(...a); Repute.nightly(!!G._nightFed); Sfx.night(); if (!G.over) saveGame(); };
+  nightTick = (...a) => { raw(...a); Repute.nightly(!!G._nightFed); Sfx.night(); Stories.dayTick(); if (!G.over) saveGame(); };
 })();
+(function () { const nt = nightTick; nightTick = (...a) => { nt(...a); if (!G.over) letterDayTick(); }; })();   // S27 每季第 3 天远方来信
 function startGame() {
   UI.initSidebar();
   scatterNature();

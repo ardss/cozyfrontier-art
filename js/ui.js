@@ -248,9 +248,10 @@ export const UI = {
       const t = v.task;
       return !t ? '待命' : t.kind === 'move' ? '移动' : t.kind === 'chop' ? '采集' + (t.target.def?.name || '') : t.kind === 'deliver' ? '运送' : t.kind === 'build' ? '建造' + (t.target.def?.name || '') : '岗位·' + (t.target.def?.name || '');
     };
+    const log = Array.isArray(G.storyLog) ? G.storyLog.slice(0, 5) : [];   // S25 村志（最近 5 条）
     el.innerHTML = `<b>村民 ${G.villagers.length}/${houseCapacity()}</b>` + G.villagers.map((v, i) =>
       `<div class="prow" data-i="${i}"><span class="av">${v.name[0]}</span><span class="pn">${v.name}${v.trait ? ' <i>' + v.trait.name + '</i>' : ''}<br><span style="color:var(--dim);font-size:10px">${st(v)}${skillTag(v) ? ' · ' + skillTag(v) : ''}</span></span><span class="ps">定位 ›</span></div>`
-    ).join('');
+    ).join('') + (log.length ? `<div style="margin-top:8px;font-size:11px;color:#a89880"><b style="color:#7a6a50">📜 村志</b>${log.map(s => `<div style="margin-top:3px">· 第${s.d}天 ${s.text}</div>`).join('')}</div>` : '');
     el.querySelectorAll('.prow').forEach(row => row.onclick = () => {
       const v = G.villagers[+row.dataset.i];
       if (!v) return;

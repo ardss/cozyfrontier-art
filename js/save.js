@@ -8,6 +8,7 @@ import { scene } from './scene.js';
 import { NATURE_DEFS, DEFS, TRAITS } from './config.js';
 import { protos, assetsReady, onAssetsLoaded } from './assetsv2.js';
 import { spawnVillagers } from './villagers.js';
+import { pastureRestore } from './pasture.js';
 import { placeInstance, createSite, updateSiteVisuals } from './buildings.js';
 import { ctx } from './context.js';
 
@@ -23,8 +24,16 @@ export function saveGame() {
       res: { ...G.res }, foodCap: G.foodCap, happy: G.happy,
       day: G.day, time: G.time, year: G.year,
       tech: [...G.tech], milestones: [...G.milestones],
+      repute: G.repute || 0,                                   // S39 声望（S25 补全）
+      storyLog: (G.storyLog || []).slice(0, 8),                // S25 村志
+      letters: G.letters || [],                                // S25 信件
+      pasture: G.placed.filter(p => p.pasture).map(p => ({     // S25 畜牧状态（蛋/鹿计时、鹿数）
+        id: p.def.id, e: p.pasture.eggReady ? 1 : 0, ld: p.pasture.lastDay || 0,
+        dn: p.pasture.deer ? p.pasture.deer.length : 0, rd: p.pasture.respawnDay || 0,
+      })),
       villagers: G.villagers.map(v => ({
         name: v.name, trait: v.trait ? v.trait.id : null, slot: v.slot,
+        skills: v.skills || {}, sick: v.sick ? 1 : 0,          // S35 技能 / 生病（S25 补全）
         x: v.obj.position.x, z: v.obj.position.z,
       })),
       placed: G.placed.map(p => ({ id: p.def.id, x: p.x, z: p.z, rot: p.rot })),
@@ -87,8 +96,13 @@ export function loadGame() {
       updateSiteVisuals(site);
     }
     G.happy = data.happy; G.foodCap = data.foodCap;   // 覆盖为存档最终值（已含建筑加成）
+    // S25 存档补全：声望 / 村志 / 信件 / 畜牧状态（全部缺省兜底，旧存档不抛错）
+    G.repute = (typeof data.repute === 'number') ? data.repute : (G.repute || 20);
+    G.storyLog = Array.isArray(data.storyLog) ? data.storyLog.slice(0, 8) : [];
+    G.letters = Array.isArray(data.letters) ? data.letters : [];
     // 3) 自然资源
     for (const n of data.nature) rebuildNature(n);
+    pastureRestore(data.pasture);                     // S25：恢复蛋/鹿状态（缺省安全）
     // 4) 村民：用原生成函数造骨架，再回填数据字段
     spawnVillagers(data.villagers.length);
     data.villagers.forEach((vd, i) => {
@@ -97,6 +111,7 @@ export function loadGame() {
       v.name = vd.name;
       v.trait = TRAITS.find(t => t.id === vd.trait) || v.trait;
       v.slot = vd.slot;
+      v.skills = vd.skills || {}; v.sick = !!vd.sick;   // S25 补全：技能/生病兜底
       v.task = null; v.resume = null; v.carry = {};
       v.obj.position.x = vd.x; v.obj.position.z = vd.z;
     });
