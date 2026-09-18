@@ -13,6 +13,7 @@ import { carryTotal } from './drops';
 import { removeEntry } from './buildings';
 import { Repute, skillTag } from './repute';   // S39 声望 / S35 技能
 import { ctx } from './context';
+import { renderTechTree } from './techtree';
 
 export function toast(msg) {
   const t = document.createElement('div');
@@ -275,23 +276,8 @@ export const UI: any = {
   },
   renderTech() {
     const el = document.getElementById('tech');
-    el.innerHTML = `<b>${ICONS.gear} 科技（知识 ${ics('know')}${Math.floor(G.res.know || 0)}）</b>` + TECHS.map(t => {
-      const done = G.tech.has(t.id);
-      const can = !done && (G.res.know || 0) >= t.cost;
-      return `<div class="trow ${done ? 'done' : can ? 'can' : ''}"><span>${done ? '✓' : ics('know') + t.cost} ${t.name}</span><span style="color:var(--dim);font-size:10px">${t.desc}</span>${done ? '' : `<button data-t="${t.id}" ${can ? '' : 'disabled'}>研究</button>`}</div>`;
-    }).join('') + `<b style="display:block;margin-top:8px">🏆 里程碑 ${G.milestones.size}/${MILESTONES.length}</b>` + MILESTONES.map(m =>
-      `<div class="trow ${G.milestones.has(m.id) ? 'done' : ''}"><span>${G.milestones.has(m.id) ? '✓' : '○'} ${m.name}</span><span style="color:var(--dim);font-size:10px">${m.desc}</span></div>`
-    ).join('') + `<div style="text-align:right"><button id="btn-techclose">关闭</button></div>`;
-    el.querySelectorAll('button[data-t]').forEach((b: any) => b.onclick = () => {
-      const t = TECHS.find(x => x.id === b.dataset.t);
-      if (!t || G.tech.has(t.id) || (G.res.know || 0) < t.cost) return;
-      G.res.know -= t.cost;
-      G.tech.add(t.id);
-      toast('🔬 研究完成：' + t.name + '（' + t.unlock.map(id => (DEFS.find(d => d.id === id) || {}).name || id).join('/') + ' 解锁）');
-      this.renderTech();
-      this.renderList();
-    });
-    document.getElementById('btn-techclose').onclick = () => el.style.display = 'none';
+    renderTechTree(el, toast);   // 树状渲染拆到 techtree.ts（三层奶油水彩风）
+    this.renderList();
   },
 
   hoverTip(e) {

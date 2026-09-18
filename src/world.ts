@@ -36,6 +36,10 @@ export const pay = def => Object.entries(def.cost).forEach(([r, v]: [string, num
 /* ---- 由世界状态直接推导的查询（供 UI / 模拟共用） ---- */
 export const coreBuilt = () => G.placed.some(p => p.def.role === 'core');
 export const unlocked = def => def.role === 'core' || (!def.tech || G.tech.has(def.tech)) && coreBuilt();
+/* ---- 科技研究门槛：知识够 + 前置科技（needs，旧档无字段视为无依赖）全研究完 ---- */
+export const needsOf = (t: any) => Array.isArray(t.needs) ? t.needs : [];
+export const missingNeeds = (t: any) => needsOf(t).filter(n => !G.tech.has(n));
+export const canResearch = (t: any) => !G.tech.has(t.id) && (G.res.know || 0) >= t.cost && missingNeeds(t).length === 0;
 export function houseCapacity() {
   return G.placed.filter(p => p.def.role === 'house' || p.def.role === 'core').reduce((s, p) => s + p.def.cap, 0);
 }

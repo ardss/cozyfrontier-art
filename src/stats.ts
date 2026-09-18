@@ -13,16 +13,19 @@ function ensureDom() {
   const st = document.createElement('style');
   st.textContent = `
   #statspanel{position:absolute;left:14px;top:96px;width:250px;max-height:56vh;overflow-y:auto;padding:12px 14px;font-size:12px;line-height:1.7;display:none;z-index:6}
-  #statspanel b.hd{color:var(--gold);font-size:14px}
-  #statspanel .sec{margin-top:8px;padding-top:4px;color:var(--gold);font-size:11.5px;letter-spacing:1px}
-  #statspanel .srow{display:flex;align-items:center;gap:6px;border-top:1px solid rgba(232,200,130,.1);padding:3px 2px;flex-wrap:wrap}
+  #statspanel b.hd{color:var(--ink);font-size:14px}
+  #statspanel .sec{margin-top:8px;padding-top:4px;color:var(--ink);font-size:11.5px;letter-spacing:1px}
+  #statspanel .srow{display:flex;align-items:center;gap:6px;border-top:1px solid rgba(125,143,90,.18);padding:3px 2px;flex-wrap:wrap}
   #statspanel .srow .nm{flex:1;color:var(--txt)}
   #statspanel .srow .num{color:var(--dim);font-size:11px}
   #statspanel .pos{color:var(--ok)}
-  #statspanel .neg{color:#e8a090}
-  #statspanel .warn{color:#e8b090}
+  #statspanel .neg{color:var(--bad)}
+  #statspanel .warn{color:#7a5a1a}
+  #statspanel .alerts{margin-top:4px;background:var(--wheat-bg);border:1px solid var(--wheat);border-radius:9px;padding:4px 8px}
+  #statspanel .alerts .srow{border-top-color:rgba(217,185,106,.45)}
   #statspanel .foot{margin-top:8px;text-align:right}
-  #statspanel .foot button{background:#7a4536;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer}`;
+  #statspanel .foot button{background:#d9d3c0;color:var(--txt);border:none;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer}
+  #statspanel .foot button:hover{background:#e4decb}`;
   document.head.appendChild(st);
   const el = document.createElement('div');
   el.id = 'statspanel';
@@ -123,8 +126,10 @@ function render() {
   const shortTxt = shortBlds.length
     ? shortBlds.map(b => `<div class="srow"><span class="nm neg">${b.name}</span><span class="num">缺原料 ${b.need}，已停工待料</span></div>`).join('')
     : `<div class="srow"><span class="num pos">各在岗作坊原料充足</span></div>`;
-  const alerts = `<div class="srow">${ICONS.food || ''}<span class="nm">存粮可撑</span>${foodTxt}</div>`
+  const alerts = `<div class="alerts">`
+    + `<div class="srow">${ICONS.food || ''}<span class="nm">存粮可撑</span>${foodTxt}</div>`
     + `<div class="srow">${ICONS.sword || ''}<span class="nm">季节</span>${winterTxt}</div>`
+    + `</div>`
     + `<div class="srow">${ICONS.hammer || ''}<span class="nm">断供作坊</span></div>${shortTxt}`;
   el.innerHTML = `<b class="hd">${ICONS.gear || ''} 村庄总览</b>`
     + `<div class="sec">资源流（每日预期）</div>${rows}`

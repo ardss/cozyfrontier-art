@@ -4,7 +4,7 @@
 set -u
 BASE=${1:-http://localhost:8777/mvp.html}
 FAIL=0
-agent-browser close --all >/dev/null 2>&1; sleep 1
+agent-browser close --all >/dev/null 2>&1 && sleep 1 || true
 agent-browser open "$BASE?v=smoke-$(date +%s)" >/dev/null && sleep 8
 agent-browser find text "开 始 新 生 活" click >/dev/null && sleep 5
 num() { agent-browser eval "$1" | tr -d '"' | tr -d '\r' | tr -cd '0-9-'; }

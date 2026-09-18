@@ -21734,14 +21734,14 @@ var RECIPES = {
   // 书院讲学：无原料，产出知识
 };
 var TECHS = [
-  { id: "woodwork", name: "\u6728\u5DE5\u672F", cost: 2, unlock: ["sawmill"], desc: "\u89E3\u9501\u952F\u6728\u5382\uFF1A2\u6728 \u2192 3\u677F" },
-  { id: "baking", name: "\u70D8\u7119\u672F", cost: 2, unlock: ["bakery"], desc: "\u89E3\u9501\u9762\u5305\u623F\uFF1A2\u98DF \u2192 3\u9762\u5305" },
-  { id: "masonry", name: "\u77F3\u4F5C\u672F", cost: 3, unlock: ["wellhouse", "fountain", "watchtower"], desc: "\u89E3\u9501\u6C34\u4E95/\u55B7\u6CC9/\u77AD\u671B\u5854" },
-  { id: "watch", name: "\u54E8\u6212", cost: 2, unlock: ["watchpost"], desc: "\u89E3\u9501\u54E8\u4F4D\uFF08\u591C\u95F4\u9632\u72FC\uFF09" },
-  { id: "storage", name: "\u4ED3\u50A8\u672F", cost: 3, unlock: ["warehouse"], desc: "\u89E3\u9501\u4ED3\u5E93\uFF08\u98DF\u7269\u4E0A\u9650 +50\uFF09" },
-  { id: "glass", name: "\u6E29\u5BA4\u683D\u57F9", cost: 4, unlock: ["greenhouse"], desc: "\u89E3\u9501\u6E29\u5BA4\uFF08\u51AC\u5929\u4E5F\u80FD\u4EA7\u98DF\uFF09" },
-  { id: "wellness", name: "\u6F84\u5FC3\u4E4B\u9053", cost: 4, unlock: ["bathhouse", "clinic"], desc: "\u89E3\u9501\u6FA1\u5802/\u8BCA\u6240" },
-  { id: "sailing", name: "\u822A\u6D77\u672F", cost: 5, unlock: ["lighthouse", "shipyard"], desc: "\u89E3\u9501\u706F\u5854/\u9020\u8239\u5382" }
+  { id: "woodwork", name: "\u6728\u5DE5\u672F", cost: 2, tier: 1, needs: [], unlock: ["sawmill"], desc: "\u89E3\u9501\u952F\u6728\u5382\uFF1A2\u6728 \u2192 3\u677F" },
+  { id: "baking", name: "\u70D8\u7119\u672F", cost: 2, tier: 1, needs: [], unlock: ["bakery"], desc: "\u89E3\u9501\u9762\u5305\u623F\uFF1A2\u98DF \u2192 3\u9762\u5305" },
+  { id: "masonry", name: "\u77F3\u4F5C\u672F", cost: 3, tier: 1, needs: [], unlock: ["wellhouse", "fountain", "watchtower"], desc: "\u89E3\u9501\u6C34\u4E95/\u55B7\u6CC9/\u77AD\u671B\u5854" },
+  { id: "watch", name: "\u54E8\u6212", cost: 2, tier: 1, needs: [], unlock: ["watchpost"], desc: "\u89E3\u9501\u54E8\u4F4D\uFF08\u591C\u95F4\u9632\u72FC\uFF09" },
+  { id: "storage", name: "\u4ED3\u50A8\u672F", cost: 3, tier: 2, needs: ["woodwork"], unlock: ["warehouse"], desc: "\u89E3\u9501\u4ED3\u5E93\uFF08\u98DF\u7269\u4E0A\u9650 +50\uFF09" },
+  { id: "glass", name: "\u6E29\u5BA4\u683D\u57F9", cost: 4, tier: 2, needs: ["baking"], unlock: ["greenhouse"], desc: "\u89E3\u9501\u6E29\u5BA4\uFF08\u51AC\u5929\u4E5F\u80FD\u4EA7\u98DF\uFF09" },
+  { id: "wellness", name: "\u6F84\u5FC3\u4E4B\u9053", cost: 4, tier: 3, needs: ["storage"], unlock: ["bathhouse", "clinic"], desc: "\u89E3\u9501\u6FA1\u5802/\u8BCA\u6240" },
+  { id: "sailing", name: "\u822A\u6D77\u672F", cost: 5, tier: 3, needs: ["storage"], unlock: ["lighthouse", "shipyard"], desc: "\u89E3\u9501\u706F\u5854/\u9020\u8239\u5382" }
 ];
 var GRID = 26;
 var CELL_SINK = 0.045;
@@ -22055,6 +22055,9 @@ var canAfford = (def) => Object.entries(def.cost).every(([r, v]) => G.res[r] >= 
 var pay = (def) => Object.entries(def.cost).forEach(([r, v]) => G.res[r] -= v);
 var coreBuilt = () => G.placed.some((p) => p.def.role === "core");
 var unlocked = (def) => def.role === "core" || (!def.tech || G.tech.has(def.tech)) && coreBuilt();
+var needsOf = (t) => Array.isArray(t.needs) ? t.needs : [];
+var missingNeeds = (t) => needsOf(t).filter((n) => !G.tech.has(n));
+var canResearch = (t) => !G.tech.has(t.id) && (G.res.know || 0) >= t.cost && missingNeeds(t).length === 0;
 function houseCapacity() {
   return G.placed.filter((p) => p.def.role === "house" || p.def.role === "core").reduce((s, p) => s + p.def.cap, 0);
 }
@@ -27309,6 +27312,52 @@ function floatText(text, worldPos) {
   setTimeout(() => el3.remove(), 1300);
 }
 
+// src/techtree.ts
+var TECH_ICON = {
+  woodwork: "wood",
+  baking: "bread",
+  masonry: "stone",
+  watch: "sword",
+  storage: "box",
+  glass: "food",
+  wellness: "happy",
+  sailing: "trade"
+};
+var techName = (id) => (TECHS.find((x) => x.id === id) || {}).name || id;
+function nodeHtml(t) {
+  const done = G.tech.has(t.id);
+  const missing = missingNeeds(t);
+  const can = canResearch(t);
+  const icon = `<span class="tic">${ICONS[TECH_ICON[t.id]] || ICONS.gear}</span>`;
+  if (done) return `<div class="tnode done" title="${t.desc}">${icon}<div class="tnm">${t.name}</div><div class="tcost">\u5DF2\u7814\u7A76</div></div>`;
+  const missTxt = missing.length ? "\u9700\u5148\u7814\u7A76 " + missing.map(techName).join("\u3001") + "\u3002" : "";
+  const btn = `<button class="rbtn" data-t="${t.id}" ${can ? "" : "disabled"}>\u7814\u7A76</button>`;
+  return `<div class="tnode ${missing.length ? "locked" : "can"}" title="${missTxt}${t.desc}\uFF08\u77E5\u8BC6\u6210\u672C ${t.cost}\uFF09">${icon}<div class="tnm">${t.name}</div><div class="tcost">\u77E5\u8BC6\u6210\u672C ${t.cost}</div>${btn}</div>`;
+}
+var parentOf = (t) => Array.isArray(t.needs) && t.needs[0] || "_root";
+function tierHtml(tier) {
+  const list = TECHS.filter((t) => (t.tier || 1) === tier);
+  if (tier === 1) return `<div class="ttier">${list.map(nodeHtml).join("")}</div>`;
+  const groups = {};
+  list.forEach((t) => {
+    const p = parentOf(t);
+    (groups[p] = groups[p] || []).push(t);
+  });
+  return `<div class="ttier">${Object.values(groups).map((g) => `<div class="tbranch">${g.map(nodeHtml).join("")}</div>`).join("")}</div>`;
+}
+function renderTechTree(el3, notify) {
+  el3.innerHTML = `<b>${ICONS.gear} \u79D1\u6280</b> <span style="color:var(--dim);font-size:11px">\u77E5\u8BC6 ${ICONS.know}${Math.floor(G.res.know || 0)} \xB7 \u524D\u7F6E\u7814\u7A76\u5B8C\u624D\u53EF\u89E3\u9501\u4E0B\u5C42</span>` + [1, 2, 3].map(tierHtml).join("") + `<b style="display:block;margin-top:10px;font-size:12px">${ICONS.flag} \u91CC\u7A0B\u7891 ${G.milestones.size}/${MILESTONES.length}</b>` + MILESTONES.map((m) => `<div class="mrow ${G.milestones.has(m.id) ? "done" : ""}"><span>${G.milestones.has(m.id) ? "\u2713" : "\u25CB"} ${m.name}</span><span style="color:var(--dim);font-size:10px">${m.desc}</span></div>`).join("") + `<div style="text-align:right"><button id="btn-techclose">\u5173\u95ED</button></div>`;
+  el3.querySelectorAll("button[data-t]").forEach((b) => b.onclick = () => {
+    const t = TECHS.find((x) => x.id === b.dataset.t);
+    if (!t || !canResearch(t)) return;
+    G.res.know -= t.cost;
+    G.tech.add(t.id);
+    notify("\u7814\u7A76\u5B8C\u6210\uFF1A" + t.name + "\uFF08" + t.unlock.map((id) => (DEFS.find((d) => d.id === id) || {}).name || id).join("/") + " \u89E3\u9501\uFF09");
+    renderTechTree(el3, notify);
+  });
+  document.getElementById("btn-techclose").onclick = () => el3.style.display = "none";
+}
+
 // src/ui.ts
 var ics = (r) => `<span class="ics">${ICONS[r] || ""}</span>`;
 function toast(msg) {
@@ -27580,23 +27629,8 @@ var UI = {
   },
   renderTech() {
     const el3 = document.getElementById("tech");
-    el3.innerHTML = `<b>${ICONS.gear} \u79D1\u6280\uFF08\u77E5\u8BC6 ${ics("know")}${Math.floor(G.res.know || 0)}\uFF09</b>` + TECHS.map((t) => {
-      const done = G.tech.has(t.id);
-      const can = !done && (G.res.know || 0) >= t.cost;
-      return `<div class="trow ${done ? "done" : can ? "can" : ""}"><span>${done ? "\u2713" : ics("know") + t.cost} ${t.name}</span><span style="color:var(--dim);font-size:10px">${t.desc}</span>${done ? "" : `<button data-t="${t.id}" ${can ? "" : "disabled"}>\u7814\u7A76</button>`}</div>`;
-    }).join("") + `<b style="display:block;margin-top:8px">\u{1F3C6} \u91CC\u7A0B\u7891 ${G.milestones.size}/${MILESTONES.length}</b>` + MILESTONES.map(
-      (m) => `<div class="trow ${G.milestones.has(m.id) ? "done" : ""}"><span>${G.milestones.has(m.id) ? "\u2713" : "\u25CB"} ${m.name}</span><span style="color:var(--dim);font-size:10px">${m.desc}</span></div>`
-    ).join("") + `<div style="text-align:right"><button id="btn-techclose">\u5173\u95ED</button></div>`;
-    el3.querySelectorAll("button[data-t]").forEach((b) => b.onclick = () => {
-      const t = TECHS.find((x) => x.id === b.dataset.t);
-      if (!t || G.tech.has(t.id) || (G.res.know || 0) < t.cost) return;
-      G.res.know -= t.cost;
-      G.tech.add(t.id);
-      toast("\u{1F52C} \u7814\u7A76\u5B8C\u6210\uFF1A" + t.name + "\uFF08" + t.unlock.map((id) => (DEFS.find((d) => d.id === id) || {}).name || id).join("/") + " \u89E3\u9501\uFF09");
-      this.renderTech();
-      this.renderList();
-    });
-    document.getElementById("btn-techclose").onclick = () => el3.style.display = "none";
+    renderTechTree(el3, toast);
+    this.renderList();
   },
   hoverTip(e) {
     const tip = document.getElementById("tip");
@@ -28135,16 +28169,19 @@ function ensureDom() {
   const st = document.createElement("style");
   st.textContent = `
   #statspanel{position:absolute;left:14px;top:96px;width:250px;max-height:56vh;overflow-y:auto;padding:12px 14px;font-size:12px;line-height:1.7;display:none;z-index:6}
-  #statspanel b.hd{color:var(--gold);font-size:14px}
-  #statspanel .sec{margin-top:8px;padding-top:4px;color:var(--gold);font-size:11.5px;letter-spacing:1px}
-  #statspanel .srow{display:flex;align-items:center;gap:6px;border-top:1px solid rgba(232,200,130,.1);padding:3px 2px;flex-wrap:wrap}
+  #statspanel b.hd{color:var(--ink);font-size:14px}
+  #statspanel .sec{margin-top:8px;padding-top:4px;color:var(--ink);font-size:11.5px;letter-spacing:1px}
+  #statspanel .srow{display:flex;align-items:center;gap:6px;border-top:1px solid rgba(125,143,90,.18);padding:3px 2px;flex-wrap:wrap}
   #statspanel .srow .nm{flex:1;color:var(--txt)}
   #statspanel .srow .num{color:var(--dim);font-size:11px}
   #statspanel .pos{color:var(--ok)}
-  #statspanel .neg{color:#e8a090}
-  #statspanel .warn{color:#e8b090}
+  #statspanel .neg{color:var(--bad)}
+  #statspanel .warn{color:#7a5a1a}
+  #statspanel .alerts{margin-top:4px;background:var(--wheat-bg);border:1px solid var(--wheat);border-radius:9px;padding:4px 8px}
+  #statspanel .alerts .srow{border-top-color:rgba(217,185,106,.45)}
   #statspanel .foot{margin-top:8px;text-align:right}
-  #statspanel .foot button{background:#7a4536;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer}`;
+  #statspanel .foot button{background:#d9d3c0;color:var(--txt);border:none;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer}
+  #statspanel .foot button:hover{background:#e4decb}`;
   document.head.appendChild(st);
   const el3 = document.createElement("div");
   el3.id = "statspanel";
@@ -28224,7 +28261,7 @@ function render() {
     winterTxt = `<span class="${ok ? "pos" : "neg"}">${toWinter} \u5929\u540E\u5165\u51AC\uFF08\u5EFA\u8BAE\u67F4\u2265${p * 8} \u7CAE\u2265${p * 5}\uFF09</span>`;
   } else winterTxt = `<span class="num">${toWinter} \u5929\u540E\u5165\u51AC\uFF08\u73B0 ${seasonOf(G.day)}\u5B63\uFF09</span>`;
   const shortTxt = shortBlds.length ? shortBlds.map((b) => `<div class="srow"><span class="nm neg">${b.name}</span><span class="num">\u7F3A\u539F\u6599 ${b.need}\uFF0C\u5DF2\u505C\u5DE5\u5F85\u6599</span></div>`).join("") : `<div class="srow"><span class="num pos">\u5404\u5728\u5C97\u4F5C\u574A\u539F\u6599\u5145\u8DB3</span></div>`;
-  const alerts = `<div class="srow">${ICONS.food || ""}<span class="nm">\u5B58\u7CAE\u53EF\u6491</span>${foodTxt}</div><div class="srow">${ICONS.sword || ""}<span class="nm">\u5B63\u8282</span>${winterTxt}</div><div class="srow">${ICONS.hammer || ""}<span class="nm">\u65AD\u4F9B\u4F5C\u574A</span></div>${shortTxt}`;
+  const alerts = `<div class="alerts"><div class="srow">${ICONS.food || ""}<span class="nm">\u5B58\u7CAE\u53EF\u6491</span>${foodTxt}</div><div class="srow">${ICONS.sword || ""}<span class="nm">\u5B63\u8282</span>${winterTxt}</div></div><div class="srow">${ICONS.hammer || ""}<span class="nm">\u65AD\u4F9B\u4F5C\u574A</span></div>${shortTxt}`;
   el3.innerHTML = `<b class="hd">${ICONS.gear || ""} \u6751\u5E84\u603B\u89C8</b><div class="sec">\u8D44\u6E90\u6D41\uFF08\u6BCF\u65E5\u9884\u671F\uFF09</div>${rows}<div class="sec">\u52B3\u52A8\u529B</div>${labor}<div class="sec">\u8B66\u62A5</div>${alerts}` + el3.querySelector(".foot").outerHTML;
   document.getElementById("btn-statsclose").onclick = () => Stats.toggle();
 }

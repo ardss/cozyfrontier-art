@@ -22,16 +22,16 @@ export const RECIPES: any = {
   bakery:  { in: { food: 2 }, out: { bread: 3 }, time: 8 },
   school:  { in: {},          out: { know: 2 },  time: 15 },   // 书院讲学：无原料，产出知识
 };
-/* ---- 科技树：研究消耗知识，解锁进阶建筑（R5） ---- */
+/* ---- 科技树：三层（tier 1-3），needs = 前置科技 id（全部研究完才可研究；旧档无 needs 视为无依赖） ---- */
 export const TECHS = [
-  { id: 'woodwork', name: '木工术',   cost: 2, unlock: ['sawmill'],   desc: '解锁锯木厂：2木 → 3板' },
-  { id: 'baking',   name: '烘焙术',   cost: 2, unlock: ['bakery'],    desc: '解锁面包房：2食 → 3面包' },
-  { id: 'masonry',  name: '石作术',   cost: 3, unlock: ['wellhouse', 'fountain', 'watchtower'], desc: '解锁水井/喷泉/瞭望塔' },
-  { id: 'watch',    name: '哨戒',     cost: 2, unlock: ['watchpost'], desc: '解锁哨位（夜间防狼）' },
-  { id: 'storage',  name: '仓储术',   cost: 3, unlock: ['warehouse'], desc: '解锁仓库（食物上限 +50）' },
-  { id: 'glass',    name: '温室栽培', cost: 4, unlock: ['greenhouse'], desc: '解锁温室（冬天也能产食）' },
-  { id: 'wellness', name: '澄心之道', cost: 4, unlock: ['bathhouse', 'clinic'], desc: '解锁澡堂/诊所' },
-  { id: 'sailing',  name: '航海术',   cost: 5, unlock: ['lighthouse', 'shipyard'], desc: '解锁灯塔/造船厂' },
+  { id: 'woodwork', name: '木工术',   cost: 2, tier: 1, needs: [],            unlock: ['sawmill'],   desc: '解锁锯木厂：2木 → 3板' },
+  { id: 'baking',   name: '烘焙术',   cost: 2, tier: 1, needs: [],            unlock: ['bakery'],    desc: '解锁面包房：2食 → 3面包' },
+  { id: 'masonry',  name: '石作术',   cost: 3, tier: 1, needs: [],            unlock: ['wellhouse', 'fountain', 'watchtower'], desc: '解锁水井/喷泉/瞭望塔' },
+  { id: 'watch',    name: '哨戒',     cost: 2, tier: 1, needs: [],            unlock: ['watchpost'], desc: '解锁哨位（夜间防狼）' },
+  { id: 'storage',  name: '仓储术',   cost: 3, tier: 2, needs: ['woodwork'],  unlock: ['warehouse'], desc: '解锁仓库（食物上限 +50）' },
+  { id: 'glass',    name: '温室栽培', cost: 4, tier: 2, needs: ['baking'],    unlock: ['greenhouse'], desc: '解锁温室（冬天也能产食）' },
+  { id: 'wellness', name: '澄心之道', cost: 4, tier: 3, needs: ['storage'],   unlock: ['bathhouse', 'clinic'], desc: '解锁澡堂/诊所' },
+  { id: 'sailing',  name: '航海术',   cost: 5, tier: 3, needs: ['storage'],   unlock: ['lighthouse', 'shipyard'], desc: '解锁灯塔/造船厂' },
 ];
 export const GRID = 26, CELL_SINK = 0.045, DRAG_TOLERANCE = 5;
 
