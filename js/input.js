@@ -11,6 +11,7 @@ import { mainEl, dom, cam, camCtl, buildGrid, raycaster, groundPlane, toGround, 
 import { G, footprint, cellsOf, canPlace, clampCell, canAfford, pay } from './world.js';
 import { makePad, showGhost, hideGhost, updateGhost, createSite, ghostOK, ghostBad } from './buildings.js';
 import { command } from './villagers.js';
+import { highlightNode } from './nature.js';
 import { ctx } from './context.js';
 
 const S = {
@@ -262,68 +263,74 @@ export const Input = {
     const r = dom.getBoundingClientRect();
     const x1 = Math.min(downAt.x, e.clientX), x2 = Math.max(downAt.x, e.clientX);
     const y1 = Math.min(downAt.y, e.clientY), y2 = Math.max(downAt.y, e.clientY);
-    // 先看框内有没有村民
     const p = new THREE.Vector3();
-    const vils = [];
+    const vils = [], nodes = [];
     for (const v of G.villagers) {
       p.copy(v.obj.position); p.y = .5; p.project(cam);
       const sx = r.left + (p.x + 1) / 2 * r.width, sy = r.top + (1 - p.y) / 2 * r.height;
       if (sx >= x1 && sx <= x2 && sy >= y1 && sy <= y2) vils.push(v);
     }
-    if (vils.length) {
-      this.clearSelection();
-      for (const v of vils) { G.selected.add(v); v.ring.visible = true; }
-      ctx.UI.selectionChanged();
-      ctx.toast('已选中 ' + vils.length + ' 人，右键派活');
-      return;
-    }
-    // 有选中村民时，框资源 = 派去采集；框空地 = 移动
-    if (G.selected.size) {
-      const nodes = [];
-      for (const n of G.nature) {
-        if (!n.alive) continue;
-        p.copy(n.inst.position); p.y = .5; p.project(cam);
-        const sx = r.left + (p.x + 1) / 2 * r.width, sy = r.top + (1 - p.y) / 2 * r.height;
-        if (sx >= x1 && sx <= x2 && sy >= y1 && sy <= y2) nodes.push(n);
-      }
-      if (nodes.length) {
-        let i = 0;
-        G.selected.forEach(v => command(v, 'chop', nodes[i++ % nodes.length]));
-        ctx.toast(`📋 框选派工：${nodes.length} 个资源 × ${G.selected.size} 人`);
-        return;
-      }
-      const gpt = this._rectCenterGround(x1, y1, x2, y2);
-      if (gpt) {
-        let i = 0;
-        G.selected.forEach(v => {
-          const a = (i++ / G.selected.size) * Math.PI * 2;
-          command(v, 'move', new THREE.Vector3(gpt.x + Math.cos(a) * .5, 0, gpt.z + Math.sin(a) * .5));
-        });
-        ctx.toast('移动');
-      }
-      return;
-    }
-    // 没选村民时框资源 = 一键自动派工：最近的空闲村民轮流上岗
-    const nodes = [];
     for (const n of G.nature) {
       if (!n.alive) continue;
       p.copy(n.inst.position); p.y = .5; p.project(cam);
       const sx = r.left + (p.x + 1) / 2 * r.width, sy = r.top + (1 - p.y) / 2 * r.height;
       if (sx >= x1 && sx <= x2 && sy >= y1 && sy <= y2) nodes.push(n);
     }
-    if (nodes.length) {
-      const cx = nodes.reduce((s, n) => s + n.inst.position.x, 0) / nodes.length;
-      const cz = nodes.reduce((s, n) => s + n.inst.position.z, 0) / nodes.length;
-      const idle = G.villagers.filter(v => !v.task)
-        .sort((a, b) => Math.hypot(a.obj.position.x - cx, a.obj.position.z - cz) - Math.hypot(b.obj.position.x - cx, b.obj.position.z - cz))
-        .slice(0, nodes.length);
-      if (!idle.length) { ctx.toast('😶 没有空闲村民——先让人歇会儿或取消任务'); return; }
-      let i = 0;
-      for (const v of idle) command(v, 'chop', nodes[i++ % nodes.length]);
-      ctx.toast(`🪓 自动派工：${idle.length} 名空闲村民 → ${nodes.length} 个资源`);
+    // 规则一：同框有人有资源 → 选中村民并直接派工（最直觉）
+    if (vils.length && nodes.length) {
+      this.clearSelection();
+      for (const v of vils) { G.selected.add(v); v.ring.visible = true; }
+      let j = 0;
+      for (const v of vils) { command(v, 'chop', nodes[j++ % nodes.length]); }
+      G.nature.forEach(n => highlightNode(n, false));
+      nodes.forEach(n => highlightNode(n, true));
+      ctx.UI.selectionChanged();
+      ctx.toast(`🪓 已派 ${vils.length} 人去采 ${nodes.length} 个资源（脚下亮环 = 目标）`);
       return;
     }
-    ctx.UI.selectionChanged();
+    // 规则二：只框到人 → 选中；提示下一步
+    if (vils.length) {
+      this.clearSelection();
+      for (const v of vils) { G.selected.add(v); v.ring.visible = true; }
+      ctx.UI.selectionChanged();
+      ctx.toast('已选中 ' + vils.length + ' 人：右键派活，或再框一片资源');
+      return;
+    }
+    // 规则三：只框到资源
+    if (nodes.length) {
+      if (G.selected.size) {
+        let j = 0;
+        G.selected.forEach(v => command(v, 'chop', nodes[j++ % nodes.length]));
+        G.nature.forEach(n => highlightNode(n, false));
+      nodes.forEach(n => highlightNode(n, true));
+        ctx.toast(`📋 ${G.selected.size} 人 → ${nodes.length} 个资源（亮环 = 目标）`);
+      } else {
+        const cx = nodes.reduce((s, n) => s + n.inst.position.x, 0) / nodes.length;
+        const cz = nodes.reduce((s, n) => s + n.inst.position.z, 0) / nodes.length;
+        const idle = G.villagers.filter(v => !v.task)
+          .sort((a, b) => Math.hypot(a.obj.position.x - cx, a.obj.position.z - cz) - Math.hypot(b.obj.position.x - cx, b.obj.position.z - cz))
+          .slice(0, nodes.length);
+        if (!idle.length) { ctx.toast('😶 没有空闲村民——先让人歇会儿或取消任务'); return; }
+        let j = 0;
+        for (const v of idle) command(v, 'chop', nodes[j++ % nodes.length]);
+        G.nature.forEach(n => highlightNode(n, false));
+      nodes.forEach(n => highlightNode(n, true));
+        ctx.toast(`🪓 自动派工：${idle.length} 名空闲村民 → ${nodes.length} 个资源`);
+      }
+      return;
+    }
+    // 规则四：空地 → 已选村民移动；没选人则取消选择
+    if (G.selected.size) {
+      const gpt = this._rectCenterGround(x1, y1, x2, y2);
+      if (gpt) {
+        let k = 0;
+        G.selected.forEach(v => {
+          const a = (k++ / G.selected.size) * Math.PI * 2;
+          command(v, 'move', new THREE.Vector3(gpt.x + Math.cos(a) * .5, 0, gpt.z + Math.sin(a) * .5));
+        });
+        ctx.toast('移动');
+      }
+    } else this.clearSelection();
   },
   _rectCenterGround(x1, y1, x2, y2) {
     const r = dom.getBoundingClientRect();

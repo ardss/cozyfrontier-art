@@ -1,10 +1,25 @@
 /* =====================================================================
  * 5. 自然资源与地表装饰
  * ===================================================================*/
+import * as THREE from 'three';
 import { GRID, NATURE_DEFS, NATURE_COUNTS } from './config.js';
 import { scene } from './scene.js';
 import { G, key } from './world.js';
 import { protos } from './assets.js';
+
+/* ---- 资源目标高亮：被派工的资源脚下亮起金环 ---- */
+const ringGeo = new THREE.RingGeometry(.4, .5, 28).rotateX(-Math.PI / 2);
+const ringMat = new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: .9, depthWrite: false });
+export function highlightNode(node, on = true) {
+  if (on && !node.ring) {
+    node.ring = new THREE.Mesh(ringGeo, ringMat);
+    node.ring.position.set(node.x + .5, .05, node.z + .5);
+    scene.add(node.ring);
+  } else if (!on && node.ring) {
+    scene.remove(node.ring);
+    node.ring = null;
+  }
+}
 
 export function scatterNature() {
   const center = GRID / 2;
@@ -37,6 +52,7 @@ export function chopDone(node) {
   node.hp--;
   if (node.hp <= 0) {
     node.alive = false;
+    highlightNode(node, false);
     scene.remove(node.inst);
     if (G.occ.get(key(node.x, node.z)) === node) G.occ.delete(key(node.x, node.z));
     node.respawnDay = G.day + (node.def.regrow || 9999);
