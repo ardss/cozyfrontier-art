@@ -2,7 +2,7 @@
  * 12. 启动与主循环（模块装配入口：注入跨模块引用 → 等资产 → 开局 → loop）
  * ===================================================================*/
 import * as THREE from 'three';
-import { DAY_SECONDS } from './config.js';
+import { DAY_SECONDS, GRID } from './config.js';
 import { mainEl, renderer, scene, cam, camCtl } from './scene.js';
 import { G } from './world.js';
 import { cellFree } from './pathfinding.js';
@@ -22,6 +22,17 @@ ctx.Input = Input;
 ctx.toast = toast;
 ctx.startPlacing = startPlacing;
 document.getElementById('btn-tech').onclick = () => UI.toggleTech();
+(function menuCam() {                                  // 菜单机位：环绕 + 俯瞰（开始后 body.playing 接管）
+  if (!document.body.classList.contains('playing')) {
+    menuCam.t = (menuCam.t || 0) + 0.0006;
+    camCtl.theta = Math.PI * 0.15 + Math.sin(menuCam.t) * 0.9;
+    camCtl.phi = Math.PI * 0.27;
+    camCtl.r = 20;
+    camCtl.target.set(GRID / 2, 0, GRID / 2);
+    camCtl.apply();
+  }
+  requestAnimationFrame(menuCam);
+})();
 
 function startGame() {
   UI.initSidebar();
@@ -36,6 +47,17 @@ onAssetsLoaded(startGame);
 if (assetsReady()) startGame();
 document.getElementById('btn-start').onclick = () => {
   document.getElementById('intro').style.display = 'none';
+  ctx.toast && ctx.toast('🍂 先建【村中心】，村民会自动去建造。框选一片树，空闲村民会自己去砍！');
+};
+
+// —— 主菜单：镜头绕村庄慢速环绕，点击开始后回到游戏机位 ——
+const introEl = document.getElementById('intro');
+document.getElementById('btn-start').onclick = () => {
+  introEl.style.display = 'none';
+  document.body.classList.add('playing');
+  camCtl.theta = Math.PI * 0.15; camCtl.phi = Math.PI * 0.34; camCtl.r = 26;
+  camCtl.target.set(GRID / 2, 0, GRID / 2);
+  camCtl.apply();
   ctx.toast && ctx.toast('🍂 先建【村中心】，村民会自动去建造。框选一片树，空闲村民会自己去砍！');
 };
 
