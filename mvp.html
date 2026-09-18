@@ -145,9 +145,6 @@
 window.__errs=[];
 window.addEventListener('error',e=>{window.__errs.push(e.message+' @'+e.lineno)});
 </script>
-<script type="importmap">
-{"imports":{"three":"./js/vendor/three.module.js","three/addons/":"./js/vendor/three/addons/"}}
-</script>
 </head>
 <body>
 <div id="main">
@@ -197,6 +194,6 @@ window.addEventListener('error',e=>{window.__errs.push(e.message+' @'+e.lineno)}
   <div id="people" class="panel"></div>
 </div>
 <button id="photo-save">💾 保存截图</button>
-<script type="module" src="./js/main.js"></script>
+<script type="module" src="./js/bundle.js"></script>
 </body>
 </html>
