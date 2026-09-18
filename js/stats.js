@@ -12,7 +12,7 @@ function ensureDom() {
   if (document.getElementById('statspanel')) return;
   const st = document.createElement('style');
   st.textContent = `
-  #statspanel{position:absolute;left:14px;top:100px;width:300px;max-height:72vh;overflow-y:auto;padding:12px 14px;font-size:12px;line-height:1.7;display:none;z-index:6}
+  #statspanel{position:absolute;left:14px;top:96px;width:250px;max-height:56vh;overflow-y:auto;padding:12px 14px;font-size:12px;line-height:1.7;display:none;z-index:6}
   #statspanel b.hd{color:var(--gold);font-size:14px}
   #statspanel .sec{margin-top:8px;padding-top:4px;color:var(--gold);font-size:11.5px;letter-spacing:1px}
   #statspanel .srow{display:flex;align-items:center;gap:6px;border-top:1px solid rgba(232,200,130,.1);padding:3px 2px;flex-wrap:wrap}
