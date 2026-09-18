@@ -15,6 +15,7 @@ import { updateSiteVisuals, finishSite } from './buildings.js';
 import { FARM_WORK, harvestDone } from './farm.js';
 import { eggCollected, huntDone } from './pasture.js';
 import { depositEfficiency, productionBoost } from './storage.js';
+import { tryEquip, toolMul, maybeBreakTool, needsTool, ensureToolStock, updateBasket } from './tools.js';
 import { Repute, gainExp, skillMul } from './repute.js';
 import { ctx } from './context.js';
 
@@ -87,6 +88,8 @@ function stepCompost() {
 
 export function stepVillager(v, dt, t) {
   const speed = 1.5;
+  ensureToolStock();                                   // S9 开局/旧档补发 2 件工具
+  updateBasket(v, carryTotal);                         // S36 背篓显隐与大小
   // 路过掉落物顺手拾取
   for (let i = G.drops.length - 1; i >= 0; i--) {
     const d = G.drops[i];
@@ -197,10 +200,12 @@ export function stepVillager(v, dt, t) {
     return;
   }
   const sKey = v.task.kind === 'chop' ? 'chop' : v.task.kind === 'harvest' ? 'harvest' : 'work';
-  v.task.workT += dt * (traitOf(v).workMul || 1) * skillMul(v, sKey) * illnessMul(v);
+  tryEquip(v);                                         // S9 采集/收割/狩猎到岗自动装备工具
+  v.task.workT += dt * (traitOf(v).workMul || 1) * skillMul(v, sKey) * illnessMul(v) * (needsTool(v.task.kind) ? toolMul(v) : 1);
   animWork(v, t);
   if (v.task.workT >= (v.task.target.def.work || FARM_WORK)) {
     v.task.workT = 0;
+    const doneKind = v.task.kind;                      // S9：完成后判定工具损耗
     if (sKey !== 'work') gainExp(v, sKey);   // S35 采集/收割完成 → 经验 +1（做工按天结算）
     if (v.task.kind === 'chop') {
       const node = v.task.target;
@@ -218,6 +223,7 @@ export function stepVillager(v, dt, t) {
     } else if (v.task.kind === 'hunt') {                // S15 狩猎完成：+食+石，鹿消失
       huntDone(v); v.task = null;
     }
+    if (needsTool(doneKind)) maybeBreakTool(v);   // S9 完成 20% 概率工具损坏
     // 'work'：建筑产出走天结算，出勤即可
   }
 }

@@ -12,6 +12,7 @@ export const G = {
   year: 1, milestones: new Set(),           // R6 多年进程与里程碑
   storyLog: [], letters: [],                // S25 村志（≤8 条）/ 信件
   letterState: { pending: null, debt: 0, order: null },   // S27 远方来信（借债/订单状态）
+  voyage: null, autoWork: true,             // S11 远航状态 / S12 村民自治开关
 };
 export const key = (x, z) => x + ',' + z;
 export function footprint(b, rot) { return (rot % 2) ? [b.d, b.w] : [b.w, b.d]; }

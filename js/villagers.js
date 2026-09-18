@@ -6,6 +6,7 @@ import { GRID, VNAMES, TRAITS } from './config.js';
 import { scene } from './scene.js';
 import { G } from './world.js';
 import { protos, CHAR_FILES } from './assetsv2.js';
+import { makeBasket } from './tools.js';   // S36 背篓
 
 export function spawnVillagers(n) {
   for (let i = 0; i < n; i++) {
@@ -59,8 +60,9 @@ export function spawnVillagers(n) {
       new THREE.MeshBasicMaterial({ color: 0x8fc0ff, transparent: true, opacity: .9, depthWrite: false }));
     ring.position.y = .02; ring.visible = false;
     wrap.add(ring);
+    const basket = makeBasket(); wrap.add(basket);   // S36 头顶小背篓（carry>0 时显示）
     scene.add(wrap);
-    G.villagers.push({ name: VNAMES[G.villagers.length % VNAMES.length], trait: TRAITS[Math.floor(Math.random() * TRAITS.length)], obj: wrap, bones, ring, task: null, resume: null, carry: {}, skills: {}, slot: (G.villagers.length % 4) * 0.3 });
+    G.villagers.push({ name: VNAMES[G.villagers.length % VNAMES.length], trait: TRAITS[Math.floor(Math.random() * TRAITS.length)], obj: wrap, bones, ring, basket, hasTool: false, task: null, resume: null, carry: {}, skills: {}, slot: (G.villagers.length % 4) * 0.3 });
   }
 }
 export function command(v, kind, target) { v.task = { kind, target, workT: 0 }; }

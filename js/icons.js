@@ -37,7 +37,9 @@ export const ICONS = {
   trade: wrap(`<path d="M9 7 Q9 4 12 4 Q15 4 15 7 L15.5 8.5 Q19.5 10 19.5 15 Q19.5 20.5 12 20.5 Q4.5 20.5 4.5 15 Q4.5 10 8.5 8.5 Z" fill="#b08850"/><path d="M9 7 L15 7" stroke="#8a5f36" stroke-width="1.6"/><circle cx="12" cy="14.5" r="2.6" fill="#8a5f36"/><path d="M12 13 L12.5 14.3 L13.8 14.8 L12.5 15.4 L12 16.7 L11.5 15.4 L10.2 14.8 L11.5 14.3 Z" fill="#e8d8a8"/>`),
   // 剑（防狼）
   sword: wrap(`<rect x="5" y="16.5" width="7" height="2.4" rx="1.1" transform="rotate(-45 8.5 17.7)" fill="#8a6a48"/><path d="M9.5 13.5 L17.5 4 L20.5 3.5 L20 6.5 L11.5 14.5 Z" fill="#b8b8c4"/><path d="M8 15 L9 16 L11 14 L10 13 Z" fill="#c9a227"/>`),
+  tool: null, // S9 运行时别名 = axe（下方赋值）
 };
+ICONS.tool = ICONS.axe;
 
 // 顶栏/面板用的带框资源徽章
 export function resBadge(iconSvg) {

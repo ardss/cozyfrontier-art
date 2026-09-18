@@ -78,7 +78,7 @@ export const UI = {
   },
 
   refresh() {
-    document.getElementById('hudres').innerHTML = ['wood', 'food', 'stone', 'plank', 'bread', 'know', 'silver']
+    document.getElementById('hudres').innerHTML = ['wood', 'food', 'stone', 'plank', 'bread', 'know', 'silver', 'tool']
       .map(r => `<span class="res">${ICONS[r] || ''}<b>${Math.floor(G.res[r] || 0)}</b></span>`).join('')
       + `<span class="res">${ICONS.happy || ''}<b>${Math.round(G.happy)}</b></span>`
       + `<span class="res click" id="popchip" title="点击管理村民">${ICONS.pop || ''}<b>${G.villagers.length}</b><span style="color:var(--dim);font-size:10px">/${houseCapacity()}</span></span>`

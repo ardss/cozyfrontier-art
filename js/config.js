@@ -181,3 +181,9 @@ DEFS.push(
   // S14 回收堆肥：借用木桶模型，sim.js 结算肥料状态与农田加成
   { id:'compost', name:'堆肥箱', w:1,d:1, cat:'设施', cost:{wood:3,stone:2}, role:'deco', glb:'ai3d-mirror/prop-barrel.glb', desc:'回收堆肥：每 2 天消耗 3 食沤肥（无粮则失效），肥料生效时 10 格内农田产出 +15%。' },
 );
+
+/* ---- S9 工具耐久 + S36 背篓（追加段）：新资源 tool + 锯木厂工具配方 ---- */
+RES_INFO.tool = { label: '器', icon: '🪓', depotRole: 'wood', color: 0x9aa5b0 };   // 工具：采集/收割/狩猎装备，效率 ×1.25
+RECIPES.toolCraft = { in: { wood: 1, plank: 1 }, out: { tool: 2 }, time: 10 };     // 锯木厂兼工具坊
+const sawmillDef = DEFS.find(d => d.id === 'sawmill');
+if (sawmillDef) sawmillDef.desc = '配方：2木 → 3板，另可造工具（1木+1板 → 2器）。派村民上工。';

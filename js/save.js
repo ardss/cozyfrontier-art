@@ -24,7 +24,9 @@ export function saveGame() {
       res: { ...G.res }, foodCap: G.foodCap, happy: G.happy,
       day: G.day, time: G.time, year: G.year,
       tech: [...G.tech], milestones: [...G.milestones],
-      repute: G.repute || 0,                                   // S39 声望（S25 补全）
+      repute: G.repute || 0,
+      voyage: G.voyage || null,
+      autoWork: G.autoWork !== false,                                   // S39 声望（S25 补全）
       storyLog: (G.storyLog || []).slice(0, 8),                // S25 村志
       letters: G.letters || [],                                // S25 信件
       pasture: G.placed.filter(p => p.pasture).map(p => ({     // S25 畜牧状态（蛋/鹿计时、鹿数）
@@ -98,6 +100,8 @@ export function loadGame() {
     G.happy = data.happy; G.foodCap = data.foodCap;   // 覆盖为存档最终值（已含建筑加成）
     // S25 存档补全：声望 / 村志 / 信件 / 畜牧状态（全部缺省兜底，旧存档不抛错）
     G.repute = (typeof data.repute === 'number') ? data.repute : (G.repute || 20);
+    G.voyage = data.voyage || null;
+    G.autoWork = data.autoWork !== false;
     G.storyLog = Array.isArray(data.storyLog) ? data.storyLog.slice(0, 8) : [];
     G.letters = Array.isArray(data.letters) ? data.letters : [];
     // 3) 自然资源

@@ -74,7 +74,7 @@ function render() {
   if (!el || el.style.display !== 'block') return;
   const { prod, use, shortBlds, winter } = flowPerDay();
   /* ---- 资源流 ---- */
-  const keys = ['wood', 'food', 'stone', 'plank', 'bread', 'know'];
+  const keys = ['wood', 'food', 'stone', 'plank', 'bread', 'know', 'tool'];
   let rows = '';
   for (const r of keys) {
     const cur = Math.floor(G.res[r] || 0);

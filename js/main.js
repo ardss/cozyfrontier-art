@@ -26,6 +26,7 @@ import { Deco } from './deco.js';
 import { Stories } from './stories.js';   // S25 村民小故事
 import { Repute } from './repute.js';   // S39 声望
 import { dayTick as letterDayTick } from './letters.js';   // S27 远方来信
+import { voyageDayTick, initVoyage } from './voyage.js'; import { initAutonomy } from './autonomy.js';   // S11 远航 + S12 自治
 
 // —— 主模块注入：ui/input/buildings/sim 通过 ctx 反向调用，避免循环依赖 ——
 ctx.UI = UI;
@@ -57,7 +58,10 @@ let nightTick = () => { };           // 下方包装为"夜间结算 + 自动存
   const raw = nightSettlement;
   nightTick = (...a) => { raw(...a); Repute.nightly(!!G._nightFed); Sfx.night(); Stories.dayTick(); if (!G.over) saveGame(); };
 })();
-(function () { const nt = nightTick; nightTick = (...a) => { nt(...a); if (!G.over) letterDayTick(); }; })();   // S27 每季第 3 天远方来信
+  (function () { const nt = nightTick; nightTick = (...a) => { nt(...a); if (!G.over) letterDayTick(); }; })();   // S27 每季第 3 天远方来信
+(function () { const nt = nightTick; nightTick = (...a) => { nt(...a); if (!G.over) voyageDayTick(); }; })();   // S11 远航归航判定
+initVoyage();                                       // S11 灯塔面板「发起远航」钩子
+initAutonomy();                                     // S12 村民自治扫描（内部 2 秒定时）
 function startGame() {
   UI.initSidebar();
   scatterNature();
