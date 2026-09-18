@@ -12,9 +12,11 @@ import { protos } from './assets';
 import { spawnDrop, floatText } from './drops';
 import { ctx } from './context';
 import { registerJobs } from './jobs';
+import { isRain } from './weather';
 
 export const FARM_WORK = 3;                 // 收割工作时长（秒）
-const HARVEST_FOOD = 6;                     // 每块田收获粮食
+const HARVEST_FOOD = 10;                    // 每块田收获粮食（P2-16：6→10）
+const COMPOST_RANGE = 10, COMPOST_BOOST = 1.30;   // P2-16：堆肥加成 15%→30%
 const STAGE_SECS = [30, 35, 35];            // 阶段 0→1→2→成熟，共 100s ≈ 2 天
 const STAGE_H = [0.10, 0.22, 0.34, 0.46];   // 各阶段作物高度
 const STAGE_COLORS = [0x8fbf6a, 0x9cc254, 0xc2b04a, 0xe3b84c];   // 苗绿→金黄
@@ -99,14 +101,24 @@ function sow(entry, silent) {
 }
 function isWinterNow() { return seasonOf(G.day) === '冬'; }
 
+/* ---- 堆肥加成（原 sim.js 挂 G.farmYieldMul 暗道，P1-14 改为模块导出） ---- */
+export function farmYieldMul(entry) {
+  for (const p of G.placed) {
+    if (p.def.id !== 'compost' || !p.fert) continue;
+    if (Math.hypot(p.x - entry.x, p.z - entry.z) <= COMPOST_RANGE) return COMPOST_BOOST;
+  }
+  return 1;
+}
+
 /* ---- 收割完成（sim.js 村民工作时长达标后调用） ---- */
 export function harvestDone(v) {
   const e = v.task.target, f = e.farm;
   if (!f || f.state !== 'ready') return;
   f.state = 'grow'; f.stage = 0; f.t = 0;
   updateCrops(e);
-  spawnDrop('food', Math.round(HARVEST_FOOD * (G.farmYieldMul ? G.farmYieldMul(e) : 1)), e.inst.position);   // S14 堆肥加成：产量在此生成，sim.js 无法外部拦截，故仅此 1 行接入 G.farmYieldMul（sim.js 注入，默认 1）
-  floatText('🌾 +' + HARVEST_FOOD + ' 食', e.inst.position);
+  const got = Math.round(HARVEST_FOOD * farmYieldMul(e));   // S14 堆肥加成：实际掉落
+  spawnDrop('food', got, e.inst.position);
+  floatText('🌾 +' + got + ' 食', e.inst.position);          // P1-14：浮字显示实得数量
 }
 
 /* ---- 每帧：生长推进 / 冬冻春播 / 自动派工收割 ---- */
@@ -130,11 +142,12 @@ export function stepFarm(dt) {
     for (const e of farms) if (e.farm.killed) { e.farm.killed = false; sow(e, true); n++; }
     if (n) ctx.toast('🌸 春回大地，' + n + ' 块农田自动重新播种');
   }
-  // 生长推进（冬季不生长）
+  // 生长推进（冬季不生长；P2-17：雨天生长 +10%）
+  const growMul = isRain() ? 1.1 : 1;
   if (!winter) for (const e of farms) {
     const f = e.farm;
     if (f.state !== 'grow') continue;
-    f.t += dt;
+    f.t += dt * growMul;
     const need = STAGE_SECS[f.stage];
     if (f.t >= need) {
       f.t = 0; f.stage++;

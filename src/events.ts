@@ -27,6 +27,9 @@ export const Events = {
   emit(event, payload?) {
     const list = subs.get(event);
     if (!list || !list.length) return;
-    for (const { fn } of [...list].sort((a, b) => a.order - b.order || a.seq - b.seq)) fn(payload);
+    // P0-7：每个订阅者 try/catch 隔离——一个订阅者抛错不再炸掉整条夜间链（含自动存档）
+    for (const { fn } of [...list].sort((a, b) => a.order - b.order || a.seq - b.seq)) {
+      try { fn(payload); } catch (e) { console.error('[Events] 订阅者处理 ' + event + ' 出错：', e); }
+    }
   },
 };

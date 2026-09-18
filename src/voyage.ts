@@ -31,6 +31,16 @@ export function voyageDayTick() {                    // main.js nightTick 链调
   const V = G.voyage;
   if (!V || G.day - V.day < DAYS) return;
   G.voyage = null;
+  // P2-16：15% 概率遭遇风浪空手而归（收益 0，只兜底快乐）
+  if (Math.random() < 0.15) {
+    G.happy = Math.max(0, G.happy - 2);
+    toast('⛈ 远航船队在海上遭遇风浪，空手而归……（快乐 -2）');
+    el.innerHTML = `<b>⛈ 远航遇险</b><div style="color:#d8ccb0;white-space:pre-line;margin-top:4px">桅杆在风暴里断了半根——船队勉强漂回港口，货舱空空如也。村民们帮水手把船拖上岸，盼着下一支船队的好消息。</div>\
+<button id="btn-voyok">唉，先回家吧</button>`;
+    el.style.display = 'block';
+    document.getElementById('btn-voyok').onclick = () => { el.style.display = 'none'; };
+    return;
+  }
   const silver = 22 + Math.floor(Math.random() * 9); // 22~30
   const seed = Math.random() < 0.2;                  // 20% 远方的种子
   G.res.silver = (G.res.silver || 0) + silver;

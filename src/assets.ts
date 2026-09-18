@@ -13,15 +13,19 @@ dracoLoader.setDecoderPath('./js/vendor/draco/');   // 本地解码器，零 CDN
 loader.setDRACOLoader(dracoLoader);
 
 export const protos: any = {};   // id -> 归一化的 Group（原点=脚印中心，脚底贴地）
-let pendingLoads = 0, onAllLoaded = null;
+let pendingLoads = 0, loadedCbs: Function[] = [];   // P0-8：数组语义，后注册不覆盖先注册
 
 export function assetsReady() { return pendingLoads === 0; }
-export function onAssetsLoaded(cb) { onAllLoaded = cb; }
+export function onAssetsLoaded(cb) {
+  if (assetsReady()) { cb(); return; }               // 已加载：立即同步执行
+  loadedCbs.push(cb);
+}
+function fireLoaded() { const cbs = loadedCbs; loadedCbs = []; cbs.forEach(cb => { try { cb(); } catch (e) { console.error(e); } }); }
 
 function loadProto(id, glb, fit) {
   if (!glb) return;                                   // 程序化模型建筑（鸡舍/渔档/猎屋等）无 GLB，跳过
   pendingLoads++;
-  const done = () => { if (--pendingLoads === 0 && onAllLoaded) onAllLoaded(); };
+  const done = () => { if (--pendingLoads === 0) fireLoaded(); };
   loader.load(enc(glb) + '?v=5', g => {
     const root = g.scene;
     root.traverse(o => {
@@ -123,6 +127,6 @@ CHAR_FILES.forEach((f, i) => {
       geoList.push({ geo, material: o.material });
     });
     protos['char' + i] = { skin: { geoList, segs }, charFile: f };
-    if (--pendingLoads === 0 && onAllLoaded) onAllLoaded();
-  }, undefined, err => { console.error('load fail', f, err); if (--pendingLoads === 0 && onAllLoaded) onAllLoaded(); });
+    if (--pendingLoads === 0) fireLoaded();
+  }, undefined, err => { console.error('load fail', f, err); if (--pendingLoads === 0) fireLoaded(); });
 });

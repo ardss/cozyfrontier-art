@@ -21753,7 +21753,7 @@ var DEFS = [
   { id: "cottage_b", name: "\u730E\u6237\u6751\u820D", w: 2, d: 1, cat: "\u4F4F\u623F", cost: { wood: 5 }, role: "house", cap: 2, desc: "\u730E\u6237\u7684\u5BB6\u3002" },
   { id: "home_small", name: "\u5C0F\u6C11\u5C45", w: 2, d: 2, cat: "\u4F4F\u623F", cost: { wood: 7 }, role: "house", cap: 3, desc: "\u8212\u9002\u6C11\u5C45\u3002" },
   { id: "home_large", name: "\u5927\u6C11\u5C45", w: 2, d: 2, cat: "\u4F4F\u623F", cost: { wood: 8, plank: 4 }, role: "house", cap: 4, desc: "\u5BBD\u655E\u6C11\u5C45\uFF08\u9700\u8981\u6728\u677F\uFF09\u3002" },
-  { id: "farm", name: "\u519C\u7530", w: 3, d: 3, cat: "\u519C\u7267", cost: { wood: 4 }, role: "farm", desc: "\u5F00\u57A6\u519C\u7530\uFF1A\u5EFA\u6210\u81EA\u52A8\u64AD\u79CD\uFF0C\u70B9\u51FB\u53EF\u5207\u6362\u64AD\u79CD/\u4F11\u8015\u3002\u6625\u590F\u79CB\u751F\u957F\uFF0C\u51AC\u5B63\u51BB\u6B7B\uFF0C\u6765\u5E74\u6625\u81EA\u52A8\u518D\u64AD\u3002\u6210\u719F\u540E\u7A7A\u95F2\u6751\u6C11\u81EA\u52A8\u6536\u5272 +6 \u98DF\u3002" },
+  { id: "farm", name: "\u519C\u7530", w: 3, d: 3, cat: "\u519C\u7267", cost: { wood: 4 }, role: "farm", desc: "\u5F00\u57A6\u519C\u7530\uFF1A\u5EFA\u6210\u81EA\u52A8\u64AD\u79CD\uFF0C\u70B9\u51FB\u53EF\u5207\u6362\u64AD\u79CD/\u4F11\u8015\u3002\u6625\u590F\u79CB\u751F\u957F\uFF0C\u51AC\u5B63\u51BB\u6B7B\uFF0C\u6765\u5E74\u6625\u81EA\u52A8\u518D\u64AD\u3002\u6210\u719F\u540E\u7A7A\u95F2\u6751\u6C11\u81EA\u52A8\u6536\u5272 +10 \u98DF\u3002" },
   { id: "farmhouse", name: "\u519C\u820D", w: 2, d: 2, cat: "\u519C\u7267", cost: { wood: 9 }, role: "food", out: 4, desc: "\u6751\u6C11\u4E3B\u4EA7\u98DF\u7269\u3002" },
   { id: "sawmill", name: "\u952F\u6728\u5382", w: 2, d: 2, cat: "\u52A0\u5DE5", cost: { wood: 6 }, role: "wood", desc: "\u914D\u65B9\uFF1A2\u6728 \u2192 3\u677F\u3002\u6D3E\u6751\u6C11\u4E0A\u5DE5\u3002", tech: "woodwork" },
   { id: "apiary", name: "\u8702\u7BB1\u67B6", w: 1, d: 1, cat: "\u519C\u7267", cost: { wood: 3 }, role: "food", out: 2, desc: "\u4EA7\u8702\u871C\u5C0F\u5C4B\u3002" },
@@ -21865,7 +21865,7 @@ var MILESTONES = [
 ];
 var TRADE = {
   sell: [{ res: "plank", n: 3, silver: 4 }, { res: "bread", n: 3, silver: 6 }, { res: "wood", n: 6, silver: 3 }, { res: "stone", n: 4, silver: 3 }],
-  buy: [{ res: "food", n: 8, silver: 3 }, { res: "wood", n: 8, silver: 3 }, { res: "stone", n: 5, silver: 4 }]
+  buy: [{ res: "food", n: 8, silver: 8 }, { res: "wood", n: 8, silver: 3 }, { res: "stone", n: 5, silver: 4 }]
 };
 var isMarketDay = (day) => day % 3 === 0;
 var EVENTS = [
@@ -21905,7 +21905,7 @@ DEFS.push(
   { id: "fish", name: "\u6E14\u6863", w: 2, d: 1, cat: "\u519C\u7267", cost: { wood: 5, stone: 2 }, role: "food", desc: "\u4E34\u6C34\u800C\u5EFA\uFF08\u5730\u56FE\u8FB9\u7F18\uFF09\u3002\u6D3E\u6751\u6C11\u4E0A\u5DE5\u5782\u9493\uFF1A\u7EA6 20 \u79D2 +2 \u98DF\uFF0C\u51AC\u5B63\u51CF\u534A\u3002" },
   { id: "hunt", name: "\u730E\u5C4B", w: 2, d: 1, cat: "\u519C\u7267", cost: { wood: 6 }, role: "pasture", desc: "\u6751\u7F18\u51FA\u6CA1 1-2 \u53EA\u91CE\u9E7F\u3002\u7A7A\u95F2\u6751\u6C11\u81EA\u52A8\u72E9\u730E\uFF1A+5 \u98DF +1 \u77F3\uFF0C\u9E7F 3 \u5929\u540E\u5237\u65B0\u3002" },
   // S14 回收堆肥：借用木桶模型，sim.js 结算肥料状态与农田加成
-  { id: "compost", name: "\u5806\u80A5\u7BB1", w: 1, d: 1, cat: "\u8BBE\u65BD", cost: { wood: 3, stone: 2 }, role: "deco", glb: "ai3d-mirror/prop-barrel.glb", desc: "\u56DE\u6536\u5806\u80A5\uFF1A\u6BCF 2 \u5929\u6D88\u8017 3 \u98DF\u6CA4\u80A5\uFF08\u65E0\u7CAE\u5219\u5931\u6548\uFF09\uFF0C\u80A5\u6599\u751F\u6548\u65F6 10 \u683C\u5185\u519C\u7530\u4EA7\u51FA +15%\u3002" }
+  { id: "compost", name: "\u5806\u80A5\u7BB1", w: 1, d: 1, cat: "\u8BBE\u65BD", cost: { wood: 3, stone: 2 }, role: "deco", glb: "ai3d-mirror/prop-barrel.glb", desc: "\u56DE\u6536\u5806\u80A5\uFF1A\u6BCF 2 \u5929\u6D88\u8017 1 \u98DF\u6CA4\u80A5\uFF08\u65E0\u7CAE\u5219\u5931\u6548\uFF09\uFF0C\u80A5\u6599\u751F\u6548\u65F6 10 \u683C\u5185\u519C\u7530\u4EA7\u51FA +30%\u3002" }
 );
 RES_INFO.tool = { label: "\u5668", icon: "\u{1FA93}", depotRole: "wood", color: 10134960 };
 RECIPES.toolCraft = { in: { wood: 1, plank: 1 }, out: { tool: 2 }, time: 10 };
@@ -22004,7 +22004,7 @@ function pickAt(e, list, filterAlive) {
 
 // src/world.ts
 var G = {
-  res: { wood: 10, food: 10, stone: 2, plank: 0, bread: 0, know: 0, silver: 5 },
+  res: { wood: 10, food: 18, stone: 2, plank: 0, bread: 0, know: 0, silver: 5 },
   foodCap: 30,
   happy: 70,
   day: 1,
@@ -24972,18 +24972,33 @@ dracoLoader.setDecoderPath("./js/vendor/draco/");
 loader.setDRACOLoader(dracoLoader);
 var protos = {};
 var pendingLoads = 0;
-var onAllLoaded = null;
+var loadedCbs = [];
 function assetsReady() {
   return pendingLoads === 0;
 }
 function onAssetsLoaded(cb) {
-  onAllLoaded = cb;
+  if (assetsReady()) {
+    cb();
+    return;
+  }
+  loadedCbs.push(cb);
+}
+function fireLoaded() {
+  const cbs = loadedCbs;
+  loadedCbs = [];
+  cbs.forEach((cb) => {
+    try {
+      cb();
+    } catch (e) {
+      console.error(e);
+    }
+  });
 }
 function loadProto(id, glb, fit) {
   if (!glb) return;
   pendingLoads++;
   const done = () => {
-    if (--pendingLoads === 0 && onAllLoaded) onAllLoaded();
+    if (--pendingLoads === 0) fireLoaded();
   };
   loader.load(enc2(glb) + "?v=5", (g) => {
     const root = g.scene;
@@ -25096,10 +25111,10 @@ CHAR_FILES.forEach((f, i) => {
       geoList.push({ geo, material: o.material });
     });
     protos["char" + i] = { skin: { geoList, segs }, charFile: f };
-    if (--pendingLoads === 0 && onAllLoaded) onAllLoaded();
+    if (--pendingLoads === 0) fireLoaded();
   }, void 0, (err) => {
     console.error("load fail", f, err);
-    if (--pendingLoads === 0 && onAllLoaded) onAllLoaded();
+    if (--pendingLoads === 0) fireLoaded();
   });
 });
 
@@ -25733,9 +25748,116 @@ function initPasture() {
   ctx.UI.__pastureHooked = true;
 }
 
+// src/weather.ts
+var WIND_PERIOD = 30;
+var WIND_BASE = 0.35;
+var WIND_AMP = 0.3;
+var windT = Math.random() * 100;
+var wind = WIND_BASE;
+var SWAY_TYPES = /* @__PURE__ */ new Set(["tree", "tree2", "tree3", "dead"]);
+var SWAY_AMP = 0.022;
+var SWAY_FREQ = 1.6;
+var P_COUNT = 600;
+var AREA = GRID + 8;
+var RAIN_FALL = 14;
+var SNOW_FALL = 1.6;
+var points = null;
+var pos = null;
+var vel = null;
+var mode = "none";
+var BASE_FOG = { near: 40, far: 95, sun: 2.4 };
+var weatherOn = false;
+function makePoints(isSnow) {
+  pos = new Float32Array(P_COUNT * 3);
+  vel = new Float32Array(P_COUNT);
+  for (let i = 0; i < P_COUNT; i++) {
+    pos[i * 3] = Math.random() * AREA - AREA / 2 + GRID / 2;
+    pos[i * 3 + 1] = Math.random() * 16;
+    pos[i * 3 + 2] = Math.random() * AREA - AREA / 2 + GRID / 2;
+    vel[i] = 0.7 + Math.random() * 0.6;
+  }
+  const geo = new BufferGeometry();
+  geo.setAttribute("position", new BufferAttribute(pos, 3));
+  const mat = new PointsMaterial({
+    color: isSnow ? 16777215 : 10336472,
+    size: isSnow ? 0.16 : 0.07,
+    transparent: true,
+    opacity: isSnow ? 0.75 : 0.45,
+    depthWrite: false,
+    sizeAttenuation: true
+  });
+  points = new Points(geo, mat);
+  points.frustumCulled = false;
+  scene.add(points);
+}
+function setMode(m) {
+  if (m === mode) return;
+  if (points) {
+    scene.remove(points);
+    points.geometry.dispose();
+    points.material.dispose();
+    points = null;
+  }
+  mode = m;
+  if (m !== "none") makePoints(m === "snow");
+  applyLight(m !== "none");
+}
+function applyLight(on) {
+  if (on === weatherOn) return;
+  const f = scene.fog;
+  if (on) {
+    f.near = BASE_FOG.near * 0.85;
+    f.far = BASE_FOG.far * 0.85;
+    sun.intensity = BASE_FOG.sun * 0.8;
+  } else {
+    f.near = BASE_FOG.near;
+    f.far = BASE_FOG.far;
+    sun.intensity = BASE_FOG.sun;
+  }
+  weatherOn = on;
+}
+var rolledDay = -1;
+function rollDay() {
+  if (rolledDay === G.day) return;
+  rolledDay = G.day;
+  if (isWinterDay(G.day)) setMode("snow");
+  else setMode(Math.random() < 0.15 ? "rain" : "none");
+}
+function stepWeather(dt) {
+  windT += dt;
+  wind = WIND_BASE + WIND_AMP * Math.sin(windT * Math.PI * 2 / WIND_PERIOD);
+  if ((stepWeather._f = (stepWeather._f || 0) + 1) % 2 === 0) {
+    const t = windT;
+    for (const n of G.nature) {
+      if (!n.alive || !SWAY_TYPES.has(n.type) || !n.inst) continue;
+      if (n._phase === void 0) n._phase = Math.random() * Math.PI * 2;
+      n.inst.rotation.z = wind * SWAY_AMP * 4 * Math.sin(t * SWAY_FREQ + n._phase);
+    }
+  }
+  rollDay();
+  if (!points) return;
+  const fall = mode === "snow" ? SNOW_FALL : RAIN_FALL;
+  const wOff = wind * (mode === "snow" ? 2.2 : 0.6);
+  const arr = pos;
+  for (let i = 0; i < P_COUNT; i++) {
+    const j = i * 3;
+    arr[j + 1] -= fall * vel[i] * dt;
+    if (mode === "snow") arr[j] += wOff * vel[i] * dt * Math.sin(windT * 2 + i);
+    if (arr[j + 1] < 0) {
+      arr[j] = Math.random() * AREA - AREA / 2 + GRID / 2;
+      arr[j + 1] = 14 + Math.random() * 4;
+      arr[j + 2] = Math.random() * AREA - AREA / 2 + GRID / 2;
+    }
+  }
+  points.geometry.attributes.position.needsUpdate = true;
+}
+var isRain = () => mode === "rain";
+
 // src/farm.ts
 var FARM_WORK = 3;
-var HARVEST_FOOD = 6;
+var HARVEST_FOOD = 10;
+var COMPOST_RANGE = 10;
+var COMPOST_BOOST = 1.3;
 var STAGE_SECS = [30, 35, 35];
 var STAGE_H = [0.1, 0.22, 0.34, 0.46];
 var STAGE_COLORS = [9420650, 10273364, 12759114, 14923852];
@@ -25825,6 +25947,13 @@ function sow(entry, silent) {
 function isWinterNow() {
   return seasonOf(G.day) === "\u51AC";
 }
+function farmYieldMul(entry) {
+  for (const p of G.placed) {
+    if (p.def.id !== "compost" || !p.fert) continue;
+    if (Math.hypot(p.x - entry.x, p.z - entry.z) <= COMPOST_RANGE) return COMPOST_BOOST;
+  }
+  return 1;
+}
 function harvestDone(v) {
   const e = v.task.target, f = e.farm;
   if (!f || f.state !== "ready") return;
@@ -25832,8 +25961,9 @@ function harvestDone(v) {
   f.stage = 0;
   f.t = 0;
   updateCrops(e);
-  spawnDrop("food", Math.round(HARVEST_FOOD * (G.farmYieldMul ? G.farmYieldMul(e) : 1)), e.inst.position);
-  floatText("\u{1F33E} +" + HARVEST_FOOD + " \u98DF", e.inst.position);
+  const got = Math.round(HARVEST_FOOD * farmYieldMul(e));
+  spawnDrop("food", got, e.inst.position);
+  floatText("\u{1F33E} +" + got + " \u98DF", e.inst.position);
 }
 G._farmT = 0;
 function stepFarm(dt) {
@@ -25862,10 +25992,11 @@ function stepFarm(dt) {
     }
     if (n) ctx.toast("\u{1F338} \u6625\u56DE\u5927\u5730\uFF0C" + n + " \u5757\u519C\u7530\u81EA\u52A8\u91CD\u65B0\u64AD\u79CD");
   }
+  const growMul = isRain() ? 1.1 : 1;
   if (!winter) for (const e of farms) {
     const f = e.farm;
     if (f.state !== "grow") continue;
-    f.t += dt;
+    f.t += dt * growMul;
     const need = STAGE_SECS[f.stage];
     if (f.t >= need) {
       f.t = 0;
@@ -26054,38 +26185,31 @@ function finishSite(site) {
   cellsOf(site.def, site.x, site.z, site.rot).forEach((k) => {
     if (G.occ.get(k) === site) G.occ.delete(k);
   });
+  site.inst.traverse((o) => {
+    if (!o.isMesh) return;
+    const ms = Array.isArray(o.material) ? o.material : [o.material];
+    ms.forEach((m) => m.dispose && m.dispose());
+  });
   scene.remove(site.inst, site.pad, site.barGrp);
   G.sites = G.sites.filter((s) => s !== site);
   placeInstance(site.def, site.x, site.z, site.rot, true);
   ctx.toast && ctx.toast("\u{1F528} " + site.def.name + " \u5EFA\u6210");
   ctx.UI && ctx.UI.refresh();
 }
-function stepSites(dt) {
-  for (const site of G.sites) site.barGrp.quaternion.copy(cam.quaternion);
-  G._siteT = (G._siteT || 0) + dt;
-  if (G._siteT > 1.5) {
-    G._siteT = 0;
+var SITE_BUILDERS_MAX = 2;
+registerJobs({
+  id: "site-build",
+  scan() {
     for (const site of G.sites) {
       const builders = G.villagers.filter((v) => v.task && v.task.kind === "build" && v.task.target === site).length;
-      if (builders >= 2) continue;
-      let near = null, nd = 1e9;
-      for (const v of G.villagers) {
-        if (v.task) continue;
-        const d = v.obj.position.distanceTo(site.inst.position);
-        if (d < nd) {
-          nd = d;
-          near = v;
-        }
-      }
-      if (near) {
-        site.builder = near;
-        command(near, "build", site);
-      }
+      if (builders >= SITE_BUILDERS_MAX) continue;
+      return { kind: "build", target: site };
     }
+    return null;
   }
-  for (const site of G.sites) {
-    if (site.builder && (!site.builder.task || site.builder.task.target !== site)) site.builder = null;
-  }
+});
+function stepSites(dt) {
+  for (const site of G.sites) site.barGrp.quaternion.copy(cam.quaternion);
 }
 var ghostOK = new MeshBasicMaterial({ color: 11206570, transparent: true, opacity: 0.5, depthWrite: false });
 var ghostBad = new MeshBasicMaterial({ color: 16737877, transparent: true, opacity: 0.5, depthWrite: false });
@@ -26119,6 +26243,558 @@ function updateGhost(def, cell, rot) {
     p.position.set(cell.x + i + 0.5, 0.03, cell.z + j + 0.5);
     ghost.fp.add(p);
   }
+}
+
+// src/storage.ts
+var STORAGE = {
+  RANGE: 12,
+  // 免损耗半径（格）：村中心或任一仓库
+  FAR_EFF: 0.5,
+  // 超出半径的入库效率（远途损耗）
+  BOOST_R: 8,
+  // 仓库辐射半径（格）
+  BOOST: 1.1
+  // 辐射范围内生产建筑效率加成
+};
+var FAR_RES = { food: true, bread: true };
+function depots() {
+  return G.placed.filter((p) => p.def.role === "core" || p.def.id === "warehouse").map((p) => ({ x: p.inst.position.x, z: p.inst.position.z }));
+}
+function depotDist(x, z) {
+  let best = Infinity;
+  for (const d of depots()) best = Math.min(best, Math.hypot(d.x - x, d.z - z));
+  return best;
+}
+function depositEfficiency(x, z, res) {
+  if (!FAR_RES[res]) return 1;
+  return depotDist(x, z) <= STORAGE.RANGE ? 1 : STORAGE.FAR_EFF;
+}
+function productionBoost(x, z) {
+  return depotDist(x, z) <= STORAGE.BOOST_R ? STORAGE.BOOST : 1;
+}
+
+// src/events.ts
+var subs = /* @__PURE__ */ new Map();
+var Events = {
+  /* 订阅：order 越小越先被调用；返回 fn 便于 off */
+  on(event, fn, order = 100) {
+    if (!subs.has(event)) subs.set(event, []);
+    subs.get(event).push({ fn, order, seq: subs.get(event).length });
+    return fn;
+  },
+  off(event, fn) {
+    const list = subs.get(event);
+    if (!list) return;
+    const i = list.findIndex((s) => s.fn === fn);
+    if (i >= 0) list.splice(i, 1);
+  },
+  emit(event, payload) {
+    const list = subs.get(event);
+    if (!list || !list.length) return;
+    for (const { fn } of [...list].sort((a, b) => a.order - b.order || a.seq - b.seq)) {
+      try {
+        fn(payload);
+      } catch (e) {
+        console.error("[Events] \u8BA2\u9605\u8005\u5904\u7406 " + event + " \u51FA\u9519\uFF1A", e);
+      }
+    }
+  }
+};
+
+// src/repute.ts
+var SKILL_NAMES = { chop: "\u780D\u4F10", harvest: "\u6536\u83B7", work: "\u505A\u5DE5" };
+var skillLevel = (exp) => Math.min(3, Math.floor((exp || 0) / 10));
+var skillMul = (v, key2) => 1 + 0.1 * skillLevel(v.skills && v.skills[key2]);
+function gainExp(v, key2, n = 1) {
+  if (!v.skills) v.skills = {};
+  const before = skillLevel(v.skills[key2]);
+  v.skills[key2] = (v.skills[key2] || 0) + n;
+  const after = skillLevel(v.skills[key2]);
+  if (after > before) ctx.toast(`\u{1F331} ${v.name} \u719F\u7EC3\u4E86${SKILL_NAMES[key2] || key2}\uFF0C\u6548\u7387\u63D0\u5347`);
+}
+var skillTag = (v) => {
+  if (!v.skills) return "";
+  const [k, e] = Object.entries(v.skills).sort((a, b) => b[1] - a[1])[0] || [null, 0];
+  const lv = skillLevel(e);
+  return lv ? (SKILL_NAMES[k] || k) + "\xB7" + ["\u719F\u7EC3", "\u8001\u624B", "\u5927\u5E08"][lv - 1] : "";
+};
+var Repute = {
+  value: () => G.repute == null ? 20 : G.repute,
+  add(n, reason) {
+    const old = this.value();
+    G.repute = Math.max(0, Math.min(100, old + n));
+    const d = G.repute - old;
+    if (d) ctx.toast(`\u2B50 \u58F0\u671B ${d > 0 ? "+" : ""}${d} \u2192 ${G.repute}${reason ? "\uFF08" + reason + "\uFF09" : ""}`);
+  },
+  tradeDiscount() {
+    return this.value() >= 60 ? 0.1 : 0;
+  },
+  immigrantMul() {
+    return this.value() >= 40 ? 0.7 : 1;
+  },
+  /* 夜间结算：fed=全村温饱。低声望有概率流失村民（由 main.js 的 nightTick 包装调用） */
+  nightly(fed) {
+    if (G.over) return;
+    this.add(fed ? 1 : -2, fed ? "\u5168\u6751\u6E29\u9971" : "\u51BB\u997F\u4E4B\u591C");
+    if (this.value() < 15 && G.villagers.length > 1 && Math.random() < 0.25) {
+      const i = Math.floor(Math.random() * G.villagers.length);
+      const lv = G.villagers.splice(i, 1)[0];
+      if (lv) {
+        scene.remove(lv.obj);
+        G.selected && G.selected.delete(lv);
+        ctx.UI && ctx.UI.hideInfo();
+        ctx.UI && ctx.UI.selectionChanged();
+        ctx.toast(`\u{1F622} \u58F0\u671B\u4F4E\u8FF7\uFF0C${lv.name} \u5931\u671B\u5730\u79BB\u5F00\u4E86\u6751\u5E84`);
+      }
+    }
+  }
+};
+Events.on("night", () => Repute.nightly(!!G._nightFed), 10);
+
+// src/sim.ts
+var carryCap = (v) => CARRY_CAP + (traitOf(v).carryBonus || 0);
+var SICK_MUL = 0.5;
+var FROST_MUL = 0.75;
+var EPIDEMIC_MUL = 0.9;
+var SICK_DAYS = 3;
+function illnessMul(v) {
+  return (v.sick ? SICK_MUL : v.frostbite ? FROST_MUL : 1) * (G.sickCount >= 2 ? EPIDEMIC_MUL : 1);
+}
+var dotGeo = new SphereGeometry(0.09, 8, 6);
+var dotMat = new MeshBasicMaterial({ color: 6738026 });
+function updateSickDots() {
+  for (const v of G.villagers) {
+    if (v.sick && !v._sickDot) {
+      const dot = new Mesh(dotGeo, dotMat);
+      dot.position.y = 1.55;
+      v.obj.add(dot);
+      v._sickDot = dot;
+    } else if (!v.sick && v._sickDot) {
+      v.obj.remove(v._sickDot);
+      v._sickDot = null;
+    }
+  }
+}
+function stepDisease() {
+  for (const v of G.villagers) {
+    if (v.frostbite) {
+      v.frostbite = false;
+      v.sick = true;
+      v.sickT = SICK_DAYS;
+      ctx.toast(`\u{1F912} ${v.name} \u7684\u51BB\u4F24\u6076\u5316\u6210\u4E86\u75C5\uFF0C\u9700\u8981\u4F11\u606F\u6216\u5C31\u533B`);
+    }
+  }
+  const clinicStaffed = G.placed.some((p) => p.def.id === "clinic") && G.villagers.some((v) => v.task && v.task.kind === "work" && v.task.target && v.task.target.def && v.task.target.def.id === "clinic");
+  if (clinicStaffed) {
+    const patient = G.villagers.find((v) => v.sick);
+    if (patient) {
+      patient.sick = false;
+      patient.sickT = 0;
+      ctx.toast(`\u{1F48A} \u8BCA\u6240\u6CBB\u597D\u4E86 ${patient.name} \u7684\u75C5`);
+    }
+  }
+  for (const v of G.villagers) {
+    if (!v.sick) continue;
+    if (--v.sickT <= 0) {
+      v.sick = false;
+      ctx.toast(`\u{1F60A} ${v.name} \u75CA\u6108\u4E86`);
+    }
+  }
+  G.sickCount = G.villagers.filter((v) => v.sick).length;
+  if (G.sickCount >= 2) {
+    G.happy -= 1;
+    ctx.toast(`\u{1F922} \u6D41\u884C\u75C5\uFF01${G.sickCount} \u540D\u6751\u6C11\u75C5\u5012\u4E86\uFF08\u5168\u4F53\u6548\u7387 \xD70.9\uFF0C\u5FEB\u4E50 -1\uFF0C\u8BCA\u6240\u53EF\u6CBB\u75C5\uFF09`);
+  }
+  updateSickDots();
+}
+function stepCompost() {
+  if (G.day % 2 !== 0) return;
+  for (const p of G.placed) {
+    if (p.def.id !== "compost") continue;
+    if (G.res.food >= 1) {
+      G.res.food -= 1;
+      if (!p.fert) ctx.toast("\u{1F343} \u5806\u80A5\u7BB1\u5F00\u59CB\u6CA4\u80A5\uFF1A10 \u683C\u5185\u519C\u7530\u4EA7\u51FA +30%");
+      p.fert = true;
+    } else p.fert = false;
+  }
+}
+function stepVillager(v, dt, t) {
+  const speed = 1.5;
+  ensureToolStock();
+  updateBasket(v, carryTotal);
+  for (let i = G.drops.length - 1; i >= 0; i--) {
+    const d = G.drops[i];
+    if (carryTotal(v) < carryCap(v) && Math.hypot(d.x - v.obj.position.x, d.z - v.obj.position.z) < 0.8) {
+      v.carry[d.res] = (v.carry[d.res] || 0) + d.amt;
+      scene.remove(d.mesh);
+      G.drops.splice(i, 1);
+      floatText("+" + d.amt + " " + (ICONS[d.res] || ""), v.obj.position);
+    }
+  }
+  if (v.task && v.task.kind !== "deliver" && carryTotal(v) >= carryCap(v)) {
+    if (v.task.kind === "chop" && v.task.target.alive) v.resume = { kind: "chop", target: v.task.target };
+    startDeliver(v);
+  }
+  if (!v.task && carryTotal(v) < carryCap(v)) {
+    let near = null, nd = 8;
+    for (const d of G.drops) {
+      const dist2 = Math.hypot(d.x - v.obj.position.x, d.z - v.obj.position.z);
+      if (dist2 < nd) {
+        nd = dist2;
+        near = d;
+      }
+    }
+    if (near) v.task = { kind: "fetch", target: near };
+    else if (carryTotal(v) > 0) startDeliver(v);
+  }
+  if (v.task && v.task.kind === "chop" && carryTotal(v) > 0 && (carryTotal(v) >= carryCap(v) || !v.task.target.alive)) {
+    const depot = findDepot(v);
+    v.resume = v.task.target.alive ? { kind: "chop", target: v.task.target } : null;
+    v.task = depot ? { kind: "deliver", target: depot } : { kind: "deliver", target: { x: GRID / 2 + 1.5, z: GRID / 2 + 1.5 } };
+  }
+  let dest = null, arriveR = 0.6;
+  if (v.task) {
+    if (v.task.kind === "move") {
+      dest = v.task.target;
+      arriveR = 0.25;
+    } else if (v.task.kind === "chop") {
+      if (!v.task.target.alive) {
+        v.task = null;
+      } else {
+        dest = v.task.target.inst.position;
+        arriveR = 1.05 + (v.slot || 0);
+      }
+    } else if (v.task.kind === "work") {
+      if (!G.placed.includes(v.task.target)) {
+        v.task = null;
+      } else {
+        dest = v.task.target.inst.position;
+        arriveR = 1.3;
+      }
+    } else if (v.task.kind === "build") {
+      if (!G.sites.includes(v.task.target)) {
+        v.task = null;
+      } else {
+        dest = v.task.target.inst.position;
+        arriveR = 1.5 + Math.max(v.task.target.def.w, v.task.target.def.d) / 2;
+      }
+    } else if (v.task.kind === "harvest") {
+      if (!G.placed.includes(v.task.target) || v.task.target.farm.state === "fallow") {
+        v.task = null;
+      } else {
+        dest = v.task.target.inst.position;
+        arriveR = 2.3;
+      }
+    } else if (v.task.kind === "egg") {
+      if (!G.placed.includes(v.task.target)) {
+        v.task = null;
+      } else {
+        dest = v.task.target.inst.position;
+        arriveR = 1.4;
+      }
+    } else if (v.task.kind === "hunt") {
+      if (!v.task.target.parent) {
+        v.task = null;
+      } else {
+        dest = v.task.target.position;
+        arriveR = 1.2;
+      }
+    } else if (v.task.kind === "deliver") {
+      dest = v.task.target.inst ? v.task.target.inst.position : v.task.target;
+      arriveR = v.task.target.inst ? 1.6 : 0.4;
+    } else if (v.task.kind === "fetch") {
+      if (!G.drops.includes(v.task.target)) {
+        v.task = null;
+      } else {
+        dest = v.task.target.mesh.position;
+        arriveR = 0.5;
+      }
+    }
+  }
+  if (!dest) {
+    animIdle(v, t);
+    return;
+  }
+  const dx = dest.x - v.obj.position.x, dz = dest.z - v.obj.position.z;
+  let dist = Math.hypot(dx, dz);
+  let arrived = dist <= arriveR;
+  if (!arrived) {
+    const tk = v.task.kind + ":" + Math.round(dest.x * 2) + ":" + Math.round(dest.z * 2);
+    if (v._pathKey !== tk) {
+      v.path = findPath(v.obj.position.x, v.obj.position.z, dest.x, dest.z);
+      v._pi = 0;
+      v._pathKey = tk;
+    }
+    let tx = dest.x, tz = dest.z;
+    if (v.path) {
+      if (losFree(v.obj.position.x, v.obj.position.z, dest.x, dest.z)) v.path = null;
+      else {
+        let wp = v.path[v._pi];
+        while (wp && Math.hypot(wp.x - v.obj.position.x, wp.z - v.obj.position.z) < 0.3) {
+          v._pi++;
+          wp = v.path[v._pi];
+        }
+        if (wp) {
+          tx = wp.x;
+          tz = wp.z;
+        } else v.path = null;
+      }
+    }
+    const ddx = tx - v.obj.position.x, ddz = tz - v.obj.position.z;
+    const dd = Math.hypot(ddx, ddz) || 1;
+    const nx = v.obj.position.x + ddx / dd * speed * dt;
+    const nz = v.obj.position.z + ddz / dd * speed * dt;
+    if (cellFree(Math.floor(nx), Math.floor(nz)) || !cellFree(Math.floor(v.obj.position.x), Math.floor(v.obj.position.z))) {
+      v.obj.position.x = nx;
+      v.obj.position.z = nz;
+    } else {
+      if (dist < arriveR + 0.8) arrived = true;
+      v._pathKey = null;
+    }
+    v.obj.rotation.y = Math.atan2(ddx, ddz);
+  }
+  if (!arrived) {
+    animWalk(v, t);
+    return;
+  }
+  v._pathKey = null;
+  if (v.task.kind === "move" || v.task.kind === "fetch") {
+    v.task = null;
+    return;
+  }
+  if (v.task.kind === "build") {
+    const site = v.task.target;
+    v.task.workT += dt * (traitOf(v).workMul || 1) * skillMul(v, "work") * illnessMul(v);
+    site.progress += dt;
+    animWork(v, t);
+    updateSiteVisuals(site);
+    if (site.progress >= site.need) {
+      finishSite(site);
+      v.task = null;
+    }
+    return;
+  }
+  if (v.task.kind === "deliver") {
+    deliverCarry(v);
+    v.task = v.resume && v.resume.target.alive ? { kind: "chop", target: v.resume.target, workT: 0 } : null;
+    v.resume = null;
+    return;
+  }
+  const sKey = v.task.kind === "chop" ? "chop" : v.task.kind === "harvest" ? "harvest" : "work";
+  tryEquip(v);
+  const weatherMul = v.task.kind === "chop" && isRain() ? 0.8 : 1;
+  v.task.workT += dt * (traitOf(v).workMul || 1) * skillMul(v, sKey) * illnessMul(v) * weatherMul * (needsTool(v.task.kind) ? toolMul(v) : 1);
+  animWork(v, t);
+  if (v.task.workT >= (v.task.target.def.work || FARM_WORK)) {
+    v.task.workT = 0;
+    const doneKind = v.task.kind;
+    if (sKey !== "work") gainExp(v, sKey);
+    if (v.task.kind === "chop") {
+      const node = v.task.target;
+      const amt = node.def.yield === "food" && isWinterDay(G.day) ? Math.max(1, node.def.amt - 1) : node.def.amt;
+      const q = amt * depositEfficiency(node.inst.position.x, node.inst.position.z, node.def.yield);
+      spawnDrop(node.def.yield, Math.random() < q % 1 ? Math.ceil(q) : Math.floor(q), node.inst.position);
+      chopFX(node.inst, node.def.yield);
+      chopDone(node);
+    } else if (v.task.kind === "harvest") {
+      harvestDone(v);
+      v.task = null;
+    } else if (v.task.kind === "egg") {
+      eggCollected(v);
+      v.task = null;
+    } else if (v.task.kind === "hunt") {
+      huntDone(v);
+      v.task = null;
+    }
+    if (needsTool(doneKind)) maybeBreakTool(v);
+  }
+}
+function houseHappiness() {
+  const houses = G.placed.filter((p) => p.def.role === "house");
+  const good = houses.filter((p) => G.placed.some((w) => w.def.role === "well" && Math.abs(w.x - p.x) <= 6 && Math.abs(w.z - p.z) <= 6)).reduce((s, p) => s + p.def.cap, 0);
+  const total = houses.reduce((s, p) => s + p.def.cap, 0);
+  return total ? good / total : 1;
+}
+function productionPerDay() {
+  let wood = 0, food = 0;
+  const eff = (0.6 + G.happy / 250) * (0.5 + 0.5 * houseHappiness());
+  const winter = isWinterDay(G.day);
+  for (const p of G.placed) {
+    if (p.def.out === void 0) continue;
+    const n = G.villagers.filter((v) => v.task && v.task.kind === "work" && v.task.target === p).length;
+    if (!n) continue;
+    const rate = winter && p.def.id !== "greenhouse" ? 0.3 : 1;
+    if (p.def.role === "wood") wood += p.def.out * Math.min(n, 2) * eff;
+    else food += p.def.out * Math.min(n, 2) * eff * rate;
+  }
+  return { wood, food };
+}
+function stepProduction(dt) {
+  const winter = isWinterDay(G.day);
+  for (const p of G.placed) {
+    const rc = RECIPES[p.def.id];
+    if (!rc) continue;
+    const n = G.villagers.filter((v) => v.task && v.task.kind === "work" && v.task.target === p).length;
+    if (!n) {
+      p.prodT = 0;
+      continue;
+    }
+    p.prodT = (p.prodT || 0) + dt * Math.min(n, 2) * (winter ? 0.5 : 1);
+    while (p.prodT >= rc.time) {
+      if (!Object.entries(rc.in).every(([r, v]) => G.res[r] >= v)) {
+        p.prodT = rc.time;
+        break;
+      }
+      Object.entries(rc.in).forEach(([r, v]) => G.res[r] -= v);
+      Object.entries(rc.out).forEach(([r, v]) => {
+        const q = v * productionBoost(p.inst.position.x, p.inst.position.z) * depositEfficiency(p.inst.position.x, p.inst.position.z, r);
+        G.res[r] = (G.res[r] || 0) + (Math.random() < q % 1 ? Math.ceil(q) : Math.floor(q));
+      });
+      p.prodT -= rc.time;
+      const [res, amt] = Object.entries(rc.out)[0];
+      floatText("+" + amt + " " + (ICONS[res] || ""), p.inst.position);
+    }
+  }
+}
+function decorBonus() {
+  return G.placed.filter((p) => p.def.role === "happy").reduce((s, p) => s + (p.def.add || 0), 0);
+}
+function nightSettlement() {
+  const winter = isWinterDay(G.day);
+  stepCompost();
+  const pop = G.villagers.length;
+  const glutton = G.villagers.filter((x) => traitOf(x).extraFood).length;
+  let need = pop * (winter ? 2 : 1) + glutton;
+  const eatBread = Math.min(G.res.bread || 0, need);
+  G.res.bread -= eatBread;
+  need -= eatBread;
+  let fed = true;
+  if (G.res.food >= need) {
+    G.res.food -= need;
+    G._starveNights = 0;
+  } else {
+    fed = false;
+    G.res.food = 0;
+    G.happy -= 15;
+    G._starveNights = (G._starveNights || 0) + 1;
+    if (G._starveNights < 2) {
+      ctx.toast("\u{1F616} \u7CAE\u98DF\u4E0D\u591F\uFF0C\u6751\u6C11\u997F\u7740\u809A\u5B50\u5165\u7761\u4E86\uFF08\u8FDE\u7EED\u7F3A\u7CAE 2 \u665A\u5C31\u4F1A\u6709\u4EBA\u79BB\u5F00\uFF01\uFF09");
+    } else if (G.placed.some((p) => p.def.id === "clinic") && Math.random() < 0.5) {
+      G.happy += 5;
+      ctx.toast("\u{1F3E5} \u8BCA\u6240\u71AC\u8FC7\u96BE\u5173\uFF0C\u6751\u6C11\u7559\u4E86\u4E0B\u6765");
+    } else {
+      const leaver = G.villagers.pop();
+      if (leaver) {
+        scene.remove(leaver.obj);
+        G.selected.delete(leaver);
+        ctx.UI && ctx.UI.hideInfo();
+        ctx.UI && ctx.UI.selectionChanged();
+        ctx.toast(`\u{1F622} ${leaver.name} \u997F\u574F\u4E86\uFF0C\u79BB\u5F00\u4E86\u6751\u5E84`);
+      }
+    }
+  }
+  if (winter) {
+    const fire = G.placed.some((p) => p.def.id === "campfire");
+    const fuelNeed = Math.ceil(G.villagers.length * (fire ? 0.5 : 1));
+    if (G.res.wood >= fuelNeed) G.res.wood -= fuelNeed;
+    else {
+      fed = false;
+      G.res.wood = 0;
+      G.happy -= G.placed.some((p) => p.def.id === "bathhouse") ? 6 : 12;
+      ctx.toast(`\u{1F976} \u71C3\u6599\u4E0D\u8DB3\uFF0C\u6751\u6C11\u53D7\u51BB${G.placed.some((p) => p.def.id === "bathhouse") ? "\uFF08\u6FA1\u5802\u5E2E\u5927\u5BB6\u7F13\u4E86\u7F13\uFF09" : "\uFF08\u5FEB\u4E50 -12\uFF0C\u5EFA\u7BDD\u706B\u53EF\u7701\u4E00\u534A\u6728\u67F4\uFF09"}`);
+      const healthy = G.villagers.filter((v) => !v.frostbite && !v.sick);
+      const n = Math.min(healthy.length, 1 + Math.floor(Math.random() * 2));
+      for (let i = 0; i < n; i++) healthy.splice(Math.floor(Math.random() * healthy.length), 1)[0].frostbite = true;
+    }
+    G.happy -= 6;
+  } else G.happy = Math.min(100, G.happy + 4 + Math.round(decorBonus() * 0.2));
+  stepDisease();
+  const roll = Math.random();
+  const guarded = G.placed.some((p) => p.def.role === "tower" || p.def.id === "watchpost");
+  if (roll < 0.22 && G.day >= 6) {
+    if (!guarded) {
+      const loss = Math.min(G.res.food, 4 + Math.floor(Math.random() * 4));
+      G.res.food -= loss;
+      ctx.toast(`\u{1F43A} \u72FC\u7FA4\u5077\u7CAE\uFF01\u635F\u5931 ${loss} \u98DF\uFF08\u5EFA\u77AD\u671B\u5854\u53EF\u9632\uFF09`);
+    } else ctx.toast("\u{1F43A} \u72FC\u7FA4\u88AB\u54E8\u5854\u5413\u9000\u4E86");
+  } else if (roll < 0.5 - 0.1 * Repute.immigrantMul() && houseCapacity() > G.villagers.length && G.res.food >= G.villagers.length) {
+    spawnVillagers(1);
+    ctx.toast(`\u{1F389} \u65C5\u884C\u8005\u52A0\u5165\u6751\u5E84\uFF08\u73B0 ${G.villagers.length} \u4EBA\uFF09`);
+  } else if (roll < 0.5) {
+    G.res.wood += 3;
+    ctx.toast("\u{1F30A} \u6CB3\u6C34\u9001\u6765\u6D6E\u6728 +3 \u6728");
+  }
+  const dove = G.placed.filter((p) => p.def.id === "dovecote").length;
+  if (dove) G.res.food = Math.min(G.foodCap, G.res.food + (winter ? 1 : 2) * dove);
+  for (const v of G.villagers) if (v.task && v.task.kind === "work") gainExp(v, "work");
+  if (G.placed.some((p) => p.def.id === "school") && G.day % 2 === 0 && G.villagers.length) {
+    const sv = G.villagers[Math.floor(Math.random() * G.villagers.length)];
+    const keys2 = Object.keys(sv.skills || {});
+    gainExp(sv, keys2.length ? keys2[Math.floor(Math.random() * keys2.length)] : "work", 5);
+  }
+  G._nightFed = fed;
+  G.happy = Math.max(0, G.happy);
+  G.day++;
+  regrow();
+  const din = (G.day - 1) % YEAR_DAYS + 1;
+  if (din === 1 && G.day > 1) {
+    G.year++;
+    ctx.toast("\u{1F338} \u65B0\u7684\u4E00\u5E74\u5F00\u59CB\u4E86\u2014\u2014\u7B2C " + G.year + " \u5E74");
+  }
+  if (seasonOf(G.day) === "\u51AC" && seasonOf(G.day - 1) !== "\u51AC") ctx.toast("\u2744 \u51AC\u5929\u6765\u4E86\uFF01\u9732\u5929\u4EA7\u51FA\u5927\u51CF\uFF0C\u6E29\u5BA4/\u56E4\u7CAE\u662F\u5173\u952E");
+  else if (din === SEASON_DAYS * 3) {
+    const p = G.villagers.length;
+    const fire = G.placed.some((x) => x.def.id === "campfire");
+    const woodNeed = p * (fire ? 4 : 6), foodNeed = p * 12;
+    const ok = G.res.wood >= woodNeed && G.res.food >= foodNeed;
+    ctx.toast(ok ? `\u2744 \u660E\u65E5\u5165\u51AC\uFF1A\u50A8\u5907\u8FBE\u6807\uFF08\u67F4 ${Math.floor(G.res.wood)}/\u9700${woodNeed}\uFF0C\u7CAE ${Math.floor(G.res.food)}/\u9700${foodNeed}\uFF09\uFF0C\u7A33\u4E86` : `\u26A0 \u660E\u65E5\u5165\u51AC\uFF1A\u50A8\u5907\u4E0D\u8DB3\uFF01\u5EFA\u8BAE \u7CAE\u2265${foodNeed} \u67F4\u2265${woodNeed}${fire ? "\uFF08\u7BDD\u706B\u5DF2\u628A\u67F4\u9700\u964D\u5230 4/\u4EBA\uFF09" : "\uFF08\u5EFA\u7BDD\u706B\u53EF\u7701\u67F4\uFF09"}\uFF08\u73B0 \u7CAE ${Math.floor(G.res.food)}\uFF0C\u67F4 ${Math.floor(G.res.wood)}\uFF09`);
+  }
+  const din2 = (G.day - 1) % YEAR_DAYS + 1;
+  if (din2 % SEASON_DAYS === 1) {
+    const bonus = G.placed.some((p) => p.def.id === "campfire") ? 14 : 10;
+    G.happy = Math.min(100, G.happy + bonus);
+    ctx.toast(`\u{1F389} ${FESTIVALS[seasonOf(G.day)]}\uFF01\u5168\u6751\u6B22\u805A\u4E00\u5802\uFF08\u5FEB\u4E50 +${bonus}` + (bonus > 10 ? "\uFF0C\u7BDD\u706B\u6DFB\u4E86\u5F69" : "") + "\uFF09");
+    Repute.add(3, "\u4E3E\u529E\u8282\u65E5");
+  }
+  const sunny = G.villagers.filter((x) => traitOf(x).sunny).length;
+  if (sunny) G.happy = Math.min(100, G.happy + sunny);
+  if (isMarketDay(G.day)) ctx.toast("\u{1F9F3} \u884C\u5546\u5230\u8BBF\uFF01\u4ECA\u5929\u53BB\u5E02\u96C6\u53EF\u4EE5\u4E70\u5356\u8D27\u7269");
+  if (Math.random() < 0.3 && ctx.UI && ctx.UI.showEvent) ctx.UI.showEvent(EVENTS[Math.floor(Math.random() * EVENTS.length)]);
+  checkMilestones();
+  if (!G.over && G.villagers.length < 3) {
+    endGame(false);
+    return;
+  }
+  ctx.UI && ctx.UI.refresh();
+}
+function endGame(win) {
+  G.over = true;
+  document.getElementById("end").style.display = "flex";
+  if (win) {
+    document.getElementById("end-title").textContent = "\u{1F3C6} \u7E41\u8363\u7684\u6696\u5883\u8FB9\u9672";
+    document.getElementById("end-desc").textContent = `\u5168\u90E8\u91CC\u7A0B\u7891\u8FBE\u6210\uFF01\u7B2C ${G.year} \u5E74\uFF0C\u4EBA\u53E3 ${G.villagers.length}\uFF0C\u5FEB\u4E50 ${Math.round(G.happy)}\u3002\u8FD9\u5EA7\u6751\u5E84\u6210\u4E86\u8FB9\u9672\u7684\u4F20\u5947\u3002`;
+  } else {
+    document.getElementById("end-title").textContent = "\u{1F940} \u6751\u5E84\u8870\u843D\u4E86";
+    document.getElementById("end-desc").textContent = `\u7B2C ${G.year} \u5E74\uFF0C\u6751\u6C11\u8D8A\u6765\u8D8A\u5C11\uFF0C\u5927\u5BB6\u6536\u62FE\u884C\u56CA\u79BB\u5F00\u4E86\u8FB9\u9672\u3002\u56E4\u7CAE\u3001\u71C3\u6599\u4E0E\u5FEB\u4E50\uFF0C\u7F3A\u4E00\u4E0D\u53EF\u3002`;
+  }
+}
+function checkMilestones() {
+  for (const m of MILESTONES) {
+    if (G.milestones.has(m.id)) continue;
+    let ok = false;
+    if (m.type === "place") ok = G.placed.some((p) => p.def.id === m.id2);
+    else if (m.type === "res") ok = (G.res[m.key] || 0) >= m.n;
+    else if (m.type === "tech") ok = G.tech.size >= m.n;
+    else if (m.type === "pop") ok = G.villagers.length >= m.n;
+    else if (m.type === "year") ok = (G.year || 1) >= m.n;
+    if (ok) {
+      G.milestones.add(m.id);
+      G.happy = Math.min(100, G.happy + 8);
+      Repute.add(8, "\u8FBE\u6210\u91CC\u7A0B\u7891\u3010" + m.name + "\u3011");
+      ctx.toast("\u{1F3C6} \u91CC\u7A0B\u7891\u8FBE\u6210\u3010" + m.name + "\u3011\uFF1A" + m.desc + "\uFF08\u5FEB\u4E50 +8\uFF09");
+    }
+  }
+  if (G.milestones.size >= MILESTONES.length) endGame(true);
 }
 
 // src/save.ts
@@ -26156,6 +26832,10 @@ function saveGame() {
       // S25 村志
       letters: G.letters || [],
       // S25 信件
+      letterState: G.letterState || null,
+      // S27 借银/订单状态
+      starveNights: G._starveNights || 0,
+      // 连续缺粮夜数（P0-6）
       pasture: G.placed.filter((p) => p.pasture).map((p) => ({
         // S25 畜牧状态（蛋/鹿计时、鹿数）
         id: p.def.id,
@@ -26171,12 +26851,17 @@ function saveGame() {
         skills: v.skills || {},
         sick: v.sick ? 1 : 0,
         // S35 技能 / 生病（S25 补全）
+        sickT: v.sickT || 0,
+        // P0-1 生病自愈倒计时
+        carry: { ...v.carry || {} },
+        // P1-12 身上携带
         x: v.obj.position.x,
         z: v.obj.position.z
       })),
       placed: G.placed.map((p) => ({ id: p.def.id, x: p.x, z: p.z, rot: p.rot })),
       sites: G.sites.map((s) => ({ id: s.def.id, x: s.x, z: s.z, rot: s.rot, progress: s.progress, need: s.need })),
       // 自然物：连外观偏移一起存，读档后与存档时画面一致
+      // dc: 装饰树标记（hp:Infinity 无法 JSON 序列化，读档按 plantDecoTree 语义重建，P0-2）
       nature: G.nature.map((n) => ({
         t: n.type,
         x: n.x,
@@ -26184,11 +26869,14 @@ function saveGame() {
         hp: n.hp,
         alive: n.alive,
         rd: n.respawnDay,
+        dc: n.deco ? 1 : 0,
         px: n.inst.position.x,
         pz: n.inst.position.z,
         ry: n.inst.rotation.y,
         s: n.inst.scale.x
-      }))
+      })),
+      // 地上掉落物（P1-12）
+      drops: G.drops.map((d) => ({ res: d.res, amt: d.amt, x: d.x, z: d.z }))
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     return true;
@@ -26221,6 +26909,24 @@ function rebuildNature(n) {
   inst.position.set(n.px, 0, n.pz);
   inst.rotation.y = n.ry;
   inst.scale.setScalar(n.s);
+  if (n.dc) {
+    scene.add(inst);
+    const deco = {
+      type: "tree",
+      def: { name: "\u88C5\u9970\u6811", deco: true, yield: "wood", amt: 0, hp: 1 },
+      inst,
+      x: n.x,
+      z: n.z,
+      hp: Infinity,
+      alive: true,
+      deco: true,
+      respawnDay: 0,
+      ring: null
+    };
+    G.nature.push(deco);
+    G.occ.set(key(n.x, n.z), deco);
+    return;
+  }
   if (n.alive) scene.add(inst);
   const node = { type: n.t, def: nd, inst, x: n.x, z: n.z, hp: n.hp, alive: n.alive, respawnDay: n.rd || 0, ring: null };
   G.nature.push(node);
@@ -26261,8 +26967,11 @@ function loadGame() {
     G.autoWork = data.autoWork !== false;
     G.storyLog = Array.isArray(data.storyLog) ? data.storyLog.slice(0, 8) : [];
     G.letters = Array.isArray(data.letters) ? data.letters : [];
+    G.letterState = data.letterState || { pending: null, debt: 0, order: null };
+    G._starveNights = data.starveNights || 0;
     for (const n of data.nature) rebuildNature(n);
     pastureRestore(data.pasture);
+    for (const d of data.drops || []) spawnDropAt(d.res, d.amt, d.x, d.z);
     spawnVillagers(data.villagers.length);
     data.villagers.forEach((vd, i) => {
       const v = G.villagers[i];
@@ -26272,13 +26981,17 @@ function loadGame() {
       v.slot = vd.slot;
       v.skills = vd.skills || {};
       v.sick = !!vd.sick;
+      v.sickT = typeof vd.sickT === "number" && vd.sickT > 0 ? vd.sickT : vd.sick ? SICK_DAYS : 0;
       v.task = null;
       v.resume = null;
-      v.carry = {};
+      v.carry = vd.carry && typeof vd.carry === "object" ? { ...vd.carry } : {};
       v.obj.position.x = vd.x;
       v.obj.position.z = vd.z;
     });
     ctx.UI && ctx.UI.refresh();
+    G.over = false;
+    const end = document.getElementById("end");
+    if (end) end.style.display = "none";
     return true;
   };
   if (assetsReady()) return apply();
@@ -26331,28 +27044,6 @@ function setupControls() {
   });
   refreshHud();
 }
-
-// src/events.ts
-var subs = /* @__PURE__ */ new Map();
-var Events = {
-  /* 订阅：order 越小越先被调用；返回 fn 便于 off */
-  on(event, fn, order = 100) {
-    if (!subs.has(event)) subs.set(event, []);
-    subs.get(event).push({ fn, order, seq: subs.get(event).length });
-    return fn;
-  },
-  off(event, fn) {
-    const list = subs.get(event);
-    if (!list) return;
-    const i = list.findIndex((s) => s.fn === fn);
-    if (i >= 0) list.splice(i, 1);
-  },
-  emit(event, payload) {
-    const list = subs.get(event);
-    if (!list || !list.length) return;
-    for (const { fn } of [...list].sort((a, b) => a.order - b.order || a.seq - b.seq)) fn(payload);
-  }
-};
 
 // src/audio.ts
 var ac = null;
@@ -26508,9 +27199,21 @@ Events.on("night", () => Sfx.night(), 20);
 
 // src/drops.ts
 var dropGeo = new IcosahedronGeometry(0.14, 0);
+var dropMats = {};
+function dropMat(res) {
+  return dropMats[res] || (dropMats[res] = new MeshLambertMaterial({ color: RES_INFO[res].color }));
+}
 function spawnDrop(res, amt, pos2) {
-  const mesh = new Mesh(dropGeo, new MeshLambertMaterial({ color: RES_INFO[res].color }));
+  const mesh = new Mesh(dropGeo, dropMat(res));
   mesh.position.set(pos2.x + (Math.random() - 0.5) * 0.8, 0.5, pos2.z + (Math.random() - 0.5) * 0.8);
+  finishDrop(mesh, res, amt);
+}
+function spawnDropAt(res, amt, x, z) {
+  const mesh = new Mesh(dropGeo, dropMat(res));
+  mesh.position.set(x, 0.5, z);
+  finishDrop(mesh, res, amt);
+}
+function finishDrop(mesh, res, amt) {
   mesh.castShadow = true;
   scene.add(mesh);
   G.drops.push({ mesh, res, amt, x: mesh.position.x, z: mesh.position.z, baseY: 0.14, t: Math.random() * 6 });
@@ -26604,527 +27307,6 @@ function floatText(text, worldPos) {
   el3.style.top = r.top + (1 - p.y) / 2 * r.height + "px";
   mainEl.appendChild(el3);
   setTimeout(() => el3.remove(), 1300);
-}
-
-// src/storage.ts
-var STORAGE = {
-  RANGE: 12,
-  // 免损耗半径（格）：村中心或任一仓库
-  FAR_EFF: 0.5,
-  // 超出半径的入库效率（远途损耗）
-  BOOST_R: 8,
-  // 仓库辐射半径（格）
-  BOOST: 1.1
-  // 辐射范围内生产建筑效率加成
-};
-var FAR_RES = { food: true, bread: true };
-function depots() {
-  return G.placed.filter((p) => p.def.role === "core" || p.def.id === "warehouse").map((p) => ({ x: p.inst.position.x, z: p.inst.position.z }));
-}
-function depotDist(x, z) {
-  let best = Infinity;
-  for (const d of depots()) best = Math.min(best, Math.hypot(d.x - x, d.z - z));
-  return best;
-}
-function depositEfficiency(x, z, res) {
-  if (!FAR_RES[res]) return 1;
-  return depotDist(x, z) <= STORAGE.RANGE ? 1 : STORAGE.FAR_EFF;
-}
-function productionBoost(x, z) {
-  return depotDist(x, z) <= STORAGE.BOOST_R ? STORAGE.BOOST : 1;
-}
-
-// src/repute.ts
-var SKILL_NAMES = { chop: "\u780D\u4F10", harvest: "\u6536\u83B7", work: "\u505A\u5DE5" };
-var skillLevel = (exp) => Math.min(3, Math.floor((exp || 0) / 10));
-var skillMul = (v, key2) => 1 + 0.1 * skillLevel(v.skills && v.skills[key2]);
-function gainExp(v, key2, n = 1) {
-  if (!v.skills) v.skills = {};
-  const before = skillLevel(v.skills[key2]);
-  v.skills[key2] = (v.skills[key2] || 0) + n;
-  const after = skillLevel(v.skills[key2]);
-  if (after > before) ctx.toast(`\u{1F331} ${v.name} \u719F\u7EC3\u4E86${SKILL_NAMES[key2] || key2}\uFF0C\u6548\u7387\u63D0\u5347`);
-}
-var skillTag = (v) => {
-  if (!v.skills) return "";
-  const [k, e] = Object.entries(v.skills).sort((a, b) => b[1] - a[1])[0] || [null, 0];
-  const lv = skillLevel(e);
-  return lv ? (SKILL_NAMES[k] || k) + "\xB7" + ["\u719F\u7EC3", "\u8001\u624B", "\u5927\u5E08"][lv - 1] : "";
-};
-var Repute = {
-  value: () => G.repute == null ? 20 : G.repute,
-  add(n, reason) {
-    const old = this.value();
-    G.repute = Math.max(0, Math.min(100, old + n));
-    const d = G.repute - old;
-    if (d) ctx.toast(`\u2B50 \u58F0\u671B ${d > 0 ? "+" : ""}${d} \u2192 ${G.repute}${reason ? "\uFF08" + reason + "\uFF09" : ""}`);
-  },
-  tradeDiscount() {
-    return this.value() >= 60 ? 0.1 : 0;
-  },
-  immigrantMul() {
-    return this.value() >= 40 ? 0.7 : 1;
-  },
-  /* 夜间结算：fed=全村温饱。低声望有概率流失村民（由 main.js 的 nightTick 包装调用） */
-  nightly(fed) {
-    if (G.over) return;
-    this.add(fed ? 1 : -2, fed ? "\u5168\u6751\u6E29\u9971" : "\u51BB\u997F\u4E4B\u591C");
-    if (this.value() < 15 && G.villagers.length > 1 && Math.random() < 0.25) {
-      const i = Math.floor(Math.random() * G.villagers.length);
-      const lv = G.villagers.splice(i, 1)[0];
-      if (lv) {
-        scene.remove(lv.obj);
-        G.selected && G.selected.delete(lv);
-        ctx.toast(`\u{1F622} \u58F0\u671B\u4F4E\u8FF7\uFF0C${lv.name} \u5931\u671B\u5730\u79BB\u5F00\u4E86\u6751\u5E84`);
-      }
-    }
-  }
-};
-Events.on("night", () => Repute.nightly(!!G._nightFed), 10);
-
-// src/sim.ts
-var carryCap = (v) => CARRY_CAP + (traitOf(v).carryBonus || 0);
-var SICK_MUL = 0.5;
-var FROST_MUL = 0.75;
-var EPIDEMIC_MUL = 0.9;
-var SICK_DAYS = 3;
-function illnessMul(v) {
-  return (v.sick ? SICK_MUL : v.frostbite ? FROST_MUL : 1) * (G.sickCount >= 2 ? EPIDEMIC_MUL : 1);
-}
-var dotGeo = new SphereGeometry(0.09, 8, 6);
-var dotMat = new MeshBasicMaterial({ color: 6738026 });
-function updateSickDots() {
-  for (const v of G.villagers) {
-    if (v.sick && !v._sickDot) {
-      const dot = new Mesh(dotGeo, dotMat);
-      dot.position.y = 1.55;
-      v.obj.add(dot);
-      v._sickDot = dot;
-    } else if (!v.sick && v._sickDot) {
-      v.obj.remove(v._sickDot);
-      v._sickDot = null;
-    }
-  }
-}
-function stepDisease() {
-  for (const v of G.villagers) {
-    if (v.frostbite) {
-      v.frostbite = false;
-      v.sick = true;
-      v.sickT = SICK_DAYS;
-      ctx.toast(`\u{1F912} ${v.name} \u7684\u51BB\u4F24\u6076\u5316\u6210\u4E86\u75C5\uFF0C\u9700\u8981\u4F11\u606F\u6216\u5C31\u533B`);
-    }
-  }
-  const clinicStaffed = G.placed.some((p) => p.def.id === "clinic") && G.villagers.some((v) => v.task && v.task.kind === "work" && v.task.target && v.task.target.def && v.task.target.def.id === "clinic");
-  if (clinicStaffed) {
-    const patient = G.villagers.find((v) => v.sick);
-    if (patient) {
-      patient.sick = false;
-      patient.sickT = 0;
-      ctx.toast(`\u{1F48A} \u8BCA\u6240\u6CBB\u597D\u4E86 ${patient.name} \u7684\u75C5`);
-    }
-  }
-  for (const v of G.villagers) {
-    if (!v.sick) continue;
-    if (--v.sickT <= 0) {
-      v.sick = false;
-      ctx.toast(`\u{1F60A} ${v.name} \u75CA\u6108\u4E86`);
-    }
-  }
-  G.sickCount = G.villagers.filter((v) => v.sick).length;
-  if (G.sickCount >= 2) {
-    G.happy -= 1;
-    ctx.toast(`\u{1F922} \u6D41\u884C\u75C5\uFF01${G.sickCount} \u540D\u6751\u6C11\u75C5\u5012\u4E86\uFF08\u5168\u4F53\u6548\u7387 \xD70.9\uFF0C\u5FEB\u4E50 -1\uFF0C\u8BCA\u6240\u53EF\u6CBB\u75C5\uFF09`);
-  }
-  updateSickDots();
-}
-var COMPOST_RANGE = 10;
-var COMPOST_BOOST = 1.15;
-G.farmYieldMul = (entry) => {
-  for (const p of G.placed) {
-    if (p.def.id !== "compost" || !p.fert) continue;
-    if (Math.hypot(p.x - entry.x, p.z - entry.z) <= COMPOST_RANGE) return COMPOST_BOOST;
-  }
-  return 1;
-};
-function stepCompost() {
-  if (G.day % 2 !== 0) return;
-  for (const p of G.placed) {
-    if (p.def.id !== "compost") continue;
-    if (G.res.food >= 3) {
-      G.res.food -= 3;
-      if (!p.fert) ctx.toast("\u{1F343} \u5806\u80A5\u7BB1\u5F00\u59CB\u6CA4\u80A5\uFF1A10 \u683C\u5185\u519C\u7530\u4EA7\u51FA +15%");
-      p.fert = true;
-    } else p.fert = false;
-  }
-}
-function stepVillager(v, dt, t) {
-  const speed = 1.5;
-  ensureToolStock();
-  updateBasket(v, carryTotal);
-  for (let i = G.drops.length - 1; i >= 0; i--) {
-    const d = G.drops[i];
-    if (carryTotal(v) < carryCap(v) && Math.hypot(d.x - v.obj.position.x, d.z - v.obj.position.z) < 0.8) {
-      v.carry[d.res] = (v.carry[d.res] || 0) + d.amt;
-      scene.remove(d.mesh);
-      G.drops.splice(i, 1);
-      floatText("+" + d.amt + " " + (ICONS[d.res] || ""), v.obj.position);
-    }
-  }
-  if (v.task && v.task.kind !== "deliver" && carryTotal(v) >= carryCap(v)) {
-    if (v.task.kind === "chop" && v.task.target.alive) v.resume = { kind: "chop", target: v.task.target };
-    startDeliver(v);
-  }
-  if (!v.task && carryTotal(v) < carryCap(v)) {
-    let near = null, nd = 8;
-    for (const d of G.drops) {
-      const dist2 = Math.hypot(d.x - v.obj.position.x, d.z - v.obj.position.z);
-      if (dist2 < nd) {
-        nd = dist2;
-        near = d;
-      }
-    }
-    if (near) v.task = { kind: "fetch", target: near };
-    else if (carryTotal(v) > 0) startDeliver(v);
-  }
-  if (v.task && v.task.kind === "chop" && carryTotal(v) > 0 && (carryTotal(v) >= carryCap(v) || !v.task.target.alive)) {
-    const depot = findDepot(v);
-    v.resume = v.task.target.alive ? { kind: "chop", target: v.task.target } : null;
-    v.task = depot ? { kind: "deliver", target: depot } : { kind: "deliver", target: { x: GRID / 2 + 1.5, z: GRID / 2 + 1.5 } };
-  }
-  let dest = null, arriveR = 0.6;
-  if (v.task) {
-    if (v.task.kind === "move") {
-      dest = v.task.target;
-      arriveR = 0.25;
-    } else if (v.task.kind === "chop") {
-      if (!v.task.target.alive) {
-        v.task = null;
-      } else {
-        dest = v.task.target.inst.position;
-        arriveR = 1.05 + (v.slot || 0);
-      }
-    } else if (v.task.kind === "work") {
-      if (!G.placed.includes(v.task.target)) {
-        v.task = null;
-      } else {
-        dest = v.task.target.inst.position;
-        arriveR = 1.3;
-      }
-    } else if (v.task.kind === "build") {
-      if (!G.sites.includes(v.task.target)) {
-        v.task = null;
-      } else {
-        dest = v.task.target.inst.position;
-        arriveR = 1.5;
-      }
-    } else if (v.task.kind === "harvest") {
-      if (!G.placed.includes(v.task.target) || v.task.target.farm.state === "fallow") {
-        v.task = null;
-      } else {
-        dest = v.task.target.inst.position;
-        arriveR = 2.3;
-      }
-    } else if (v.task.kind === "egg") {
-      if (!G.placed.includes(v.task.target)) {
-        v.task = null;
-      } else {
-        dest = v.task.target.inst.position;
-        arriveR = 1.4;
-      }
-    } else if (v.task.kind === "hunt") {
-      if (!v.task.target.parent) {
-        v.task = null;
-      } else {
-        dest = v.task.target.position;
-        arriveR = 1.2;
-      }
-    } else if (v.task.kind === "deliver") {
-      dest = v.task.target.inst ? v.task.target.inst.position : v.task.target;
-      arriveR = v.task.target.inst ? 1.6 : 0.4;
-    } else if (v.task.kind === "fetch") {
-      if (!G.drops.includes(v.task.target)) {
-        v.task = null;
-      } else {
-        dest = v.task.target.mesh.position;
-        arriveR = 0.5;
-      }
-    }
-  }
-  if (!dest) {
-    animIdle(v, t);
-    return;
-  }
-  const dx = dest.x - v.obj.position.x, dz = dest.z - v.obj.position.z;
-  let dist = Math.hypot(dx, dz);
-  let arrived = dist <= arriveR;
-  if (!arrived) {
-    const tk = v.task.kind + ":" + Math.round(dest.x * 2) + ":" + Math.round(dest.z * 2);
-    if (v._pathKey !== tk) {
-      v.path = findPath(v.obj.position.x, v.obj.position.z, dest.x, dest.z);
-      v._pi = 0;
-      v._pathKey = tk;
-    }
-    let tx = dest.x, tz = dest.z;
-    if (v.path) {
-      if (losFree(v.obj.position.x, v.obj.position.z, dest.x, dest.z)) v.path = null;
-      else {
-        let wp = v.path[v._pi];
-        while (wp && Math.hypot(wp.x - v.obj.position.x, wp.z - v.obj.position.z) < 0.3) {
-          v._pi++;
-          wp = v.path[v._pi];
-        }
-        if (wp) {
-          tx = wp.x;
-          tz = wp.z;
-        } else v.path = null;
-      }
-    }
-    const ddx = tx - v.obj.position.x, ddz = tz - v.obj.position.z;
-    const dd = Math.hypot(ddx, ddz) || 1;
-    const nx = v.obj.position.x + ddx / dd * speed * dt;
-    const nz = v.obj.position.z + ddz / dd * speed * dt;
-    if (cellFree(Math.floor(nx), Math.floor(nz)) || !cellFree(Math.floor(v.obj.position.x), Math.floor(v.obj.position.z))) {
-      v.obj.position.x = nx;
-      v.obj.position.z = nz;
-    } else {
-      if (dist < arriveR + 0.8) arrived = true;
-      v._pathKey = null;
-    }
-    v.obj.rotation.y = Math.atan2(ddx, ddz);
-  }
-  if (!arrived) {
-    animWalk(v, t);
-    return;
-  }
-  v._pathKey = null;
-  if (v.task.kind === "move" || v.task.kind === "fetch") {
-    v.task = null;
-    return;
-  }
-  if (v.task.kind === "build") {
-    const site = v.task.target;
-    v.task.workT += dt * (traitOf(v).workMul || 1) * skillMul(v, "work") * illnessMul(v);
-    site.progress += dt;
-    animWork(v, t);
-    updateSiteVisuals(site);
-    if (site.progress >= site.need) {
-      finishSite(site);
-      v.task = null;
-    }
-    return;
-  }
-  if (v.task.kind === "deliver") {
-    deliverCarry(v);
-    v.task = v.resume && v.resume.target.alive ? { kind: "chop", target: v.resume.target, workT: 0 } : null;
-    v.resume = null;
-    return;
-  }
-  const sKey = v.task.kind === "chop" ? "chop" : v.task.kind === "harvest" ? "harvest" : "work";
-  tryEquip(v);
-  v.task.workT += dt * (traitOf(v).workMul || 1) * skillMul(v, sKey) * illnessMul(v) * (needsTool(v.task.kind) ? toolMul(v) : 1);
-  animWork(v, t);
-  if (v.task.workT >= (v.task.target.def.work || FARM_WORK)) {
-    v.task.workT = 0;
-    const doneKind = v.task.kind;
-    if (sKey !== "work") gainExp(v, sKey);
-    if (v.task.kind === "chop") {
-      const node = v.task.target;
-      const amt = node.def.yield === "food" && isWinterDay(G.day) ? Math.max(1, node.def.amt - 1) : node.def.amt;
-      const q = amt * depositEfficiency(node.inst.position.x, node.inst.position.z, node.def.yield);
-      spawnDrop(node.def.yield, Math.random() < q % 1 ? Math.ceil(q) : Math.floor(q), node.inst.position);
-      chopFX(node.inst, node.def.yield);
-      chopDone(node);
-    } else if (v.task.kind === "harvest") {
-      harvestDone(v);
-      v.task = null;
-    } else if (v.task.kind === "egg") {
-      eggCollected(v);
-      v.task = null;
-    } else if (v.task.kind === "hunt") {
-      huntDone(v);
-      v.task = null;
-    }
-    if (needsTool(doneKind)) maybeBreakTool(v);
-  }
-}
-function houseHappiness() {
-  const houses = G.placed.filter((p) => p.def.role === "house");
-  const good = houses.filter((p) => G.placed.some((w) => w.def.role === "well" && Math.abs(w.x - p.x) <= 6 && Math.abs(w.z - p.z) <= 6)).reduce((s, p) => s + p.def.cap, 0);
-  const total = houses.reduce((s, p) => s + p.def.cap, 0);
-  return total ? good / total : 1;
-}
-function productionPerDay() {
-  let wood = 0, food = 0;
-  const eff = (0.6 + G.happy / 250) * (0.5 + 0.5 * houseHappiness());
-  const winter = isWinterDay(G.day);
-  for (const p of G.placed) {
-    if (p.def.out === void 0) continue;
-    const n = G.villagers.filter((v) => v.task && v.task.kind === "work" && v.task.target === p).length;
-    if (!n) continue;
-    const rate = winter && p.def.id !== "greenhouse" ? 0.3 : 1;
-    if (p.def.role === "wood") wood += p.def.out * Math.min(n, 2) * eff;
-    else food += p.def.out * Math.min(n, 2) * eff * rate;
-  }
-  return { wood, food };
-}
-function stepProduction(dt) {
-  const winter = isWinterDay(G.day);
-  for (const p of G.placed) {
-    const rc = RECIPES[p.def.id];
-    if (!rc) continue;
-    const n = G.villagers.filter((v) => v.task && v.task.kind === "work" && v.task.target === p).length;
-    if (!n) {
-      p.prodT = 0;
-      continue;
-    }
-    p.prodT = (p.prodT || 0) + dt * Math.min(n, 2) * (winter ? 0.5 : 1);
-    while (p.prodT >= rc.time) {
-      if (!Object.entries(rc.in).every(([r, v]) => G.res[r] >= v)) {
-        p.prodT = rc.time;
-        break;
-      }
-      Object.entries(rc.in).forEach(([r, v]) => G.res[r] -= v);
-      Object.entries(rc.out).forEach(([r, v]) => {
-        const q = v * productionBoost(p.inst.position.x, p.inst.position.z) * depositEfficiency(p.inst.position.x, p.inst.position.z, r);
-        G.res[r] = (G.res[r] || 0) + (Math.random() < q % 1 ? Math.ceil(q) : Math.floor(q));
-      });
-      p.prodT -= rc.time;
-      const [res, amt] = Object.entries(rc.out)[0];
-      floatText("+" + amt + " " + (ICONS[res] || ""), p.inst.position);
-    }
-  }
-}
-function decorBonus() {
-  return G.placed.filter((p) => p.def.role === "happy").reduce((s, p) => s + (p.def.add || 0), 0);
-}
-function nightSettlement() {
-  const winter = isWinterDay(G.day);
-  stepCompost();
-  const pop = G.villagers.length;
-  const glutton = G.villagers.filter((x) => traitOf(x).extraFood).length;
-  let need = pop * (winter ? 2 : 1) + glutton;
-  const eatBread = Math.min(G.res.bread || 0, need);
-  G.res.bread -= eatBread;
-  need -= eatBread;
-  let fed = true;
-  if (G.res.food >= need) G.res.food -= need;
-  else {
-    fed = false;
-    G.res.food = 0;
-    G.happy -= 15;
-    if (G.placed.some((p) => p.def.id === "clinic") && Math.random() < 0.5) {
-      G.happy += 5;
-      ctx.toast("\u{1F3E5} \u8BCA\u6240\u71AC\u8FC7\u96BE\u5173\uFF0C\u6751\u6C11\u7559\u4E86\u4E0B\u6765");
-    } else {
-      const leaver = G.villagers.pop();
-      if (leaver) {
-        scene.remove(leaver.obj);
-        G.selected.delete(leaver);
-        ctx.toast(`\u{1F622} ${leaver.name} \u997F\u574F\u4E86\uFF0C\u79BB\u5F00\u4E86\u6751\u5E84`);
-      }
-    }
-  }
-  if (winter) {
-    const fire = G.placed.some((p) => p.def.id === "campfire");
-    const fuelNeed = Math.ceil(G.villagers.length * (fire ? 0.5 : 1));
-    if (G.res.wood >= fuelNeed) G.res.wood -= fuelNeed;
-    else {
-      fed = false;
-      G.res.wood = 0;
-      G.happy -= G.placed.some((p) => p.def.id === "bathhouse") ? 6 : 12;
-      ctx.toast(`\u{1F976} \u71C3\u6599\u4E0D\u8DB3\uFF0C\u6751\u6C11\u53D7\u51BB${G.placed.some((p) => p.def.id === "bathhouse") ? "\uFF08\u6FA1\u5802\u5E2E\u5927\u5BB6\u7F13\u4E86\u7F13\uFF09" : "\uFF08\u5FEB\u4E50 -12\uFF0C\u5EFA\u7BDD\u706B\u53EF\u7701\u4E00\u534A\u6728\u67F4\uFF09"}`);
-      const healthy = G.villagers.filter((v) => !v.frostbite && !v.sick);
-      const n = Math.min(healthy.length, 1 + Math.floor(Math.random() * 2));
-      for (let i = 0; i < n; i++) healthy.splice(Math.floor(Math.random() * healthy.length), 1)[0].frostbite = true;
-    }
-    G.happy -= 6;
-  } else G.happy = Math.min(100, G.happy + 4 + Math.round(decorBonus() * 0.2));
-  stepDisease();
-  const roll = Math.random();
-  const guarded = G.placed.some((p) => p.def.role === "tower" || p.def.id === "watchpost");
-  if (roll < 0.22 && G.day >= 3) {
-    if (!guarded) {
-      const loss = Math.min(G.res.food, 4 + Math.floor(Math.random() * 4));
-      G.res.food -= loss;
-      ctx.toast(`\u{1F43A} \u72FC\u7FA4\u5077\u7CAE\uFF01\u635F\u5931 ${loss} \u98DF\uFF08\u5EFA\u77AD\u671B\u5854\u53EF\u9632\uFF09`);
-    } else ctx.toast("\u{1F43A} \u72FC\u7FA4\u88AB\u54E8\u5854\u5413\u9000\u4E86");
-  } else if (roll < 0.5 - 0.1 * Repute.immigrantMul() && houseCapacity() > G.villagers.length && G.res.food >= G.villagers.length) {
-    spawnVillagers(1);
-    ctx.toast(`\u{1F389} \u65C5\u884C\u8005\u52A0\u5165\u6751\u5E84\uFF08\u73B0 ${G.villagers.length} \u4EBA\uFF09`);
-  } else if (roll < 0.5) {
-    G.res.wood += 3;
-    ctx.toast("\u{1F30A} \u6CB3\u6C34\u9001\u6765\u6D6E\u6728 +3 \u6728");
-  }
-  const dove = G.placed.filter((p) => p.def.id === "dovecote").length;
-  if (dove) G.res.food = Math.min(G.foodCap, G.res.food + (winter ? 1 : 2) * dove);
-  for (const v of G.villagers) if (v.task && v.task.kind === "work") gainExp(v, "work");
-  if (G.placed.some((p) => p.def.id === "school") && G.day % 2 === 0 && G.villagers.length) {
-    const sv = G.villagers[Math.floor(Math.random() * G.villagers.length)];
-    const keys2 = Object.keys(sv.skills || {});
-    gainExp(sv, keys2.length ? keys2[Math.floor(Math.random() * keys2.length)] : "work", 5);
-  }
-  G._nightFed = fed;
-  G.happy = Math.max(0, G.happy);
-  G.day++;
-  regrow();
-  const din = (G.day - 1) % YEAR_DAYS + 1;
-  if (din === 1 && G.day > 1) {
-    G.year++;
-    ctx.toast("\u{1F338} \u65B0\u7684\u4E00\u5E74\u5F00\u59CB\u4E86\u2014\u2014\u7B2C " + G.year + " \u5E74");
-  }
-  if (seasonOf(G.day) === "\u51AC" && seasonOf(G.day - 1) !== "\u51AC") ctx.toast("\u2744 \u51AC\u5929\u6765\u4E86\uFF01\u9732\u5929\u4EA7\u51FA\u5927\u51CF\uFF0C\u6E29\u5BA4/\u56E4\u7CAE\u662F\u5173\u952E");
-  else if (din === SEASON_DAYS * 3) {
-    const p = G.villagers.length;
-    const ok = G.res.wood >= p * 8 && G.res.food >= p * 5;
-    ctx.toast(ok ? `\u2744 \u660E\u65E5\u5165\u51AC\uFF1A\u50A8\u5907\u8FBE\u6807\uFF08\u67F4 ${Math.floor(G.res.wood)}/\u9700${p * 8}\uFF0C\u7CAE ${Math.floor(G.res.food)}/\u9700${p * 5}\uFF09\uFF0C\u7A33\u4E86` : `\u26A0 \u660E\u65E5\u5165\u51AC\uFF1A\u50A8\u5907\u4E0D\u8DB3\uFF01\u5EFA\u8BAE \u67F4\u2265${p * 8} \u7CAE\u2265${p * 5}\uFF08\u73B0 \u67F4 ${Math.floor(G.res.wood)}\uFF0C\u7CAE ${Math.floor(G.res.food)}\uFF09`);
-  }
-  const din2 = (G.day - 1) % YEAR_DAYS + 1;
-  if (din2 % SEASON_DAYS === 1) {
-    const bonus = G.placed.some((p) => p.def.id === "campfire") ? 14 : 10;
-    G.happy = Math.min(100, G.happy + bonus);
-    ctx.toast(`\u{1F389} ${FESTIVALS[seasonOf(G.day)]}\uFF01\u5168\u6751\u6B22\u805A\u4E00\u5802\uFF08\u5FEB\u4E50 +${bonus}` + (bonus > 10 ? "\uFF0C\u7BDD\u706B\u6DFB\u4E86\u5F69" : "") + "\uFF09");
-    Repute.add(3, "\u4E3E\u529E\u8282\u65E5");
-  }
-  const sunny = G.villagers.filter((x) => traitOf(x).sunny).length;
-  if (sunny) G.happy = Math.min(100, G.happy + sunny);
-  if (isMarketDay(G.day)) ctx.toast("\u{1F9F3} \u884C\u5546\u5230\u8BBF\uFF01\u4ECA\u5929\u53BB\u5E02\u96C6\u53EF\u4EE5\u4E70\u5356\u8D27\u7269");
-  if (Math.random() < 0.3 && ctx.UI && ctx.UI.showEvent) ctx.UI.showEvent(EVENTS[Math.floor(Math.random() * EVENTS.length)]);
-  checkMilestones();
-  if (!G.over && G.villagers.length < 3) {
-    endGame(false);
-    return;
-  }
-  ctx.UI && ctx.UI.refresh();
-}
-function endGame(win) {
-  G.over = true;
-  document.getElementById("end").style.display = "flex";
-  if (win) {
-    document.getElementById("end-title").textContent = "\u{1F3C6} \u7E41\u8363\u7684\u6696\u5883\u8FB9\u9672";
-    document.getElementById("end-desc").textContent = `\u5168\u90E8\u91CC\u7A0B\u7891\u8FBE\u6210\uFF01\u7B2C ${G.year} \u5E74\uFF0C\u4EBA\u53E3 ${G.villagers.length}\uFF0C\u5FEB\u4E50 ${Math.round(G.happy)}\u3002\u8FD9\u5EA7\u6751\u5E84\u6210\u4E86\u8FB9\u9672\u7684\u4F20\u5947\u3002`;
-  } else {
-    document.getElementById("end-title").textContent = "\u{1F940} \u6751\u5E84\u8870\u843D\u4E86";
-    document.getElementById("end-desc").textContent = `\u7B2C ${G.year} \u5E74\uFF0C\u6751\u6C11\u8D8A\u6765\u8D8A\u5C11\uFF0C\u5927\u5BB6\u6536\u62FE\u884C\u56CA\u79BB\u5F00\u4E86\u8FB9\u9672\u3002\u56E4\u7CAE\u3001\u71C3\u6599\u4E0E\u5FEB\u4E50\uFF0C\u7F3A\u4E00\u4E0D\u53EF\u3002`;
-  }
-}
-function checkMilestones() {
-  for (const m of MILESTONES) {
-    if (G.milestones.has(m.id)) continue;
-    let ok = false;
-    if (m.type === "place") ok = G.placed.some((p) => p.def.id === m.id2);
-    else if (m.type === "res") ok = (G.res[m.key] || 0) >= m.n;
-    else if (m.type === "tech") ok = G.tech.size >= m.n;
-    else if (m.type === "pop") ok = G.villagers.length >= m.n;
-    else if (m.type === "year") ok = (G.year || 1) >= m.n;
-    if (ok) {
-      G.milestones.add(m.id);
-      G.happy = Math.min(100, G.happy + 8);
-      Repute.add(8, "\u8FBE\u6210\u91CC\u7A0B\u7891\u3010" + m.name + "\u3011");
-      ctx.toast("\u{1F3C6} \u91CC\u7A0B\u7891\u8FBE\u6210\u3010" + m.name + "\u3011\uFF1A" + m.desc + "\uFF08\u5FEB\u4E50 +8\uFF09");
-    }
-  }
-  if (G.milestones.size >= MILESTONES.length) endGame(true);
 }
 
 // src/ui.ts
@@ -27751,6 +27933,8 @@ addEventListener("pointerup", (e) => {
       ctx.toast("\u{1F3D7} " + S.placingDef.name + " \u5DE5\u5730\u5F00\u5DE5\uFF08\u7B49\u5F85\u6751\u6C11\u5EFA\u9020\uFF09");
       cancelPlacing();
       ctx.UI.refresh();
+    } else if (!canPlace(S.placingDef, S.cell.x, S.cell.z, S.rot)) {
+      ctx.toast("\u{1F6A7} \u8FD9\u91CC\u88AB\u6321\u4F4F\u4E86");
     }
   }
   if (S.mode !== "panning") S.mode = S.placingDef ? "placing" : "idle";
@@ -27761,6 +27945,7 @@ dom.addEventListener("contextmenu", (e) => e.preventDefault());
 addEventListener("keydown", (e) => {
   const k = e.key.toLowerCase();
   if (k === "escape") {
+    if (S.mode === "movingBuilding") finishMoving(false);
     cancelPlacing();
     Input.clearSelection();
     ctx.UI.hideInfo();
@@ -28058,116 +28243,6 @@ var Stats = {
   // 主循环每秒调用；面板未开时内部直接返回
 };
 
-// src/weather.ts
-var WIND_PERIOD = 30;
-var WIND_BASE = 0.35;
-var WIND_AMP = 0.3;
-var windT = Math.random() * 100;
-var wind = WIND_BASE;
-var SWAY_TYPES = /* @__PURE__ */ new Set(["tree", "tree2", "tree3", "dead"]);
-var SWAY_AMP = 0.022;
-var SWAY_FREQ = 1.6;
-var phases = null;
-function ensurePhases() {
-  if (!phases) phases = [];
-  while (phases.length < G.nature.length) phases.push(Math.random() * Math.PI * 2);
-}
-var P_COUNT = 600;
-var AREA = GRID + 8;
-var RAIN_FALL = 14;
-var SNOW_FALL = 1.6;
-var points = null;
-var pos = null;
-var vel = null;
-var mode = "none";
-var BASE_FOG = { near: 40, far: 95, sun: 2.4 };
-var weatherOn = false;
-function makePoints(isSnow) {
-  pos = new Float32Array(P_COUNT * 3);
-  vel = new Float32Array(P_COUNT);
-  for (let i = 0; i < P_COUNT; i++) {
-    pos[i * 3] = Math.random() * AREA - AREA / 2 + GRID / 2;
-    pos[i * 3 + 1] = Math.random() * 16;
-    pos[i * 3 + 2] = Math.random() * AREA - AREA / 2 + GRID / 2;
-    vel[i] = 0.7 + Math.random() * 0.6;
-  }
-  const geo = new BufferGeometry();
-  geo.setAttribute("position", new BufferAttribute(pos, 3));
-  const mat = new PointsMaterial({
-    color: isSnow ? 16777215 : 10336472,
-    size: isSnow ? 0.16 : 0.07,
-    transparent: true,
-    opacity: isSnow ? 0.75 : 0.45,
-    depthWrite: false,
-    sizeAttenuation: true
-  });
-  points = new Points(geo, mat);
-  points.frustumCulled = false;
-  scene.add(points);
-}
-function setMode(m) {
-  if (m === mode) return;
-  if (points) {
-    scene.remove(points);
-    points.geometry.dispose();
-    points.material.dispose();
-    points = null;
-  }
-  mode = m;
-  if (m !== "none") makePoints(m === "snow");
-  applyLight(m !== "none");
-}
-function applyLight(on) {
-  if (on === weatherOn) return;
-  const f = scene.fog;
-  if (on) {
-    f.near = BASE_FOG.near * 0.85;
-    f.far = BASE_FOG.far * 0.85;
-    sun.intensity = BASE_FOG.sun * 0.8;
-  } else {
-    f.near = BASE_FOG.near;
-    f.far = BASE_FOG.far;
-    sun.intensity = BASE_FOG.sun;
-  }
-  weatherOn = on;
-}
-var rolledDay = -1;
-function rollDay() {
-  if (rolledDay === G.day) return;
-  rolledDay = G.day;
-  if (isWinterDay(G.day)) setMode("snow");
-  else setMode(Math.random() < 0.15 ? "rain" : "none");
-}
-function stepWeather(dt) {
-  windT += dt;
-  wind = WIND_BASE + WIND_AMP * Math.sin(windT * Math.PI * 2 / WIND_PERIOD);
-  if ((stepWeather._f = (stepWeather._f || 0) + 1) % 2 === 0) {
-    ensurePhases();
-    const t = windT;
-    for (let i = 0; i < G.nature.length; i++) {
-      const n = G.nature[i];
-      if (!n.alive || !SWAY_TYPES.has(n.type) || !n.inst) continue;
-      n.inst.rotation.z = wind * SWAY_AMP * 4 * Math.sin(t * SWAY_FREQ + phases[i]);
-    }
-  }
-  rollDay();
-  if (!points) return;
-  const fall = mode === "snow" ? SNOW_FALL : RAIN_FALL;
-  const wOff = wind * (mode === "snow" ? 2.2 : 0.6);
-  const arr = pos;
-  for (let i = 0; i < P_COUNT; i++) {
-    const j = i * 3;
-    arr[j + 1] -= fall * vel[i] * dt;
-    if (mode === "snow") arr[j] += wOff * vel[i] * dt * Math.sin(windT * 2 + i);
-    if (arr[j + 1] < 0) {
-      arr[j] = Math.random() * AREA - AREA / 2 + GRID / 2;
-      arr[j + 1] = 14 + Math.random() * 4;
-      arr[j + 2] = Math.random() * AREA - AREA / 2 + GRID / 2;
-    }
-  }
-  points.geometry.attributes.position.needsUpdate = true;
-}
-
 // src/stories.ts
 var POOL = [
   "{\u540D}\u5728\u6CB3\u8FB9\u6361\u5230\u4E00\u5757\u5FC3\u5F62\u77F3\u5934\uFF0C\u5077\u5077\u653E\u8FDB\u4E86\u53E3\u888B\u3002",
@@ -28328,6 +28403,7 @@ Events.on("day", () => {
 }, 20);
 
 // src/autonomy.ts
+var simClock = () => (G.day || 1) * DAY_SECONDS + (G.time || 0);
 var IDLE_NEED = 2;
 var MANUAL_COOLDOWN = 30;
 registerJobs({
@@ -28335,11 +28411,27 @@ registerJobs({
   once: true,
   scan() {
     if (!G.autoWork) return null;
-    if (G._lastManualCmd && performance.now() - G._lastManualCmd < MANUAL_COOLDOWN * 1e3) return null;
     const idle = G.villagers.filter((v2) => !v2.task);
-    if (idle.length < IDLE_NEED) return null;
+    let forceSite = null;
+    if (idle.length >= 1) {
+      for (const s of G.sites) {
+        const builders = G.villagers.filter((v2) => v2.task && v2.task.kind === "build" && v2.task.target === s).length;
+        if (builders < 2) {
+          forceSite = s;
+          break;
+        }
+      }
+    }
+    if (!forceSite) {
+      if (G._lastManualCmd != null && simClock() - G._lastManualCmd < MANUAL_COOLDOWN) return null;
+      if (idle.length < IDLE_NEED) return null;
+    }
+    const v = idle[0];
+    if (forceSite) {
+      maybeToast();
+      return { kind: "build", target: forceSite, v };
+    }
     let best = null, kind = null, nd = 1e9;
-    const v = idle.sort((a, b) => 0)[0];
     for (const n of G.nature) {
       if (!n.alive || n.def.deco) continue;
       const d = v.obj.position.distanceTo(n.inst.position);
@@ -28359,15 +28451,17 @@ registerJobs({
       }
     }
     if (!best) return null;
-    if (!G._autoToastShown) {
-      G._autoToastShown = true;
-      toast("\u{1F91D} \u6751\u6C11\u81EA\u6CBB\uFF1A\u7A7A\u95F2\u8005\u81EA\u52A8\u627E\u6D3B\uFF08\u53EF\u5728\u8BBE\u7F6E\u5173\u95ED\uFF09");
-    }
+    maybeToast();
     return { kind, target: best, v };
   }
 });
+function maybeToast() {
+  if (G._autoToastShown) return;
+  G._autoToastShown = true;
+  toast("\u{1F91D} \u6751\u6C11\u81EA\u6CBB\uFF1A\u7A7A\u95F2\u8005\u81EA\u52A8\u627E\u6D3B\uFF08\u53EF\u5728\u8BBE\u7F6E\u5173\u95ED\uFF09");
+}
 Events.on("manual-dispatch", () => {
-  G._lastManualCmd = performance.now();
+  G._lastManualCmd = simClock();
 });
 function initAutonomy() {
   const btn = document.getElementById("btn-autonomy");
@@ -28402,6 +28496,16 @@ function voyageDayTick() {
   const V = G.voyage;
   if (!V || G.day - V.day < DAYS) return;
   G.voyage = null;
+  if (Math.random() < 0.15) {
+    G.happy = Math.max(0, G.happy - 2);
+    toast("\u26C8 \u8FDC\u822A\u8239\u961F\u5728\u6D77\u4E0A\u906D\u9047\u98CE\u6D6A\uFF0C\u7A7A\u624B\u800C\u5F52\u2026\u2026\uFF08\u5FEB\u4E50 -2\uFF09");
+    el2.innerHTML = `<b>\u26C8 \u8FDC\u822A\u9047\u9669</b><div style="color:#d8ccb0;white-space:pre-line;margin-top:4px">\u6845\u6746\u5728\u98CE\u66B4\u91CC\u65AD\u4E86\u534A\u6839\u2014\u2014\u8239\u961F\u52C9\u5F3A\u6F02\u56DE\u6E2F\u53E3\uFF0C\u8D27\u8231\u7A7A\u7A7A\u5982\u4E5F\u3002\u6751\u6C11\u4EEC\u5E2E\u6C34\u624B\u628A\u8239\u62D6\u4E0A\u5CB8\uFF0C\u76FC\u7740\u4E0B\u4E00\u652F\u8239\u961F\u7684\u597D\u6D88\u606F\u3002</div><button id="btn-voyok">\u5509\uFF0C\u5148\u56DE\u5BB6\u5427</button>`;
+    el2.style.display = "block";
+    document.getElementById("btn-voyok").onclick = () => {
+      el2.style.display = "none";
+    };
+    return;
+  }
   const silver = 22 + Math.floor(Math.random() * 9);
   const seed = Math.random() < 0.2;
   G.res.silver = (G.res.silver || 0) + silver;
@@ -28488,7 +28592,6 @@ function startGame() {
   toast("\u{1F342} \u5F00\u5C40\uFF1A\u5148\u5728\u4FA7\u680F\u70B9\u3010\u6751\u4E2D\u5FC3\u3011\u653E\u5230\u5730\u4E0A\uFF0C\u6751\u6C11\u4F1A\u81EA\u52A8\u53BB\u5EFA\u9020\u3002\u7136\u540E\u6846\u9009\u6751\u6C11 \u2192 \u6846\u9009\u6811/\u6D46\u679C = \u81EA\u52A8\u91C7\u96C6");
 }
 onAssetsLoaded(startGame);
-if (assetsReady()) startGame();
 var introEl = document.getElementById("intro");
 function enterGame(continueSave) {
   introEl.style.display = "none";
@@ -28498,10 +28601,7 @@ function enterGame(continueSave) {
   camCtl.r = 26;
   camCtl.target.set(GRID / 2, 0, GRID / 2);
   camCtl.apply();
-  if (continueSave) {
-    if (assetsReady()) loadGame();
-    else onAssetsLoaded(loadGame);
-  }
+  if (continueSave) onAssetsLoaded(loadGame);
   ctx.toast && ctx.toast("\u{1F342} \u5148\u5EFA\u3010\u6751\u4E2D\u5FC3\u3011\uFF0C\u6751\u6C11\u4F1A\u81EA\u52A8\u53BB\u5EFA\u9020\u3002\u6846\u9009\u4E00\u7247\u6811\uFF0C\u7A7A\u95F2\u6751\u6C11\u4F1A\u81EA\u5DF1\u53BB\u780D\uFF01");
 }
 document.getElementById("btn-start").onclick = () => {

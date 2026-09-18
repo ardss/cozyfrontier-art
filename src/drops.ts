@@ -10,9 +10,22 @@ import { Sfx } from './audio';
 
 /* ---- 掉落物与搬运 ---- */
 const dropGeo = new THREE.IcosahedronGeometry(.14, 0);
+const dropMats: any = {};                               // P1-13：按资源缓存共享材质，不再每次 new
+function dropMat(res) {
+  return dropMats[res] || (dropMats[res] = new THREE.MeshLambertMaterial({ color: RES_INFO[res].color }));
+}
 export function spawnDrop(res, amt, pos) {
-  const mesh = new THREE.Mesh(dropGeo, new THREE.MeshLambertMaterial({ color: RES_INFO[res].color }));
+  const mesh = new THREE.Mesh(dropGeo, dropMat(res));
   mesh.position.set(pos.x + (Math.random() - .5) * .8, .5, pos.z + (Math.random() - .5) * .8);
+  finishDrop(mesh, res, amt);
+}
+/* 精确落点生成（读档恢复掉落物用，不随机偏移） */
+export function spawnDropAt(res, amt, x, z) {
+  const mesh = new THREE.Mesh(dropGeo, dropMat(res));
+  mesh.position.set(x, .5, z);
+  finishDrop(mesh, res, amt);
+}
+function finishDrop(mesh, res, amt) {
   mesh.castShadow = true;
   scene.add(mesh);
   G.drops.push({ mesh, res, amt, x: mesh.position.x, z: mesh.position.z, baseY: .14, t: Math.random() * 6 });

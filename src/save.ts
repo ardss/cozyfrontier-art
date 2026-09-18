@@ -10,6 +10,8 @@ import { protos, assetsReady, onAssetsLoaded } from './assets';
 import { spawnVillagers } from './villagers';
 import { pastureRestore } from './pasture';
 import { placeInstance, createSite, updateSiteVisuals } from './buildings';
+import { SICK_DAYS } from './sim';
+import { spawnDropAt } from './drops';
 import { ctx } from './context';
 
 const SAVE_KEY = 'cf_save_v1';
@@ -29,6 +31,8 @@ export function saveGame() {
       autoWork: G.autoWork !== false,                                   // S39 声望（S25 补全）
       storyLog: (G.storyLog || []).slice(0, 8),                // S25 村志
       letters: G.letters || [],                                // S25 信件
+      letterState: G.letterState || null,                      // S27 借银/订单状态
+      starveNights: G._starveNights || 0,                      // 连续缺粮夜数（P0-6）
       pasture: G.placed.filter(p => p.pasture).map(p => ({     // S25 畜牧状态（蛋/鹿计时、鹿数）
         id: p.def.id, e: p.pasture.eggReady ? 1 : 0, ld: p.pasture.lastDay || 0,
         dn: p.pasture.deer ? p.pasture.deer.length : 0, rd: p.pasture.respawnDay || 0,
@@ -36,15 +40,20 @@ export function saveGame() {
       villagers: G.villagers.map(v => ({
         name: v.name, trait: v.trait ? v.trait.id : null, slot: v.slot,
         skills: v.skills || {}, sick: v.sick ? 1 : 0,          // S35 技能 / 生病（S25 补全）
+        sickT: v.sickT || 0,                                   // P0-1 生病自愈倒计时
+        carry: { ...(v.carry || {}) },                         // P1-12 身上携带
         x: v.obj.position.x, z: v.obj.position.z,
       })),
       placed: G.placed.map(p => ({ id: p.def.id, x: p.x, z: p.z, rot: p.rot })),
       sites: G.sites.map(s => ({ id: s.def.id, x: s.x, z: s.z, rot: s.rot, progress: s.progress, need: s.need })),
       // 自然物：连外观偏移一起存，读档后与存档时画面一致
+      // dc: 装饰树标记（hp:Infinity 无法 JSON 序列化，读档按 plantDecoTree 语义重建，P0-2）
       nature: G.nature.map(n => ({
-        t: n.type, x: n.x, z: n.z, hp: n.hp, alive: n.alive, rd: n.respawnDay,
+        t: n.type, x: n.x, z: n.z, hp: n.hp, alive: n.alive, rd: n.respawnDay, dc: n.deco ? 1 : 0,
         px: n.inst.position.x, pz: n.inst.position.z, ry: n.inst.rotation.y, s: n.inst.scale.x,
       })),
+      // 地上掉落物（P1-12）
+      drops: G.drops.map(d => ({ res: d.res, amt: d.amt, x: d.x, z: d.z })),
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     return true;
@@ -69,6 +78,15 @@ function rebuildNature(n) {
   inst.position.set(n.px, 0, n.pz);
   inst.rotation.y = n.ry;
   inst.scale.setScalar(n.s);
+  // P0-2：装饰树按 plantDecoTree 语义重建——不可砍、hp 哨兵 Infinity、独占占格
+  if (n.dc) {
+    scene.add(inst);
+    const deco = { type: 'tree', def: { name: '装饰树', deco: true, yield: 'wood', amt: 0, hp: 1 },
+      inst, x: n.x, z: n.z, hp: Infinity, alive: true, deco: true, respawnDay: 0, ring: null };
+    G.nature.push(deco);
+    G.occ.set(key(n.x, n.z), deco);
+    return;
+  }
   if (n.alive) scene.add(inst);                       // 已砍倒的不上台面，留给 regrow 逻辑复活
   const node = { type: n.t, def: nd, inst, x: n.x, z: n.z, hp: n.hp, alive: n.alive, respawnDay: n.rd || 0, ring: null };
   G.nature.push(node);
@@ -104,9 +122,12 @@ export function loadGame() {
     G.autoWork = data.autoWork !== false;
     G.storyLog = Array.isArray(data.storyLog) ? data.storyLog.slice(0, 8) : [];
     G.letters = Array.isArray(data.letters) ? data.letters : [];
+    G.letterState = data.letterState || { pending: null, debt: 0, order: null };   // P0-3 借银/订单状态
+    G._starveNights = data.starveNights || 0;                                      // P0-6 连续缺粮夜数
     // 3) 自然资源
     for (const n of data.nature) rebuildNature(n);
     pastureRestore(data.pasture);                     // S25：恢复蛋/鹿状态（缺省安全）
+    for (const d of (data.drops || [])) spawnDropAt(d.res, d.amt, d.x, d.z);   // P1-12 地上掉落物
     // 4) 村民：用原生成函数造骨架，再回填数据字段
     spawnVillagers(data.villagers.length);
     data.villagers.forEach((vd, i) => {
@@ -116,10 +137,17 @@ export function loadGame() {
       v.trait = TRAITS.find(t => t.id === vd.trait) || v.trait;
       v.slot = vd.slot;
       v.skills = vd.skills || {}; v.sick = !!vd.sick;   // S25 补全：技能/生病兜底
-      v.task = null; v.resume = null; v.carry = {};
+      // P0-1：恢复自愈倒计时；旧档只记 sick 标志时按满时长兜底，避免 undefined→NaN 永不痊愈
+      v.sickT = (typeof vd.sickT === 'number' && vd.sickT > 0) ? vd.sickT : (vd.sick ? SICK_DAYS : 0);
+      v.task = null; v.resume = null;
+      v.carry = (vd.carry && typeof vd.carry === 'object') ? { ...vd.carry } : {};   // P1-12
       v.obj.position.x = vd.x; v.obj.position.z = vd.z;
     });
     ctx.UI && ctx.UI.refresh();
+    // 读档即重新开局：清除终局遮罩与冻结标记（否则衰落后读档会一直卡在结束画面）
+    G.over = false;
+    const end = document.getElementById('end');
+    if (end) end.style.display = 'none';
     return true;
   };
   if (assetsReady()) return apply();

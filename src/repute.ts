@@ -47,7 +47,11 @@ export const Repute = {
     if (this.value() < 15 && G.villagers.length > 1 && Math.random() < 0.25) {
       const i = Math.floor(Math.random() * G.villagers.length);
       const lv = G.villagers.splice(i, 1)[0];
-      if (lv) { scene.remove(lv.obj); G.selected && G.selected.delete(lv); ctx.toast(`😢 声望低迷，${lv.name} 失望地离开了村庄`); }
+      if (lv) {
+        scene.remove(lv.obj); G.selected && G.selected.delete(lv);
+        ctx.UI && ctx.UI.hideInfo(); ctx.UI && ctx.UI.selectionChanged();   // P2-18：流失村民后清 UI
+        ctx.toast(`😢 声望低迷，${lv.name} 失望地离开了村庄`);
+      }
     }
   },
 };

@@ -17,6 +17,8 @@ import { eggCollected, huntDone } from './pasture';
 import { depositEfficiency, productionBoost } from './storage';
 import { tryEquip, toolMul, maybeBreakTool, needsTool, ensureToolStock, updateBasket } from './tools';
 import { Repute, gainExp, skillMul } from './repute';
+import { farmYieldMul } from './farm';
+import { isRain } from './weather';
 import { ctx } from './context';
 
 /* =====================================================================
@@ -67,21 +69,12 @@ function stepDisease() {
   }
   updateSickDots();
 }
-/* ---- S14 堆肥箱：肥料状态下的堆肥箱给 10 格内农田 +15% 产出（farm.js 收割处读取） ---- */
-const COMPOST_RANGE = 10, COMPOST_BOOST = 1.15;
-G.farmYieldMul = entry => {
-  for (const p of G.placed) {
-    if (p.def.id !== 'compost' || !p.fert) continue;
-    if (Math.hypot(p.x - entry.x, p.z - entry.z) <= COMPOST_RANGE) return COMPOST_BOOST;
-  }
-  return 1;
-};
-/* 每 2 天：每个堆肥箱消耗 3 食保持肥料状态；无粮则失效（温和，不倒扣） */
+/* ---- S14 堆肥箱：肥料状态下的堆肥箱给 10 格内农田 +30% 产出（farm.ts 导出 farmYieldMul） ---- */
 function stepCompost() {
   if (G.day % 2 !== 0) return;
   for (const p of G.placed) {
     if (p.def.id !== 'compost') continue;
-    if (G.res.food >= 3) { G.res.food -= 3; if (!p.fert) ctx.toast('🍃 堆肥箱开始沤肥：10 格内农田产出 +15%'); p.fert = true; }
+    if (G.res.food >= 1) { G.res.food -= 1; if (!p.fert) ctx.toast('🍃 堆肥箱开始沤肥：10 格内农田产出 +30%'); p.fert = true; }
     else p.fert = false;
   }
 }
@@ -132,7 +125,7 @@ export function stepVillager(v, dt, t) {
       else { dest = v.task.target.inst.position; arriveR = 1.3; }
     } else if (v.task.kind === 'build') {
       if (!G.sites.includes(v.task.target)) { v.task = null; }
-      else { dest = v.task.target.inst.position; arriveR = 1.5; }
+      else { dest = v.task.target.inst.position; arriveR = 1.5 + Math.max(v.task.target.def.w, v.task.target.def.d) / 2; }   // P0-4：按建筑脚印外扩，3×3 农田不再被挡
     } else if (v.task.kind === 'harvest') {
       if (!G.placed.includes(v.task.target) || v.task.target.farm.state === 'fallow') { v.task = null; }
       else { dest = v.task.target.inst.position; arriveR = 2.3; }
@@ -201,7 +194,9 @@ export function stepVillager(v, dt, t) {
   }
   const sKey = v.task.kind === 'chop' ? 'chop' : v.task.kind === 'harvest' ? 'harvest' : 'work';
   tryEquip(v);                                         // S9 采集/收割/狩猎到岗自动装备工具
-  v.task.workT += dt * (traitOf(v).workMul || 1) * skillMul(v, sKey) * illnessMul(v) * (needsTool(v.task.kind) ? toolMul(v) : 1);
+  // P2-17：雨天野外采集（砍树/浆果/采石）效率 -20%
+  const weatherMul = (v.task.kind === 'chop' && isRain()) ? 0.8 : 1;
+  v.task.workT += dt * (traitOf(v).workMul || 1) * skillMul(v, sKey) * illnessMul(v) * weatherMul * (needsTool(v.task.kind) ? toolMul(v) : 1);
   animWork(v, t);
   if (v.task.workT >= (v.task.target.def.work || FARM_WORK)) {
     v.task.workT = 0;
@@ -287,17 +282,24 @@ export function nightSettlement() {
   const eatBread = Math.min(G.res.bread || 0, need);   // 面包优先上桌，省下生食
   G.res.bread -= eatBread; need -= eatBread;
   let fed = true;                                      // S39 声望：全村温饱判定
-  if (G.res.food >= need) G.res.food -= need;
+  if (G.res.food >= need) { G.res.food -= need; G._starveNights = 0; }
   else {
     fed = false;
     G.res.food = 0; G.happy -= 15;
+    G._starveNights = (G._starveNights || 0) + 1;      // P0-6：连续缺粮夜数
     // 诊所：一半概率把要走的村民劝住
-    if (G.placed.some(p => p.def.id === 'clinic') && Math.random() < 0.5) {
+    if (G._starveNights < 2) {
+      ctx.toast('😖 粮食不够，村民饿着肚子入睡了（连续缺粮 2 晚就会有人离开！）');
+    } else if (G.placed.some(p => p.def.id === 'clinic') && Math.random() < 0.5) {
       G.happy += 5;
       ctx.toast('🏥 诊所熬过难关，村民留了下来');
     } else {
       const leaver = G.villagers.pop();
-      if (leaver) { scene.remove(leaver.obj); G.selected.delete(leaver); ctx.toast(`😢 ${leaver.name} 饿坏了，离开了村庄`); }
+      if (leaver) {
+        scene.remove(leaver.obj); G.selected.delete(leaver);
+        ctx.UI && ctx.UI.hideInfo(); ctx.UI && ctx.UI.selectionChanged();   // P2-18：清 UI 选中/面板
+        ctx.toast(`😢 ${leaver.name} 饿坏了，离开了村庄`);
+      }
     }
   }
   if (winter) {
@@ -319,7 +321,7 @@ export function nightSettlement() {
   stepDisease();                                       // S23 冻伤转病 / 诊所治病 / 自愈 / 流行病
   const roll = Math.random();
   const guarded = G.placed.some(p => p.def.role === 'tower' || p.def.id === 'watchpost');
-  if (roll < 0.22 && G.day >= 3) {
+  if (roll < 0.22 && G.day >= 6) {
     if (!guarded) {
       const loss = Math.min(G.res.food, 4 + Math.floor(Math.random() * 4));
       G.res.food -= loss;
@@ -347,12 +349,14 @@ export function nightSettlement() {
   if (din === 1 && G.day > 1) { G.year++; ctx.toast('🌸 新的一年开始了——第 ' + G.year + ' 年'); }
   if (seasonOf(G.day) === '冬' && seasonOf(G.day - 1) !== '冬') ctx.toast('❄ 冬天来了！露天产出大减，温室/囤粮是关键');
   else if (din === SEASON_DAYS * 3) {
-    // 入冬前一天：官网口径的过冬判定（柴≥8/人 且 粮≥5/人）
+    // 入冬前一天：过冬判定（P1-9：粮≥12/人、柴≥6/人，有篝火柴≥4/人，对齐真实消耗）
     const p = G.villagers.length;
-    const ok = G.res.wood >= p * 8 && G.res.food >= p * 5;
+    const fire = G.placed.some(x => x.def.id === 'campfire');
+    const woodNeed = p * (fire ? 4 : 6), foodNeed = p * 12;
+    const ok = G.res.wood >= woodNeed && G.res.food >= foodNeed;
     ctx.toast(ok
-      ? `❄ 明日入冬：储备达标（柴 ${Math.floor(G.res.wood)}/需${p * 8}，粮 ${Math.floor(G.res.food)}/需${p * 5}），稳了`
-      : `⚠ 明日入冬：储备不足！建议 柴≥${p * 8} 粮≥${p * 5}（现 柴 ${Math.floor(G.res.wood)}，粮 ${Math.floor(G.res.food)}）`);
+      ? `❄ 明日入冬：储备达标（柴 ${Math.floor(G.res.wood)}/需${woodNeed}，粮 ${Math.floor(G.res.food)}/需${foodNeed}），稳了`
+      : `⚠ 明日入冬：储备不足！建议 粮≥${foodNeed} 柴≥${woodNeed}${fire ? '（篝火已把柴需降到 4/人）' : '（建篝火可省柴）'}（现 粮 ${Math.floor(G.res.food)}，柴 ${Math.floor(G.res.wood)}）`);
   }
   const din2 = ((G.day - 1) % YEAR_DAYS) + 1;
   if (din2 % SEASON_DAYS === 1) {

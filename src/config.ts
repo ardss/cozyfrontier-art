@@ -42,7 +42,7 @@ export const DEFS: any[] = [
   { id:'cottage_b', name:'猎户村舍',w:2,d:1, cat:'住房', cost:{wood:5},  role:'house', cap:2, desc:'猎户的家。' },
   { id:'home_small',name:'小民居', w:2,d:2, cat:'住房', cost:{wood:7},  role:'house', cap:3, desc:'舒适民居。' },
   { id:'home_large',name:'大民居', w:2,d:2, cat:'住房', cost:{wood:8,plank:4}, role:'house', cap:4, desc:'宽敞民居（需要木板）。' },
-  { id:'farm',      name:'农田',   w:3,d:3, cat:'农牧', cost:{wood:4},  role:'farm',  desc:'开垦农田：建成自动播种，点击可切换播种/休耕。春夏秋生长，冬季冻死，来年春自动再播。成熟后空闲村民自动收割 +6 食。' },
+  { id:'farm',      name:'农田',   w:3,d:3, cat:'农牧', cost:{wood:4},  role:'farm',  desc:'开垦农田：建成自动播种，点击可切换播种/休耕。春夏秋生长，冬季冻死，来年春自动再播。成熟后空闲村民自动收割 +10 食。' },
   { id:'farmhouse', name:'农舍',   w:2,d:2, cat:'农牧', cost:{wood:9},  role:'food',  out:4, desc:'村民主产食物。' },
   { id:'sawmill',   name:'锯木厂', w:2,d:2, cat:'加工', cost:{wood:6},  role:'wood',  desc:'配方：2木 → 3板。派村民上工。', tech:"woodwork" },
   { id:'apiary',    name:'蜂箱架', w:1,d:1, cat:'农牧', cost:{wood:3},  role:'food',  out:2, desc:'产蜂蜜小屋。' },
@@ -138,7 +138,7 @@ export const MILESTONES = [
 /* ---- 贸易：行商每 3 天到访，市集当日开张；卖出/买入价（R7） ---- */
 export const TRADE = {
   sell: [ { res: 'plank', n: 3, silver: 4 }, { res: 'bread', n: 3, silver: 6 }, { res: 'wood', n: 6, silver: 3 }, { res: 'stone', n: 4, silver: 3 } ],
-  buy:  [ { res: 'food', n: 8, silver: 3 }, { res: 'wood', n: 8, silver: 3 }, { res: 'stone', n: 5, silver: 4 } ],
+  buy:  [ { res: 'food', n: 8, silver: 8 }, { res: 'wood', n: 8, silver: 3 }, { res: 'stone', n: 5, silver: 4 } ],
 };
 export const isMarketDay = day => day % 3 === 0;
 
@@ -180,7 +180,7 @@ DEFS.push(
   { id:'fish', name:'渔档', w:2,d:1, cat:'农牧', cost:{wood:5,stone:2}, role:'food', desc:'临水而建（地图边缘）。派村民上工垂钓：约 20 秒 +2 食，冬季减半。' },
   { id:'hunt', name:'猎屋', w:2,d:1, cat:'农牧', cost:{wood:6},  role:'pasture', desc:'村缘出没 1-2 只野鹿。空闲村民自动狩猎：+5 食 +1 石，鹿 3 天后刷新。' },
   // S14 回收堆肥：借用木桶模型，sim.js 结算肥料状态与农田加成
-  { id:'compost', name:'堆肥箱', w:1,d:1, cat:'设施', cost:{wood:3,stone:2}, role:'deco', glb:'ai3d-mirror/prop-barrel.glb', desc:'回收堆肥：每 2 天消耗 3 食沤肥（无粮则失效），肥料生效时 10 格内农田产出 +15%。' },
+  { id:'compost', name:'堆肥箱', w:1,d:1, cat:'设施', cost:{wood:3,stone:2}, role:'deco', glb:'ai3d-mirror/prop-barrel.glb', desc:'回收堆肥：每 2 天消耗 1 食沤肥（无粮则失效），肥料生效时 10 格内农田产出 +30%。' },
 );
 
 /* ---- S9 工具耐久 + S36 背篓（追加段）：新资源 tool + 锯木厂工具配方 ---- */

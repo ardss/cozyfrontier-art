@@ -7,9 +7,13 @@
  *      'manual-dispatch' 事件驱动（原 Input.issueCommand 包装删除）。
  * ===================================================================*/
 import { G } from './world';
+import { DAY_SECONDS } from './config';
 import { Events } from './events';
 import { registerJobs } from './jobs';
 import { toast } from './ui';
+
+/* ---- 模拟时间钟：G.time 每天归零，用「天×日长+当日时间」得到单调的倍速敏感时钟（P1-10） ---- */
+const simClock = () => (G.day || 1) * DAY_SECONDS + (G.time || 0);
 
 const IDLE_NEED = 2, MANUAL_COOLDOWN = 30;
 
@@ -19,12 +23,27 @@ registerJobs({
   once: true,
   scan() {
     if (!G.autoWork) return null;
-    if (G._lastManualCmd && performance.now() - G._lastManualCmd < MANUAL_COOLDOWN * 1000) return null;
     const idle = G.villagers.filter(v => !v.task);
-    if (idle.length < IDLE_NEED) return null;
-    // 候选任务：最近的可采集自然节点 / 未完工工地（农田收割已由 farm.js 自动派工）
+    // P1-10：有未动工工地时，空闲 ≥1 即接管（豁免 30 秒手动冷却，工地不等）
+    let forceSite = null;
+    if (idle.length >= 1) {
+      for (const s of G.sites) {
+        const builders = G.villagers.filter(v => v.task && v.task.kind === 'build' && v.task.target === s).length;
+        if (builders < 2) { forceSite = s; break; }
+      }
+    }
+    if (!forceSite) {
+      // P1-10：冷却计时改为模拟时钟（2× 速下冷却不再被真实时间稀释）
+      if (G._lastManualCmd != null && simClock() - G._lastManualCmd < MANUAL_COOLDOWN) return null;
+      if (idle.length < IDLE_NEED) return null;
+    }
+    // 候选任务：未完工工地优先 / 最近的可采集自然节点（农田收割已由 farm 自动派工）
+    const v = idle[0];
+    if (forceSite) {
+      maybeToast();
+      return { kind: 'build', target: forceSite, v };
+    }
     let best = null, kind = null, nd = 1e9;
-    const v = idle.sort((a, b) => 0)[0];               // 只派 1 人：任取一名空闲者
     for (const n of G.nature) {
       if (!n.alive || n.def.deco) continue;
       const d = v.obj.position.distanceTo(n.inst.position);
@@ -36,16 +55,18 @@ registerJobs({
       if (d < nd) { nd = d; best = s; kind = 'build'; }
     }
     if (!best) return null;
-    if (!G._autoToastShown) {
-      G._autoToastShown = true;
-      toast('🤝 村民自治：空闲者自动找活（可在设置关闭）');
-    }
+    maybeToast();
     return { kind, target: best, v };
   },
 });
+function maybeToast() {
+  if (G._autoToastShown) return;
+  G._autoToastShown = true;
+  toast('🤝 村民自治：空闲者自动找活（可在设置关闭）');
+}
 
-/* ---- 玩家手动派工时刻：冷却 30 秒，期间自治不接管 ---- */
-Events.on('manual-dispatch', () => { G._lastManualCmd = performance.now(); });
+/* ---- 玩家手动派工时刻：冷却 30 秒（模拟时间），期间自治不接管（工地例外） ---- */
+Events.on('manual-dispatch', () => { G._lastManualCmd = simClock(); });
 
 /* ---- 自治开关按钮 ---- */
 export function initAutonomy() {

@@ -191,6 +191,8 @@ addEventListener('pointerup', e => {
       ctx.toast('🏗 ' + S.placingDef.name + ' 工地开工（等待村民建造）');
       cancelPlacing();
       ctx.UI.refresh();
+    } else if (!canPlace(S.placingDef, S.cell.x, S.cell.z, S.rot)) {
+      ctx.toast('🚧 这里被挡住了');                    // P1-11：非法位置提示（保持放置模式可换地方）
     }
   }
   if (S.mode !== 'panning') S.mode = S.placingDef ? 'placing' : 'idle';
@@ -200,7 +202,10 @@ addEventListener('dragstart', e => e.preventDefault());
 dom.addEventListener('contextmenu', e => e.preventDefault());
 addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
-  if (k === 'escape') { cancelPlacing(); Input.clearSelection(); ctx.UI.hideInfo(); return; }
+  if (k === 'escape') {
+    if (S.mode === 'movingBuilding') finishMoving(false);   // P1-11：ESC 取消搬移并复位模型
+    cancelPlacing(); Input.clearSelection(); ctx.UI.hideInfo(); return;
+  }
   if (['w','a','s','d','q','e','r'].includes(k)) e.preventDefault();
   keys[k] = true;
   if (k === 'r' && S.placingDef) {

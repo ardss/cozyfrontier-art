@@ -17,7 +17,7 @@ import { stepCameraKeys, Input, startPlacing } from './input';
 import { UI, toast } from './ui';
 import { Stats } from './stats';
 import { ctx } from './context';
-import { onAssetsLoaded, assetsReady } from './assets';
+import { onAssetsLoaded } from './assets';
 import { saveGame, loadGame, hasSave } from './save';
 import { gameState, setupControls } from './controls';
 import { stepWeather } from './weather';
@@ -68,8 +68,7 @@ function startGame() {
   if (hasSave()) (document.getElementById('btn-continue') as HTMLElement).hidden = false;
   toast('🍂 开局：先在侧栏点【村中心】放到地上，村民会自动去建造。然后框选村民 → 框选树/浆果 = 自动采集');
 }
-onAssetsLoaded(startGame);
-if (assetsReady()) startGame();
+onAssetsLoaded(startGame);   // P0-8：资产已就绪时会同步执行，无需再补一次直调
 
 // —— 主菜单：镜头绕村庄慢速环绕，点击开始后回到游戏机位；继续游戏则读档重建 ——
 const introEl = document.getElementById('intro') as HTMLElement;
@@ -79,7 +78,7 @@ function enterGame(continueSave) {
   camCtl.theta = Math.PI * 0.15; camCtl.phi = Math.PI * 0.34; camCtl.r = 26;
   camCtl.target.set(GRID / 2, 0, GRID / 2);
   camCtl.apply();
-  if (continueSave) { if (assetsReady()) loadGame(); else onAssetsLoaded(loadGame); }
+  if (continueSave) onAssetsLoaded(loadGame);   // P0-8：同步/延后统一走回调
   ctx.toast && ctx.toast('🍂 先建【村中心】，村民会自动去建造。框选一片树，空闲村民会自己去砍！');
 }
 (document.getElementById('btn-start') as HTMLElement).onclick = () => { Sfx.init(); enterGame(false); };

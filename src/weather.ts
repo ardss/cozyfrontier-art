@@ -14,14 +14,9 @@ let windT = Math.random() * 100;
 let wind = WIND_BASE;                   // 当前风力（导出只读用）
 
 /* ---- 树摇摆：G.nature 中的树（clone 实例，rotation.z 每帧直接赋值，代价低） ----
- * 每株随机相位；只对树类（type 以 tree 开头或 dead）生效，幅度 ~0.02 rad */
+ * 每株随机相位存在节点字段 n._phase 上（P2-18：删除模块级相位表，读档/清档不再错位） */
 const SWAY_TYPES = new Set(['tree', 'tree2', 'tree3', 'dead']);
 const SWAY_AMP = 0.022, SWAY_FREQ = 1.6;
-let phases = null;                      // 与 G.nature 索引对齐的相位表（懒建 + 增量补）
-function ensurePhases() {
-  if (!phases) phases = [];
-  while (phases.length < G.nature.length) phases.push(Math.random() * Math.PI * 2);
-}
 
 /* ---- 雨/雪粒子：单个 THREE.Points，600 个，围绕相机目标区循环下落 ---- */
 const P_COUNT = 600;
@@ -85,7 +80,6 @@ function rollDay() {
 }
 
 export function initWeather() {
-  ensurePhases();
   applyLight(false);      // 复位雾/光到基线，防读档等场景残留
   rolledDay = -1;
   rollDay();
@@ -97,12 +91,11 @@ export function stepWeather(dt) {
   wind = WIND_BASE + WIND_AMP * Math.sin(windT * Math.PI * 2 / WIND_PERIOD);
   // 树摇摆（树为 clone 实例，直接赋 rotation.z；每 2 帧一次省一半开销）
   if (((stepWeather as any)._f = ((stepWeather as any)._f || 0) + 1) % 2 === 0) {
-    ensurePhases();
     const t = windT;
-    for (let i = 0; i < G.nature.length; i++) {
-      const n = G.nature[i];
+    for (const n of G.nature) {
       if (!n.alive || !SWAY_TYPES.has(n.type) || !n.inst) continue;
-      n.inst.rotation.z = wind * SWAY_AMP * 4 * Math.sin(t * SWAY_FREQ + phases[i]);
+      if (n._phase === undefined) n._phase = Math.random() * Math.PI * 2;   // P2-18：相位挂节点字段
+      n.inst.rotation.z = wind * SWAY_AMP * 4 * Math.sin(t * SWAY_FREQ + n._phase);
     }
   }
   // 每日天气
@@ -126,3 +119,5 @@ export function stepWeather(dt) {
 }
 
 export const windNow = () => wind;
+/* P2-17：当前是否在下雨（雪不算）——供采集减速/农田加速读取 */
+export const isRain = () => mode === 'rain';

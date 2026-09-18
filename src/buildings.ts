@@ -6,10 +6,10 @@ import { CELL_SINK } from './config';
 import { scene, cam } from './scene';
 import { G, footprint, cellsOf, canPlace, canAfford } from './world';
 import { protos } from './assets';
-import { command } from './villagers';
 import { ctx } from './context';
 import { registerFarm } from './farm';
 import { registerPasture } from './pasture';
+import { registerJobs } from './jobs';
 
 const padMat = new THREE.MeshLambertMaterial({ color: 0x9db972 });
 const padGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
@@ -113,33 +113,33 @@ export function updateSiteVisuals(site) {
 }
 export function finishSite(site) {
   cellsOf(site.def, site.x, site.z, site.rot).forEach(k => { if (G.occ.get(k) === site) G.occ.delete(k); });
+  // P1-13：工地半透明材质是 createSite 里的克隆，随手 dispose 防泄漏
+  site.inst.traverse(o => {
+    if (!o.isMesh) return;
+    const ms = Array.isArray(o.material) ? o.material : [o.material];
+    ms.forEach(m => m.dispose && m.dispose());
+  });
   scene.remove(site.inst, site.pad, site.barGrp);
   G.sites = G.sites.filter(s => s !== site);
   placeInstance(site.def, site.x, site.z, site.rot, true);
   ctx.toast && ctx.toast('🔨 ' + site.def.name + ' 建成');
   ctx.UI && ctx.UI.refresh();
 }
-export function stepSites(dt) {
-  for (const site of G.sites) site.barGrp.quaternion.copy(cam.quaternion);   // 进度条始终面向镜头
-  // 自动派最近的空闲村民去打工地
-  G._siteT = (G._siteT || 0) + dt;
-  if (G._siteT > 1.5) {
-    G._siteT = 0;
+/* ---- P2-15：工地派工改为 JobSource 注册（每工地最多 2 人），删除自有计时器 ---- */
+const SITE_BUILDERS_MAX = 2;
+registerJobs({
+  id: 'site-build',
+  scan() {
     for (const site of G.sites) {
       const builders = G.villagers.filter(v => v.task && v.task.kind === 'build' && v.task.target === site).length;
-      if (builders >= 2) continue;
-      let near = null, nd = 1e9;
-      for (const v of G.villagers) {
-        if (v.task) continue;
-        const d = v.obj.position.distanceTo(site.inst.position);
-        if (d < nd) { nd = d; near = v; }
-      }
-      if (near) { site.builder = near; command(near, 'build', site); }
+      if (builders >= SITE_BUILDERS_MAX) continue;
+      return { kind: 'build', target: site };
     }
-  }
-  for (const site of G.sites) {
-    if (site.builder && (!site.builder.task || site.builder.task.target !== site)) site.builder = null;
-  }
+    return null;
+  },
+});
+export function stepSites(dt) {
+  for (const site of G.sites) site.barGrp.quaternion.copy(cam.quaternion);   // 进度条始终面向镜头
 }
 
 // 幽灵预览：半透明模型 + 脚印格
