@@ -12,6 +12,7 @@ import { spawnVillagers, animWalk, animWork, animIdle } from './villagers.js';
 import { spawnDrop, carryTotal, startDeliver, findDepot, deliverCarry, floatText, chopFX } from './drops.js';
 import { updateSiteVisuals, finishSite } from './buildings.js';
 import { FARM_WORK, harvestDone } from './farm.js';
+import { depositEfficiency, productionBoost } from './storage.js';
 import { ctx } from './context.js';
 
 export function stepVillager(v, dt, t) {
@@ -127,7 +128,9 @@ export function stepVillager(v, dt, t) {
       const node = v.task.target;
       // 冬季野外食物大减（浆果/蘑菇凋零），木石照常——冬天砍柴更重要
       const amt = (node.def.yield === 'food' && isWinterDay(G.day)) ? Math.max(1, node.def.amt - 1) : node.def.amt;
-      spawnDrop(node.def.yield, amt, node.inst.position);
+      // S22 远途损耗：远离仓库/村中心的采集点，food 类落地产量按效率折算（期望值四舍五入）
+      const q = amt * depositEfficiency(node.inst.position.x, node.inst.position.z, node.def.yield);
+      spawnDrop(node.def.yield, Math.random() < q % 1 ? Math.ceil(q) : Math.floor(q), node.inst.position);
       chopFX(node.inst, node.def.yield);              // 木屑/碎石 + 目标晃动
       chopDone(node);
     } else if (v.task.kind === 'harvest') {
@@ -172,7 +175,11 @@ export function stepProduction(dt) {
     while (p.prodT >= rc.time) {
       if (!Object.entries(rc.in).every(([r, v]) => G.res[r] >= v)) { p.prodT = rc.time; break; }   // 缺原料：保持满格待料
       Object.entries(rc.in).forEach(([r, v]) => G.res[r] -= v);
-      Object.entries(rc.out).forEach(([r, v]) => G.res[r] = (G.res[r] || 0) + v);
+      // S22：仓库 8 格内生产 +10%；food 类成品（面包）还需过入库效率
+      Object.entries(rc.out).forEach(([r, v]) => {
+        const q = v * productionBoost(p.inst.position.x, p.inst.position.z) * depositEfficiency(p.inst.position.x, p.inst.position.z, r);
+        G.res[r] = (G.res[r] || 0) + (Math.random() < q % 1 ? Math.ceil(q) : Math.floor(q));
+      });
       p.prodT -= rc.time;
       const [res, amt] = Object.entries(rc.out)[0];
       floatText('+' + amt + ' ' + (ICONS[res] || ''), p.inst.position);

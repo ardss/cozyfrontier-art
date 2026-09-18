@@ -19,6 +19,8 @@ import { ctx } from './context.js';
 import { onAssetsLoaded, assetsReady } from './assets.js';
 import { saveGame, loadGame, hasSave } from './save.js';
 import { gameState, setupControls } from './controls.js';
+import { stepWeather } from './weather.js';
+import { Sfx } from './audio.js';
 
 // —— 主模块注入：ui/input/buildings/sim 通过 ctx 反向调用，避免循环依赖 ——
 ctx.UI = UI;
@@ -47,7 +49,7 @@ document.getElementById('hudres').addEventListener('click', e => {
 let nightTick = () => { };           // 下方包装为"夜间结算 + 自动存档"（不改 sim.js）
 (function () {
   const raw = nightSettlement;
-  nightTick = (...a) => { raw(...a); if (!G.over) saveGame(); };
+  nightTick = (...a) => { raw(...a); Sfx.night(); if (!G.over) saveGame(); };
 })();
 function startGame() {
   UI.initSidebar();
@@ -73,8 +75,13 @@ function enterGame(continueSave) {
   if (continueSave) { if (assetsReady()) loadGame(); else onAssetsLoaded(loadGame); }
   ctx.toast && ctx.toast('🍂 先建【村中心】，村民会自动去建造。框选一片树，空闲村民会自己去砍！');
 }
-document.getElementById('btn-start').onclick = () => enterGame(false);
-document.getElementById('btn-continue').onclick = () => enterGame(true);
+document.getElementById('btn-start').onclick = () => { Sfx.init(); enterGame(false); };
+document.getElementById('btn-continue').onclick = () => { Sfx.init(); enterGame(true); };
+const sfxBtn = document.getElementById('btn-sfx');
+if (sfxBtn) {
+  sfxBtn.onclick = () => sfxBtn.textContent = '声音:' + (Sfx.toggleMuted() ? '关' : '开');
+  sfxBtn.textContent = '声音:' + (Sfx.muted ? '关' : '开');
+}
 
 function resize() {
   const w = mainEl.clientWidth, h = mainEl.clientHeight;
@@ -125,5 +132,6 @@ window.__camCtl = camCtl;
   stepFX(dt);
   if (!G.over) stepSites(dt);
   if (!G.over) stepFarm(gdt);
+  if (!G.over) stepWeather(gdt);
   renderer.render(scene, cam);
 })();

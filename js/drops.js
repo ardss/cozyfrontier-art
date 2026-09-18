@@ -6,6 +6,7 @@ import { GRID, RES_INFO } from './config.js';
 import { ICONS } from './icons.js';
 import { scene, cam, dom, mainEl } from './scene.js';
 import { G } from './world.js';
+import { Sfx } from './audio.js';
 
 /* ---- 掉落物与搬运 ---- */
 const dropGeo = new THREE.IcosahedronGeometry(.14, 0);
@@ -68,6 +69,7 @@ export function chopFX(inst, res) {
     fxs.push({ mesh: m, vel: new THREE.Vector3((Math.random() - .5) * 2.2, 1.6 + Math.random() * 1.4, (Math.random() - .5) * 2.2), life: .65 });
   }
   shakes.push({ inst, t: .35 });
+  Sfx.chop();
 }
 export function stepFX(dt) {
   for (let i = fxs.length - 1; i >= 0; i--) {

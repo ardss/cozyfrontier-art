@@ -17,7 +17,7 @@ scene.background = new THREE.Color(0x87a96b);
 scene.fog = new THREE.Fog(0x87a96b, 40, 95);
 
 export const cam = new THREE.PerspectiveCamera(45, 1, 0.1, 300);
-const sun = new THREE.DirectionalLight(0xfff0d8, 2.4);
+export const sun = new THREE.DirectionalLight(0xfff0d8, 2.4);
 sun.position.set(10, 18, 8);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
