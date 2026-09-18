@@ -60,6 +60,13 @@
   .toast{background:rgba(43,36,32,.95);border:1px solid var(--gold);border-radius:10px;padding:8px 16px;font-size:13px;animation:tfade 4s forwards}
   @keyframes tfade{0%{opacity:0;transform:translateY(-8px)}10%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
   #end{position:absolute;inset:0;background:rgba(30,24,20,.9);display:none;z-index:20;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+  #intro{position:absolute;inset:0;background:linear-gradient(180deg,rgba(43,36,32,.96),rgba(43,36,32,.88));display:flex;z-index:30;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+  #intro h1{font-size:44px;color:var(--gold);letter-spacing:8px}
+  #intro .sub{color:var(--dim);font-size:14px;letter-spacing:2px}
+  #intro .card{max-width:460px;text-align:center;color:#d8ccb8;font-size:13px;line-height:2;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:14px 20px;margin:6px 0}
+  #intro button{background:#5a8a4a;color:#fff;border:none;border-radius:10px;padding:12px 46px;font-size:17px;cursor:pointer;letter-spacing:4px}
+  #intro button:hover{background:#6a9a56}
+  #intro .tips{color:var(--dim);font-size:11px;line-height:1.9;text-align:center}
   #end h2{font-size:26px;color:var(--gold)}
   #end p{color:var(--dim);max-width:420px;text-align:center;line-height:1.8}
   #end button{background:#5a8a4a;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:15px;cursor:pointer}
@@ -112,6 +119,13 @@ window.addEventListener('error',e=>{window.__errs.push(e.message+' @'+e.lineno)}
     <div id="toast"></div>
     <div id="zoom"><button id="zin">+</button><button id="zout">−</button></div>
     <div id="end"><h2 id="end-title"></h2><p id="end-desc"></p><button onclick="location.reload()">再来一局</button></div>
+    <div id="intro">
+      <h1>暖境边陲</h1>
+      <div class="sub">—— 边陲之地的温暖村庄 ——</div>
+      <div class="card">寒潮将至，你和三位同伴抵达了这片丰饶的边陲。<br>砍柴、采集、建起村庄的炊烟，在冬雪落下之前备好粮与柴。<br>研究技艺、结识行商，让这座小村成为边陲的传奇。</div>
+      <button id="btn-start">开 始 新 生 活</button>
+      <div class="tips">左键点/框选村民 · 右键派活（框选资源也能自动派工）<br>建造：侧栏选卡 → 点地面 · 相机：中键拖动 / Q E 旋转 / WASD 平移 / 滚轮缩放</div>
+    </div>
   </div>
 </div>
 <script type="module" src="./js/main.js"></script>

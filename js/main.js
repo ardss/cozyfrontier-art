@@ -8,7 +8,7 @@ import { G } from './world.js';
 import { cellFree } from './pathfinding.js';
 import { scatterNature } from './nature.js';
 import { spawnVillagers } from './villagers.js';
-import { stepDrops } from './drops.js';
+import { stepDrops, stepFX } from './drops.js';
 import { stepDropAnims, stepSites } from './buildings.js';
 import { stepVillager, productionPerDay, nightSettlement, stepProduction } from './sim.js';
 import { stepCameraKeys, Input, startPlacing } from './input.js';
@@ -34,6 +34,10 @@ function startGame() {
 }
 onAssetsLoaded(startGame);
 if (assetsReady()) startGame();
+document.getElementById('btn-start').onclick = () => {
+  document.getElementById('intro').style.display = 'none';
+  ctx.toast && ctx.toast('🍂 先建【村中心】，村民会自动去建造。框选一片树，空闲村民会自己去砍！');
+};
 
 function resize() {
   const w = mainEl.clientWidth, h = mainEl.clientHeight;
@@ -77,6 +81,7 @@ window.__camCtl = camCtl;
   stepCameraKeys();
   stepDropAnims(dt);
   stepDrops(dt, t);
+  stepFX(dt);
   if (!G.over) stepSites(dt);
   renderer.render(scene, cam);
 })();

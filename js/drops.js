@@ -50,6 +50,41 @@ export function deliverCarry(v) {
   v.resume = null;
 }
 
+/* ---- 采集特效：木屑/碎石粒子 + 目标晃动 ---- */
+const fxGeo = new THREE.BoxGeometry(.07, .07, .07);
+const fxMats = {};
+function fxMat(color) {
+  return fxMats[color] || (fxMats[color] = new THREE.MeshBasicMaterial({ color }));
+}
+const fxs = [];                     // { mesh, vel, life }
+const shakes = [];                  // { inst, t }
+export function chopFX(inst, res) {
+  const color = RES_INFO[res] ? RES_INFO[res].color : 0x8a5a34;
+  for (let i = 0; i < 6; i++) {
+    const m = new THREE.Mesh(fxGeo, fxMat(color));
+    m.position.set(inst.position.x, .6 + Math.random() * .5, inst.position.z);
+    scene.add(m);
+    fxs.push({ mesh: m, vel: new THREE.Vector3((Math.random() - .5) * 2.2, 1.6 + Math.random() * 1.4, (Math.random() - .5) * 2.2), life: .65 });
+  }
+  shakes.push({ inst, t: .35 });
+}
+export function stepFX(dt) {
+  for (let i = fxs.length - 1; i >= 0; i--) {
+    const f = fxs[i];
+    f.life -= dt;
+    f.vel.y -= 6 * dt;
+    f.mesh.position.addScaledVector(f.vel, dt);
+    f.mesh.rotation.x += dt * 9; f.mesh.rotation.y += dt * 7;
+    if (f.life <= 0) { scene.remove(f.mesh); fxs.splice(i, 1); }
+  }
+  for (let i = shakes.length - 1; i >= 0; i--) {
+    const s = shakes[i];
+    s.t -= dt;
+    s.inst.rotation.z = Math.sin(s.t * 55) * .06 * s.t / .35;
+    if (s.t <= 0) { s.inst.rotation.z = 0; shakes.splice(i, 1); }
+  }
+}
+
 /* ---- 浮动小字 ---- */
 export function floatText(text, worldPos) {
   const p = worldPos.clone(); p.y = 1.1; p.project(cam);

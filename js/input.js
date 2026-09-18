@@ -165,6 +165,11 @@ addEventListener('pointerup', e => {
     S.downAt = null;
     return;
   }
+  if (e.button === 1) {                              // 中键平移结束：必须复位模式
+    S.mode = S.placingDef ? 'placing' : 'idle';
+    S.downAt = null;
+    return;
+  }
   if (S.mode === 'boxSelect') {
     Input.selectInScreenRect(S.downAt, e);
   } else if (S.mode === 'maybeSelect' && wasClick && e.button === 0) {
@@ -296,6 +301,26 @@ export const Input = {
         });
         ctx.toast('移动');
       }
+      return;
+    }
+    // 没选村民时框资源 = 一键自动派工：最近的空闲村民轮流上岗
+    const nodes = [];
+    for (const n of G.nature) {
+      if (!n.alive) continue;
+      p.copy(n.inst.position); p.y = .5; p.project(cam);
+      const sx = r.left + (p.x + 1) / 2 * r.width, sy = r.top + (1 - p.y) / 2 * r.height;
+      if (sx >= x1 && sx <= x2 && sy >= y1 && sy <= y2) nodes.push(n);
+    }
+    if (nodes.length) {
+      const cx = nodes.reduce((s, n) => s + n.inst.position.x, 0) / nodes.length;
+      const cz = nodes.reduce((s, n) => s + n.inst.position.z, 0) / nodes.length;
+      const idle = G.villagers.filter(v => !v.task)
+        .sort((a, b) => Math.hypot(a.obj.position.x - cx, a.obj.position.z - cz) - Math.hypot(b.obj.position.x - cx, b.obj.position.z - cz))
+        .slice(0, nodes.length);
+      if (!idle.length) { ctx.toast('😶 没有空闲村民——先让人歇会儿或取消任务'); return; }
+      let i = 0;
+      for (const v of idle) command(v, 'chop', nodes[i++ % nodes.length]);
+      ctx.toast(`🪓 自动派工：${idle.length} 名空闲村民 → ${nodes.length} 个资源`);
       return;
     }
     ctx.UI.selectionChanged();

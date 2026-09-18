@@ -8,7 +8,7 @@ import { G, houseCapacity } from './world.js';
 import { cellFree, findPath, losFree } from './pathfinding.js';
 import { chopDone, regrow } from './nature.js';
 import { spawnVillagers, animWalk, animWork, animIdle } from './villagers.js';
-import { spawnDrop, carryTotal, startDeliver, findDepot, deliverCarry, floatText } from './drops.js';
+import { spawnDrop, carryTotal, startDeliver, findDepot, deliverCarry, floatText, chopFX } from './drops.js';
 import { updateSiteVisuals, finishSite } from './buildings.js';
 import { ctx } from './context.js';
 
@@ -123,6 +123,7 @@ export function stepVillager(v, dt, t) {
       // 冬季野外食物大减（浆果/蘑菇凋零），木石照常——冬天砍柴更重要
       const amt = (node.def.yield === 'food' && isWinterDay(G.day)) ? Math.max(1, node.def.amt - 1) : node.def.amt;
       spawnDrop(node.def.yield, amt, node.inst.position);
+      chopFX(node.inst, node.def.yield);              // 木屑/碎石 + 目标晃动
       chopDone(node);
     }
     // 'work'：建筑产出走天结算，出勤即可
