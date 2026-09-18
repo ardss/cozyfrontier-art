@@ -60,9 +60,10 @@ export const UI = {
     });
   },
 
-  renderList() {    DEFS.forEach(def => {
+  renderList() {
+    DEFS.forEach(def => {
       const row = document.getElementById('b-' + def.id);
-      if (!row) return;                                   // 侧栏尚未初始化
+      if (!row) return;
       const locked = !unlocked(def);
       row.style.display = (this.curCat === '全部' || def.cat === this.curCat) ? 'block' : 'none';
       row.classList.toggle('poor', locked || !canAfford(def));
@@ -74,6 +75,21 @@ export const UI = {
       }
       else if (!locked && lockEl) lockEl.remove();
     });
+  },
+
+  refresh() {
+    document.getElementById('hudres').innerHTML = ['wood', 'food', 'stone', 'plank', 'bread', 'know', 'silver']
+      .map(r => `<span class="res">${ICONS[r] || ''}<b>${Math.floor(G.res[r] || 0)}</b></span>`).join('')
+      + `<span class="res">${ICONS.happy || ''}<b>${Math.round(G.happy)}</b></span>`
+      + `<span class="res click" id="popchip" title="点击管理村民">${ICONS.pop || ''}<b>${G.villagers.length}</b><span style="color:var(--dim);font-size:10px">/${houseCapacity()}</span></span>`;
+    // 年历名牌
+    const din = ((G.day - 1) % YEAR_DAYS) + 1;
+    const season = seasonOf(G.day);
+    const sp = Math.min(100, Math.floor(((din - 1) % SEASON_DAYS + G.time / DAY_SECONDS) / SEASON_DAYS * 100));
+    document.getElementById('daybox').innerHTML = `<b>第 ${G.year || 1} 年</b><span>第${din}天 ${season} ${sp}%${season === '冬' ? ' · 寒冬' : ''} · 🏆${(G.milestones && G.milestones.size) || 0}/${MILESTONES.length}</span>`;
+    this.renderList();
+    if (document.getElementById('people').style.display === 'block') this.renderPeople();
+    if (this.infoEntry && !G.placed.includes(this.infoEntry)) this.hideInfo();
   },
 
   // 缩略图渲染队列（共用一个离屏渲染器）
@@ -114,51 +130,6 @@ export const UI = {
     sc.remove(obj);
     } catch (err) { console.error('thumb fail', def.id, err); }
     requestAnimationFrame(() => UI.pumpThumb());
-  },
-
-  // 侧栏悬停说明：这张卡是干什么的
-  showSideTip(def, row) {
-    const tip = document.getElementById('tip');
-    const roleTxt = { house: '住房 · 提升人口上限', wood: '生产 · 派村民上工产木', food: '生产 · 派村民上工产食', granary: '粮仓 · 食物上限+25', well: '设施 · 附近民居更满意', happy: '设施 · 提升快乐', market: '设施 · 4木换5食', tower: '设施 · 夜间防狼', deco: '' }[def.role] || def.cat;
-    const rcTxt = RECIPES[def.id] ? '<br>⚙ 配方：' + Object.entries(RECIPES[def.id].in).map(([r, v]) => ics(r) + v).join(' ') + ' → ' + Object.entries(RECIPES[def.id].out).map(([r, v]) => ics(r) + v).join(' ') + ' / ' + RECIPES[def.id].time + '秒' : '';
-    tip.innerHTML = `<b>${def.name}</b><br><span style="color:#a8d8a0">${roleTxt}${def.cap ? ' · 容量' + def.cap : ''}${def.out ? ' · 产量' + def.out : ''}</span>${rcTxt}<br>${def.desc}<br><span style="color:#a89880">造价：${Object.entries(def.cost).map(([r, v]) => ics(r) + v).join(' ')} · ${def.w}×${def.d}</span>`;
-    const m = row.getBoundingClientRect(), mm = mainEl.getBoundingClientRect();
-    tip.style.display = 'block';
-    tip.style.left = '12px';
-    tip.style.top = Math.max(8, m.top - mm.top) + 'px';
-  },
-  hideSideTip() { document.getElementById('tip').style.display = 'none'; },
-
-  refresh() {
-    document.getElementById('hudres').innerHTML = ['wood', 'food', 'stone', 'plank', 'bread', 'know', 'silver']
-      .map(r => `<span class="res">${ICONS[r] || ''}<b>${Math.floor(G.res[r] || 0)}</b></span>`).join('')
-      + `<span class="res">${ICONS.happy || ''}<b>${Math.round(G.happy)}</b></span>`
-      + `<span class="res">${ICONS.pop || ''}<b>${G.villagers.length}</b><span style="color:var(--dim);font-size:10px">/${houseCapacity()}</span></span>`;
-    // 年历：第X年 第X天 · 季节 · 季节进度
-    const din = ((G.day - 1) % YEAR_DAYS) + 1;
-    const season = seasonOf(G.day);
-    const sp = Math.min(100, Math.floor(((din - 1) % SEASON_DAYS + G.time / DAY_SECONDS) / SEASON_DAYS * 100));
-    document.getElementById('daybox').innerHTML = `<b>第 ${G.year || 1} 年</b><span>第${din}天 ${season} ${sp}%${season === '冬' ? ' · 寒冬' : ''} · 🏆${(G.milestones && G.milestones.size) || 0}/${MILESTONES.length}</span>`;
-    const vl = document.getElementById('vlist');
-    vl.innerHTML = G.villagers.map(v => {
-      const t = v.task;
-      const st = !t ? '待命' : t.kind === 'move' ? '移动' : t.kind === 'chop' ? ics(t.target.def.yield) : t.kind === 'deliver' ? ICONS.box : t.kind === 'build' ? ICONS.hammer : ICONS.gear;
-      return `<div class="v" data-i="${G.villagers.indexOf(v)}"><span class="av">${v.name[0]}</span><span class="vn">${v.name}${v.trait ? ' <span style="color:#8a7a5e">· ' + v.trait.name + '</span>' : ''}</span><span class="st">${st}</span></div>`;
-    }).join('');
-    vl.querySelectorAll('.v').forEach(row => {
-      row.onclick = () => {
-        const v = G.villagers[+row.dataset.i];
-        if (!v) return;
-        ctx.Input.clearSelection();
-        G.selected.add(v);
-        v.ring.visible = true;
-        UI.selectionChanged();
-        camCtl.target.copy(v.obj.position);
-        camCtl.apply();
-      };
-    });
-    this.renderList();
-    if (this.infoEntry && !G.placed.includes(this.infoEntry)) this.hideInfo();
   },
 
   selectionChanged() {
@@ -255,6 +226,35 @@ export const UI = {
       }
       el.style.display = 'none';
       UI.refresh();
+    });
+  },
+
+  // 人口面板：村民规模化管理（列表+定位），替代常驻头像列
+  togglePeople() {
+    const el = document.getElementById('people');
+    if (el.style.display === 'block') { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    this.renderPeople();
+  },
+  renderPeople() {
+    const el = document.getElementById('people');
+    if (el.style.display !== 'block') return;
+    const st = v => {
+      const t = v.task;
+      return !t ? '待命' : t.kind === 'move' ? '移动' : t.kind === 'chop' ? '采集' + (t.target.def?.name || '') : t.kind === 'deliver' ? '运送' : t.kind === 'build' ? '建造' + (t.target.def?.name || '') : '岗位·' + (t.target.def?.name || '');
+    };
+    el.innerHTML = `<b>村民 ${G.villagers.length}/${houseCapacity()}</b>` + G.villagers.map((v, i) =>
+      `<div class="prow" data-i="${i}"><span class="av">${v.name[0]}</span><span class="pn">${v.name}${v.trait ? ' <i>' + v.trait.name + '</i>' : ''}<br><span style="color:var(--dim);font-size:10px">${st(v)}</span></span><span class="ps">定位 ›</span></div>`
+    ).join('');
+    el.querySelectorAll('.prow').forEach(row => row.onclick = () => {
+      const v = G.villagers[+row.dataset.i];
+      if (!v) return;
+      ctx.Input.clearSelection();
+      G.selected.add(v);
+      v.ring.visible = true;
+      this.selectionChanged();
+      camCtl.target.copy(v.obj.position);
+      camCtl.apply();
     });
   },
 

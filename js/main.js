@@ -22,6 +22,7 @@ ctx.Input = Input;
 ctx.toast = toast;
 ctx.startPlacing = startPlacing;
 document.getElementById('btn-tech').onclick = () => UI.toggleTech();
+document.getElementById('hudres').addEventListener('click', e => { if (e.target.closest('#popchip')) UI.togglePeople(); });
 (function menuCam() {                                  // 菜单机位：环绕 + 俯瞰（开始后 body.playing 接管）
   if (!document.body.classList.contains('playing')) {
     menuCam.t = (menuCam.t || 0) + 0.0006;

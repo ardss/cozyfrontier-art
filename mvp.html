@@ -55,14 +55,15 @@
   .b .lk{position:absolute;left:0;right:0;bottom:2px;font-size:9.5px;color:#e8b090;text-shadow:0 1px 2px rgba(0,0,0,.8)}
   .b .lk{font-size:9.5px;color:#c98}
   /* 左下：村民列 */
-  #vlist{position:absolute;left:14px;bottom:12px;display:flex;flex-direction:column;gap:4px;padding:7px;max-height:46vh;overflow-y:auto}
-  #vlist .v{display:flex;align-items:center;gap:8px;cursor:pointer;border-radius:8px;padding:3px 8px 3px 4px;border:1px solid transparent}
-  #vlist .v:hover{background:rgba(232,200,130,.07)}
-  #vlist .v .av{width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#c8a06a,#8a6a42);color:#2b2016;font-weight:700;font-size:12px;display:inline-flex;align-items:center;justify-content:center;border:1.5px solid rgba(0,0,0,.45);flex-shrink:0}
-  #vlist .v .vn{font-size:11.5px;color:var(--txt);white-space:nowrap}
-  #vlist .v .vn i{font-style:normal;color:var(--dim);font-size:10px}
-  #vlist .v .st{font-size:10px;color:var(--dim);margin-left:auto;padding-left:8px}
-  #vlist .v.sel{border-color:#8fc0ff;background:rgba(140,190,255,.1)}
+  #people{position:absolute;left:14px;top:100px;width:270px;max-height:70vh;overflow-y:auto;padding:12px 14px;font-size:12px;line-height:1.7;display:none}
+  #people b{color:var(--gold);font-size:14px}
+  #people .prow{display:flex;align-items:center;gap:8px;border-top:1px solid rgba(232,200,130,.1);padding:5px 2px;cursor:pointer;border-radius:7px}
+  #people .prow:hover{background:rgba(232,200,130,.07)}
+  #people .av{width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#c8a06a,#8a6a42);color:#2b2016;font-weight:700;font-size:12px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;border:1.5px solid rgba(0,0,0,.45)}
+  #people .pn{flex:1;color:var(--txt);font-size:11.5px}
+  #people .pn i{font-style:normal;color:var(--dim);font-size:10px}
+  #people .ps{font-size:10px;color:var(--dim)}
+  #hudres .res.click{cursor:pointer}
   /* 右侧情境卡 */
   #info{position:absolute;right:14px;top:100px;width:250px;padding:13px 15px;font-size:12px;line-height:1.75;display:none}
   #info b{color:var(--gold);font-size:14px}
@@ -160,7 +161,7 @@ window.addEventListener('error',e=>{window.__errs.push(e.message+' @'+e.lineno)}
     <div id="cats"></div>
     <div id="list"></div>
   </div>
-  <div id="vlist" class="panel"></div>
+  <div id="people" class="panel"></div>
 </div>
 <script type="module" src="./js/main.js"></script>
 </body>

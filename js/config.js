@@ -42,27 +42,27 @@ export const DEFS = [
   { id:'cottage_b', name:'猎户村舍',w:2,d:1, cat:'住房', cost:{wood:5},  role:'house', cap:2, desc:'猎户的家。' },
   { id:'home_small',name:'小民居', w:2,d:2, cat:'住房', cost:{wood:7},  role:'house', cap:3, desc:'舒适民居。' },
   { id:'home_large',name:'大民居', w:2,d:2, cat:'住房', cost:{wood:8,plank:4}, role:'house', cap:4, desc:'宽敞民居（需要木板）。' },
-  { id:'farmhouse', name:'农舍',   w:2,d:2, cat:'生产', cost:{wood:9},  role:'food',  out:4, desc:'村民主产食物。' },
-  { id:'sawmill',   name:'锯木厂', w:2,d:2, cat:'生产', cost:{wood:6},  role:'wood',  desc:'配方：2木 → 3板。派村民上工。', tech:"woodwork" },
-  { id:'apiary',    name:'蜂箱架', w:1,d:1, cat:'生产', cost:{wood:3},  role:'food',  out:2, desc:'产蜂蜜小屋。' },
-  { id:'bakery',    name:'面包房', w:2,d:1, cat:'生产', cost:{wood:8},  role:'food',  desc:'配方：2食 → 3面包。派村民上工。', tech:"baking" },
-  { id:'greenhouse',name:'温室',   w:2,d:2, cat:'生产', cost:{wood:10}, role:'food',  out:3, desc:'冬天也能产食物。', tech:"glass" },
-  { id:'granary',   name:'粮仓',   w:2,d:2, cat:'设施', cost:{wood:5},  role:'granary',desc:'食物上限 +25。' },
+  { id:'farmhouse', name:'农舍',   w:2,d:2, cat:'农牧', cost:{wood:9},  role:'food',  out:4, desc:'村民主产食物。' },
+  { id:'sawmill',   name:'锯木厂', w:2,d:2, cat:'加工', cost:{wood:6},  role:'wood',  desc:'配方：2木 → 3板。派村民上工。', tech:"woodwork" },
+  { id:'apiary',    name:'蜂箱架', w:1,d:1, cat:'农牧', cost:{wood:3},  role:'food',  out:2, desc:'产蜂蜜小屋。' },
+  { id:'bakery',    name:'面包房', w:2,d:1, cat:'加工', cost:{wood:8},  role:'food',  desc:'配方：2食 → 3面包。派村民上工。', tech:"baking" },
+  { id:'greenhouse',name:'温室',   w:2,d:2, cat:'农牧', cost:{wood:10}, role:'food',  out:3, desc:'冬天也能产食物。', tech:"glass" },
+  { id:'granary',   name:'粮仓',   w:2,d:2, cat:'仓储', cost:{wood:5},  role:'granary',desc:'食物上限 +25。' },
   { id:'wellhouse', name:'水井',   w:1,d:1, cat:'设施', cost:{wood:3,stone:2},  role:'well',  desc:'附近民居更满意。', tech:"masonry" },
   { id:'fountain',  name:'喷泉',   w:1,d:1, cat:'设施', cost:{wood:4,stone:2},  role:'happy', add:5, desc:'快乐 +5。', tech:"masonry" },
   { id:'marketstall',name:'市集',  w:2,d:1, cat:'设施', cost:{wood:5,stone:2},  role:'market',desc:'4 木换 5 食。' },
   { id:'watchtower',name:'瞭望塔', w:2,d:2, cat:'设施', cost:{wood:7,stone:3},  role:'tower', desc:'夜间防狼。', tech:"masonry" },
   { id:'bridge',    name:'石桥',   w:3,d:1, cat:'装饰', cost:{wood:2},  role:'deco', desc:'装饰。' },
   { id:'tollgate',  name:'关卡',   w:3,d:1, cat:'装饰', cost:{wood:2},  role:'deco', desc:'装饰。' },
-  { id:'stable',    name:'马厩',   w:3,d:2, cat:'装饰', cost:{wood:6},  role:'deco', desc:'牲畜畜牧的雏形（后续更新）。' },
+  { id:'stable',    name:'马厩',   w:3,d:2, cat:'农牧', cost:{wood:6},  role:'deco', desc:'牲畜畜牧的雏形（后续更新）。' },
   { id:'lighthouse',name:'灯塔',   w:2,d:2, cat:'装饰', cost:{wood:6},  role:'happy', add:4, desc:'灯塔的光让人心安。快乐加成。', tech:"sailing" },
   { id:'bathhouse', name:'澡堂',   w:2,d:2, cat:'设施', cost:{wood:8,plank:2},  role:'happy', add:6, desc:'快乐加成；冬天燃料不足时受冻减半。', tech:"wellness" },
   { id:'school',    name:'学堂',   w:2,d:2, cat:'设施', cost:{wood:8},  role:'happy', add:6, desc:'书院：派村民上工产出知识📘，兼快乐加成。' },
   { id:'clinic',    name:'诊所',   w:2,d:2, cat:'设施', cost:{wood:8},  role:'happy', add:4, desc:'快乐加成；饥荒时一半概率留住要走的村民。', tech:"wellness" },
-  { id:'dovecote',  name:'鸽房',   w:1,d:1, cat:'生产', cost:{wood:2},  role:'deco', desc:'每晚落 2 蛋换粮（冬天 1）。' },
+  { id:'dovecote',  name:'鸽房',   w:1,d:1, cat:'农牧', cost:{wood:2},  role:'deco', desc:'每晚落 2 蛋换粮（冬天 1）。' },
   { id:'laundry',   name:'晾晒场', w:2,d:1, cat:'装饰', cost:{wood:2},  role:'happy', add:3, desc:'阳光的味道。快乐加成。' },
   { id:'shipyard',  name:'造船厂', w:4,d:3, cat:'装饰', cost:{wood:12}, role:'deco', desc:'航海贸易的起点（后续更新）。', tech:"sailing" },
-  { id:'warehouse', name:'仓库',   w:3,d:2, cat:'设施', cost:{wood:7,plank:4},  role:'deco', desc:'食物上限 +50。', tech:"storage" },
+  { id:'warehouse', name:'仓库',   w:3,d:2, cat:'仓储', cost:{wood:7,plank:4},  role:'deco', desc:'食物上限 +50。', tech:"storage" },
   { id:'watchpost', name:'哨位',   w:2,d:2, cat:'设施', cost:{wood:4},  role:'deco', desc:'和瞭望塔一样：夜间防狼。', tech:"watch" },
   // 自产小物件（prop 管线）
   { id:'fence',    name:'木栅栏', w:1,d:1, cat:'装饰', cost:{wood:1}, role:'deco', desc:'围出你的院子。' },
@@ -71,7 +71,7 @@ export const DEFS = [
   { id:'lantern',  name:'灯笼',   w:1,d:1, cat:'装饰', cost:{wood:1}, role:'deco', desc:'夜晚的暖光。' },
   { id:'signpost', name:'路牌',   w:1,d:1, cat:'装饰', cost:{wood:1}, role:'deco', desc:'指向家的方向。' },
   { id:'campfire', name:'篝火',   w:1,d:1, cat:'装饰', cost:{wood:2}, role:'deco', desc:'聚会的中心。' },
-  { id:'haystack', name:'草垛',   w:1,d:1, cat:'装饰', cost:{wood:2}, role:'deco', desc:'秋收的气息。' },
+  { id:'haystack', name:'草垛',   w:1,d:1, cat:'农牧', cost:{wood:2}, role:'deco', desc:'秋收的气息。' },
   { id:'cart',     name:'手推车', w:1,d:1, cat:'装饰', cost:{wood:2}, role:'deco', desc:'运货好帮手。' },
 ];
 DEFS.forEach(d => d.glb = d.glb || `ai3d-mirror/wc-${d.id}-paint.glb`);
@@ -119,7 +119,7 @@ export const SCATTER_DEFS = {};
 export const SCATTER_COUNTS = {};
 export const NATURE_COUNTS  = { tree: 20, tree2: 8, tree3: 6, dead: 4, bush: 12, rocks: 7, rock: 5, stump: 6, mushrooms: 8, grass_tuft: 12, flowers: 12 };
 export const VNAMES = ['阿岚', '小满', '石头', '阿枣', '春妮', '大川', '阿槐', '小蝶'];
-export const CATS = ['全部', '住房', '生产', '设施', '装饰'];
+export const CATS = ['全部', '住房', '农牧', '加工', '设施', '仓储', '装饰'];
 
 /* ---- 里程碑：声明式条件，每晚检查，达成 +8 快乐；全达成 = 繁荣终局（R6） ---- */
 export const MILESTONES = [
