@@ -132,3 +132,29 @@ export const MILESTONES = [
   { id: 'pop6',   name: '人丁', desc: '人口达到 6',      type: 'pop',   n: 6 },
   { id: 'year2',  name: '跨年', desc: '活过第一个冬天',   type: 'year',  n: 2 },
 ];
+
+/* ---- 贸易：行商每 3 天到访，市集当日开张；卖出/买入价（R7） ---- */
+export const TRADE = {
+  sell: [ { res: 'plank', n: 3, silver: 4 }, { res: 'bread', n: 3, silver: 6 }, { res: 'wood', n: 6, silver: 3 }, { res: 'stone', n: 4, silver: 3 } ],
+  buy:  [ { res: 'food', n: 8, silver: 3 }, { res: 'wood', n: 8, silver: 3 }, { res: 'stone', n: 5, silver: 4 } ],
+};
+export const isMarketDay = day => day % 3 === 0;
+
+/* ---- 双选项事件：夜间随机弹出，fx 为资源/人口/快乐增减（R7） ---- */
+export const EVENTS = [
+  { id: 'drifter', name: '迷路的旅人', text: '一位旅人在林间迷了路，又冷又饿，请求借宿。', opts: [
+    { label: '收留他（+1 人，-5 粮）', fx: { food: -5, pop: 1 } },
+    { label: '指路送别（快乐 +3）', fx: { happy: 3 } } ] },
+  { id: 'caravan', name: '远方的商队', text: '一支商队路过村口，想用石料换些木板。', opts: [
+    { label: '成交（-4 板，+6 石）', fx: { plank: -4, stone: 6 } },
+    { label: '婉拒', fx: {} } ] },
+  { id: 'storm', name: '暴雨夜', text: '暴雨冲垮了储物棚的顶。', opts: [
+    { label: '连夜抢修（-3 木）', fx: { wood: -3 } },
+    { label: '先顾着人（-6 粮受潮）', fx: { food: -6 } } ] },
+  { id: 'bees', name: '野蜂群', text: '一群野蜂在村边的大树上安了家。', opts: [
+    { label: '冒险收蜜（+6 粮，快乐 -2）', fx: { food: 6, happy: -2 } },
+    { label: '敬而远之', fx: {} } ] },
+  { id: 'ballad', name: '流浪乐手', text: '一位乐手想在篝火旁办一场小演出。', opts: [
+    { label: '办！（-2 木当柴，快乐 +8）', fx: { wood: -2, happy: 8 } },
+    { label: '改天吧', fx: {} } ] },
+];

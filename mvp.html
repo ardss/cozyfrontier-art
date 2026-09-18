@@ -51,6 +51,10 @@
   #tech .trow button{background:#52463a;color:var(--dim);border:none;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer}
   #tech .trow button:disabled{opacity:.4;cursor:default}
   #tech button#btn-techclose{margin-top:8px;background:#8a4a3a;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer}
+  #event{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);width:320px;background:rgba(58,49,40,.98);border:1px solid var(--gold);border-radius:12px;padding:16px 18px;font-size:13px;line-height:1.8;display:none;z-index:15}
+  #event b{color:var(--gold);font-size:15px}
+  #event button{margin:10px 6px 0 0;background:#5a8a4a;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer}
+  #event button.alt{background:#52463a}
   #selrect{position:absolute;border:1px solid #8fc0ff;background:rgba(140,190,255,.15);display:none;z-index:7;pointer-events:none}
   #toast{position:absolute;left:50%;transform:translateX(-50%);top:14px;display:flex;flex-direction:column;gap:6px;z-index:8;pointer-events:none;align-items:center}
   .toast{background:rgba(43,36,32,.95);border:1px solid var(--gold);border-radius:10px;padding:8px 16px;font-size:13px;animation:tfade 4s forwards}
@@ -83,6 +87,7 @@ window.addEventListener('error',e=>{window.__errs.push(e.message+' @'+e.lineno)}
   <span class="res">🟫 <b id="r-plank">0</b></span>
   <span class="res">🍞 <b id="r-bread">0</b></span>
   <span class="res">📘 <b id="r-know">0</b></span>
+  <span class="res">🪙 <b id="r-silver">5</b></span>
   <button id="btn-tech" style="background:#2b2420;color:var(--gold);border:1px solid var(--line);border-radius:8px;padding:4px 12px;font-size:13px;cursor:pointer">🔬 科技</button>
   <span class="res">😊 <b id="r-happy">70</b></span>
   <span class="res">👥 <b id="r-pop">0</b><span style="color:var(--dim);font-size:10px" id="r-cap"></span></span>
@@ -102,6 +107,7 @@ window.addEventListener('error',e=>{window.__errs.push(e.message+' @'+e.lineno)}
     <div id="tip"></div>
     <div id="info"></div>
     <div id="tech"></div>
+    <div id="event"></div>
     <div id="selrect"></div>
     <div id="toast"></div>
     <div id="zoom"><button id="zin">+</button><button id="zout">−</button></div>

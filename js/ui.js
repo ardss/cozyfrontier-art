@@ -2,7 +2,8 @@
  * 11. UI —— 侧栏、缩略图、选择面板、提示、toast
  * ===================================================================*/
 import * as THREE from 'three';
-import { DAY_SECONDS, RES_INFO, CARRY_CAP, DEFS, CATS, RECIPES, TECHS, MILESTONES, seasonOf, SEASON_DAYS, YEAR_DAYS } from './config.js';
+import { DAY_SECONDS, RES_INFO, CARRY_CAP, DEFS, CATS, RECIPES, TECHS, MILESTONES, seasonOf, SEASON_DAYS, YEAR_DAYS, TRADE, EVENTS, isMarketDay } from './config.js';
+import { spawnVillagers } from './villagers.js';
 import { mainEl, camCtl, pickAt } from './scene.js';
 import { G, canAfford, unlocked, houseCapacity } from './world.js';
 import { protos } from './assets.js';
@@ -133,6 +134,7 @@ export const UI = {
     document.getElementById('r-plank').textContent = Math.floor(G.res.plank || 0);
     document.getElementById('r-bread').textContent = Math.floor(G.res.bread || 0);
     document.getElementById('r-know').textContent = Math.floor(G.res.know || 0);
+    document.getElementById('r-silver').textContent = Math.floor(G.res.silver || 0);
     document.getElementById('r-happy').textContent = Math.round(G.happy);
     document.getElementById('r-pop').textContent = G.villagers.length;
     document.getElementById('r-cap').textContent = '/' + houseCapacity();
@@ -196,7 +198,17 @@ export const UI = {
     el.style.display = 'block';
     const d = entry.def;
     const workers = G.villagers.filter(v => v.task && v.task.target === entry).length;
-    const trade = d.role === 'market' && G.res.wood >= 4 ? '<button id="btn-trade">4 木换 5 食</button>' : '';
+    // 市集：行商到访日（每 3 天）可交易
+    let trade = '';
+    if (d.role === 'market') {
+      if (!isMarketDay(G.day)) {
+        trade = `<br><span style="color:#a89880">🧳 行商未到（每 3 天来一次，第 ${(Math.floor(G.day / 3) + 1) * 3} 天到访）</span>`;
+      } else {
+        const sell = TRADE.sell.map((t, i) => `<button data-tr="s${i}" ${G.res[t.res] >= t.n ? '' : 'disabled'}>${t.n}${RES_INFO[t.res].icon} → ${t.silver}🪙</button>`).join('');
+        const buy = TRADE.buy.map((t, i) => `<button class="alt" data-tr="b${i}" ${(G.res.silver || 0) >= t.silver ? '' : 'disabled'}>${t.silver}🪙 → ${t.n}${RES_INFO[t.res].icon}</button>`).join('');
+        trade = `<br>🧳 <b style="color:var(--ok)">行商到访！</b><br>卖出：${sell}<br>买入：${buy}`;
+      }
+    }
     const rc = RECIPES[d.id];
     const rcTxt = rc ? '⚙ 配方：' + Object.entries(rc.in).map(([r, v]) => v + RES_INFO[r].icon).join(' ') + ' → ' + Object.entries(rc.out).map(([r, v]) => v + RES_INFO[r].icon).join(' ') + ' / ' + rc.time + '秒<br>进度 ' + Math.floor(((entry.prodT || 0) / rc.time) * 100) + '%<br>' : '';
     const assignBtn = rc && G.selected.size ? `<button id="btn-assign">派选中 ${G.selected.size} 人上工</button>` : '';
@@ -210,13 +222,45 @@ export const UI = {
       this.showBuildingInfo(entry);
       toast('🏭 派工完成');
     };
-    const bt = document.getElementById('btn-trade');
-    if (bt) bt.onclick = () => {
-      if (G.res.wood >= 4) { G.res.wood -= 4; G.res.food = Math.min(G.foodCap, G.res.food + 5); toast('🛒 -4 木 +5 食'); UI.refresh(); }
-    };
+    el.querySelectorAll('button[data-tr]').forEach(b => b.onclick = () => {
+      const isSell = b.dataset.tr[0] === 's';
+      const list = isSell ? TRADE.sell : TRADE.buy;
+      const t = list[+b.dataset.tr.slice(1)];
+      if (isSell) {
+        if ((G.res[t.res] || 0) < t.n) return;
+        G.res[t.res] -= t.n; G.res.silver = (G.res.silver || 0) + t.silver;
+        toast(`🧳 卖出 ${t.n}${RES_INFO[t.res].icon} +${t.silver}🪙`);
+      } else {
+        if ((G.res.silver || 0) < t.silver) return;
+        G.res.silver -= t.silver;
+        if (t.res === 'food') G.res.food = Math.min(G.foodCap, G.res.food + t.n);
+        else G.res[t.res] = (G.res[t.res] || 0) + t.n;
+        toast(`🧳 买入 ${t.n}${RES_INFO[t.res].icon} -${t.silver}🪙`);
+      }
+      UI.refresh();
+      UI.showBuildingInfo(entry);
+    });
   },
 
   hideInfo() { document.getElementById('info').style.display = 'none'; this.infoEntry = this.infoVillager = null; },
+
+  // 双选项事件弹窗（夜间触发）
+  showEvent(ev) {
+    const el = document.getElementById('event');
+    el.innerHTML = `<b>${ev.name}</b><br>${ev.text}<br>` + ev.opts.map((o, i) => `<button data-o="${i}" class="${i ? 'alt' : ''}">${o.label}</button>`).join('');
+    el.style.display = 'block';
+    el.querySelectorAll('button[data-o]').forEach(b => b.onclick = () => {
+      const fx = ev.opts[+b.dataset.o].fx || {};
+      for (const [k, v] of Object.entries(fx)) {
+        if (k === 'pop') { if (v > 0 && houseCapacity() > G.villagers.length) { spawnVillagers(v); toast(`🚶 旅人加入（现 ${G.villagers.length} 人）`); } }
+        else if (k === 'happy') G.happy = Math.max(0, Math.min(100, G.happy + v));
+        else if (k === 'food') G.res.food = Math.max(0, Math.min(G.foodCap, G.res.food + v));
+        else G.res[k] = Math.max(0, (G.res[k] || 0) + v);
+      }
+      el.style.display = 'none';
+      UI.refresh();
+    });
+  },
 
   // 科技面板：研究消耗知识📘，解锁进阶建筑
   toggleTech() {

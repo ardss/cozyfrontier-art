@@ -1,7 +1,7 @@
 /* =====================================================================
  * 10. 模拟 —— 村民行为步进、经济、日程、夜晚结算
  * ===================================================================*/
-import { GRID, RES_INFO, CARRY_CAP, RECIPES, isWinterDay, seasonOf, SEASON_DAYS, YEAR_DAYS, MILESTONES } from './config.js';
+import { GRID, RES_INFO, CARRY_CAP, RECIPES, isWinterDay, seasonOf, SEASON_DAYS, YEAR_DAYS, MILESTONES, EVENTS, isMarketDay } from './config.js';
 import { scene } from './scene.js';
 import { G, houseCapacity } from './world.js';
 import { cellFree, findPath, losFree } from './pathfinding.js';
@@ -232,6 +232,8 @@ export function nightSettlement() {
       ? `❄ 明日入冬：储备达标（柴 ${Math.floor(G.res.wood)}/需${p * 8}，粮 ${Math.floor(G.res.food)}/需${p * 5}），稳了`
       : `⚠ 明日入冬：储备不足！建议 柴≥${p * 8} 粮≥${p * 5}（现 柴 ${Math.floor(G.res.wood)}，粮 ${Math.floor(G.res.food)}）`);
   }
+  if (isMarketDay(G.day)) ctx.toast('🧳 行商到访！今天去市集可以买卖货物');
+  if (Math.random() < 0.3 && ctx.UI && ctx.UI.showEvent) ctx.UI.showEvent(EVENTS[Math.floor(Math.random() * EVENTS.length)]);
   checkMilestones();
   if (!G.over && G.villagers.length < 3) { endGame(false); return; }
   ctx.UI && ctx.UI.refresh();
