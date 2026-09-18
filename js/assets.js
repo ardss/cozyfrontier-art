@@ -9,7 +9,7 @@ import { DEFS, NATURE_DEFS } from './config.js';
 const enc = p => p.split('/').map(encodeURIComponent).join('/');
 const loader = new GLTFLoader();
 const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath('https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/');
+dracoLoader.setDecoderPath('./js/vendor/draco/');   // 本地解码器，零 CDN 依赖
 loader.setDRACOLoader(dracoLoader);
 
 export const protos = {};   // id -> 归一化的 Group（原点=脚印中心，脚底贴地）
