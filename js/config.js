@@ -75,7 +75,8 @@ export const DEFS = [
   { id:'haystack', name:'草垛',   w:1,d:1, cat:'农牧', cost:{wood:2}, role:'deco', desc:'秋收的气息。' },
   { id:'cart',     name:'手推车', w:1,d:1, cat:'装饰', cost:{wood:2}, role:'deco', desc:'运货好帮手。' },
 ];
-DEFS.forEach(d => d.glb = d.glb || `ai3d-mirror/wc-${d.id}-paint.glb`);
+const PROG_IDS = ['farm','coop','fish','hunt'];   // 程序化模型建筑：无 GLB，避免 404
+DEFS.forEach(d => d.glb = d.glb || (PROG_IDS.includes(d.id) ? null : `ai3d-mirror/wc-${d.id}-paint.glb`));
 // 文件名与 id 不一致的特例
 const wellDef = DEFS.find(d => d.id === 'wellhouse');
 if (wellDef) wellDef.glb = 'ai3d-mirror/wc-well-paint.glb';

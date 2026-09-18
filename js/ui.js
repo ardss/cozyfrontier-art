@@ -137,7 +137,8 @@ export const UI = {
     const el = document.getElementById('selbox');
     el.style.display = G.selected.size ? 'inline' : 'none';
     el.textContent = '已选 ' + G.selected.size + ' 人';
-    document.getElementById('vlist').querySelectorAll('.v').forEach((row, i) => row.classList.toggle('sel', G.selected.has(G.villagers[i])));
+    const vl = document.getElementById('vlist');   // 旧快速列表已移除，存在才刷选中态
+    if (vl) vl.querySelectorAll('.v').forEach((row, i) => row.classList.toggle('sel', G.selected.has(G.villagers[i])));
     if (G.selected.size === 1) this.showVillagerInfo([...G.selected][0]);
     else if (G.selected.size === 0 && this.infoVillager) this.hideInfo();
   },
