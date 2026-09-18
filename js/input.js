@@ -276,33 +276,23 @@ export const Input = {
       const sx = r.left + (p.x + 1) / 2 * r.width, sy = r.top + (1 - p.y) / 2 * r.height;
       if (sx >= x1 && sx <= x2 && sy >= y1 && sy <= y2) nodes.push(n);
     }
-    // 规则一：同框有人有资源 → 选中村民并直接派工（最直觉）
-    if (vils.length && nodes.length) {
-      this.clearSelection();
-      for (const v of vils) { G.selected.add(v); v.ring.visible = true; }
-      let j = 0;
-      for (const v of vils) { command(v, 'chop', nodes[j++ % nodes.length]); }
-      G.nature.forEach(n => highlightNode(n, false));
-      nodes.forEach(n => highlightNode(n, true));
-      ctx.UI.selectionChanged();
-      ctx.toast(`🪓 已派 ${vils.length} 人去采 ${nodes.length} 个资源（脚下亮环 = 目标）`);
-      return;
-    }
-    // 规则二：只框到人 → 选中；提示下一步
+    // 规则一：框到村民（无论有没有资源）→ 只选中村民；资源必须再框一次才派工，避免误砍景观树
     if (vils.length) {
       this.clearSelection();
       for (const v of vils) { G.selected.add(v); v.ring.visible = true; }
       ctx.UI.selectionChanged();
-      ctx.toast('已选中 ' + vils.length + ' 人：右键派活，或再框一片资源');
+      ctx.toast(nodes.length
+        ? `已选中 ${vils.length} 人——再框一次这些资源就派工（直接派工误伤造景可不行）`
+        : '已选中 ' + vils.length + ' 人：右键派活，或再框一片资源');
       return;
     }
-    // 规则三：只框到资源
+    // 规则二：只框到资源 → 已选村民派工，否则空闲者自动去
     if (nodes.length) {
       if (G.selected.size) {
         let j = 0;
         G.selected.forEach(v => command(v, 'chop', nodes[j++ % nodes.length]));
         G.nature.forEach(n => highlightNode(n, false));
-      nodes.forEach(n => highlightNode(n, true));
+        nodes.forEach(n => highlightNode(n, true));
         ctx.toast(`📋 ${G.selected.size} 人 → ${nodes.length} 个资源（亮环 = 目标）`);
       } else {
         const cx = nodes.reduce((s, n) => s + n.inst.position.x, 0) / nodes.length;
