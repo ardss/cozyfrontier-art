@@ -6,6 +6,7 @@
  * ===================================================================*/
 import { G } from './world.js';
 import { toast } from './ui.js';
+import { Events } from './events.js';
 
 /* 故事池：{名}=村民名，{特质}=村民特质名；温暖治愈向，20+ 条 */
 const POOL = [
@@ -54,3 +55,6 @@ export const Stories = {
     try { toast(text); } catch { }                      // toast 失败不影响主循环
   },
 };
+
+/* ---- 新一天白天开始（原 main.js nightTick 包装平移；先于远方来信） ---- */
+Events.on('day', () => Stories.dayTick(), 10);

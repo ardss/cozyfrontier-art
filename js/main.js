@@ -2,7 +2,7 @@
  * 12. 启动与主循环（模块装配入口：注入跨模块引用 → 等资产 → 开局 → loop）
  * ===================================================================*/
 import * as THREE from 'three';
-import { DAY_SECONDS, GRID } from './config.js';
+import { DAY_SECONDS, GRID, seasonOf } from './config.js';
 import { mainEl, renderer, scene, cam, camCtl } from './scene.js';
 import { G } from './world.js';
 import { cellFree } from './pathfinding.js';
@@ -23,10 +23,13 @@ import { gameState, setupControls } from './controls.js';
 import { stepWeather } from './weather.js';
 import { Sfx } from './audio.js';
 import { Deco } from './deco.js';
-import { Stories } from './stories.js';   // S25 村民小故事
-import { Repute } from './repute.js';   // S39 声望
-import { dayTick as letterDayTick } from './letters.js';   // S27 远方来信
-import { voyageDayTick, initVoyage } from './voyage.js'; import { initAutonomy } from './autonomy.js';   // S11 远航 + S12 自治
+import './repute.js';                                // S39 声望（订阅 night 自行结算）
+import './stories.js';                              // S25 村民小故事（订阅 day）
+import './letters.js';                              // S27 远方来信（订阅 day）
+import { initAutonomy } from './autonomy.js';       // S12 自治（注册 JobSource + manual-dispatch 订阅）
+import { Events } from './events.js';               // 事件总线：夜间结算链改为发布订阅
+import { stepJobs } from './jobs.js';               // 统一派工轮询（farm/pasture/autonomy）
+import { voyageDayTick, initVoyage } from './voyage.js';   // S11 远航
 
 // —— 主模块注入：ui/input/buildings/sim 通过 ctx 反向调用，避免循环依赖 ——
 ctx.UI = UI;
@@ -53,15 +56,8 @@ document.getElementById('hudres').addEventListener('click', e => {
   requestAnimationFrame(menuCam);
 })();
 
-let nightTick = () => { };           // 下方包装为"夜间结算 + 自动存档"（不改 sim.js）
-(function () {
-  const raw = nightSettlement;
-  nightTick = (...a) => { raw(...a); Repute.nightly(!!G._nightFed); Sfx.night(); Stories.dayTick(); if (!G.over) saveGame(); };
-})();
-  (function () { const nt = nightTick; nightTick = (...a) => { nt(...a); if (!G.over) letterDayTick(); }; })();   // S27 每季第 3 天远方来信
-(function () { const nt = nightTick; nightTick = (...a) => { nt(...a); if (!G.over) voyageDayTick(); }; })();   // S11 远航归航判定
 initVoyage();                                       // S11 灯塔面板「发起远航」钩子
-initAutonomy();                                     // S12 村民自治扫描（内部 2 秒定时）
+initAutonomy();                                     // S12 自治开关按钮
 function startGame() {
   UI.initSidebar();
   scatterNature();
@@ -107,6 +103,7 @@ resize();
 const clock = new THREE.Clock();
 window.__G = G;                                     // 调试桥
 window.__camCtl = camCtl;
+let lastSeason = null;                              // 季节切换检测（emit 'season'）
 (function loop() {
   requestAnimationFrame(loop);
   const dt = Math.min(clock.getDelta(), .05);
@@ -117,7 +114,17 @@ window.__camCtl = camCtl;
     const p = productionPerDay();
     G.res.wood += p.wood * gdt / DAY_SECONDS;
     G.res.food = Math.min(G.foodCap, G.res.food + p.food * gdt / DAY_SECONDS);
-    if (G.time >= DAY_SECONDS) { G.time = 0; nightTick(); }
+    if (G.time >= DAY_SECONDS) {                    // 夜间结算 → 声望 → 音效 →（day）故事 → 来信 → 远航 → 存档
+      G.time = 0;
+      nightSettlement();
+      Events.emit('night');
+      Events.emit('day');
+      const season = seasonOf(G.day);
+      if (lastSeason === null) lastSeason = season;
+      else if (season !== lastSeason) { lastSeason = season; Events.emit('season', season); }
+      if (!G.over) voyageDayTick();                 // S11 远航归航判定
+      if (!G.over) saveGame();                      // 夜间自动存档
+    }
     if (gdt > 0) {                                    // 暂停：村民动作与工位停摆
       for (const v of G.villagers) stepVillager(v, gdt, t);
       stepProduction(gdt);
@@ -145,6 +152,7 @@ window.__camCtl = camCtl;
   if (!G.over) stepSites(dt);
   if (!G.over) stepFarm(gdt);
   if (!G.over) stepPasture(gdt);
+  if (!G.over) stepJobs(gdt);                       // 统一派工轮询（1.5s，替代各模块内部计时器）
   if (!G.over) stepWeather(gdt);
   renderer.render(scene, cam);
 })();

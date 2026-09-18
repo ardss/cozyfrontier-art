@@ -9,9 +9,9 @@ import { seasonOf, YEAR_DAYS, SEASON_DAYS } from './config.js';
 import { scene } from './scene.js';
 import { G } from './world.js';
 import { protos } from './assetsv2.js';
-import { command } from './villagers.js';
 import { spawnDrop, floatText } from './drops.js';
 import { ctx } from './context.js';
+import { registerJobs } from './jobs.js';
 
 export const FARM_WORK = 3;                 // 收割工作时长（秒）
 const HARVEST_FOOD = 6;                     // 每块田收获粮食
@@ -148,12 +148,14 @@ export function stepFarm(dt) {
     const t = G.time;
     for (const c of e.crops.children) c.rotation.z = Math.sin(t * 1.6 + c.userData.phase) * .06;
   }
-  // 自动派最近的空闲村民去收割（与工地派工同构）
-  G._farmT += dt;
-  if (G._farmT > 1.5) {
-    G._farmT = 0;
-    for (const e of farms) {
-      if (e.farm.state !== 'ready') continue;
+}
+
+/* ---- 成熟收割 JobSource：jobs.js 每 1.5s 轮询（原 stepFarm 内部计时器逻辑平移） ---- */
+registerJobs({
+  id: 'farm-harvest',
+  scan() {
+    for (const e of G.placed) {
+      if (e.def.role !== 'farm' || e.farm.state !== 'ready') continue;
       const pickers = G.villagers.filter(v => v.task && v.task.kind === 'harvest' && v.task.target === e).length;
       if (pickers >= 1) continue;
       let near = null, nd = 1e9;
@@ -162,10 +164,11 @@ export function stepFarm(dt) {
         const d = v.obj.position.distanceTo(e.inst.position);
         if (d < nd) { nd = d; near = v; }
       }
-      if (near) command(near, 'harvest', e);
+      if (near) return { kind: 'harvest', target: e };
     }
-  }
-}
+    return null;
+  },
+});
 
 /* ---- 点击农田：在现有信息面板底部追加状态与播种/休耕按钮 ---- */
 const STATE_TXT = {

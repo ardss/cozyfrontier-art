@@ -7,6 +7,7 @@
 import { seasonOf, YEAR_DAYS, SEASON_DAYS } from './config.js';
 import { G } from './world.js';
 import { UI, toast } from './ui.js';
+import { Events } from './events.js';
 
 /* ---- 样式：复制 mvp.html 中 #event 的规则，换成 #letter 专属节点 ---- */
 const css = document.createElement('style');
@@ -107,3 +108,6 @@ export function dayTick() {
     openLetter(pick, [{ label: '读完信', act: () => addHappy(1), msg: '💛 远方的故事 快乐 +1' }]);
   }
 }
+
+/* ---- 新一天：远方来信（原 main.js nightTick 包装平移；晚于村志故事） ---- */
+Events.on('day', () => { if (!G.over) dayTick(); }, 20);

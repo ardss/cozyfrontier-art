@@ -14,6 +14,7 @@ import { command } from './villagers.js';
 import { highlightNode } from './nature.js';
 import { Deco } from './deco.js';
 import { ctx } from './context.js';
+import { Events } from './events.js';
 
 const S = {
   mode: 'idle',            // idle | maybeSelect | boxSelect | placing | movingBuilding | panning
@@ -236,6 +237,7 @@ export function stepCameraKeys() {
 // 指令与选择（从输入事件里剥离出来的游戏语义）
 export const Input = {
   issueCommand(e) {
+    Events.emit('manual-dispatch');                  // 玩家手动派工：自治冷却计时（autonomy.js 订阅）
     const nat = pickAt(e, G.nature, true);
     if (nat && !nat.def.deco) {
       G.selected.forEach(v => command(v, 'chop', nat));

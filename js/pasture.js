@@ -8,9 +8,9 @@ import { GRID, seasonOf, DAY_SECONDS } from './config.js';
 import { scene } from './scene.js';
 import { G } from './world.js';
 import { protos } from './assetsv2.js';
-import { command } from './villagers.js';
 import { spawnDrop, floatText } from './drops.js';
 import { ctx } from './context.js';
+import { registerJobs, nearestIdle } from './jobs.js';
 
 export const EGG_FOOD = 3;                  // 捡蛋产出
 export const HUNT_FOOD = 5, HUNT_STONE = 1; // 狩猎产出（骨器简化为石头）
@@ -225,32 +225,27 @@ export function stepPasture(dt) {
       floatText('🥚 母鸡下蛋了', e.inst.position);
     }
   }
-  // 自动派工：最近的空闲村民（与 stepFarm 同构）
-  G._pasT += dt;
-  if (G._pasT > 1.5) {
-    G._pasT = 0;
-    for (const e of coops) {
-      if (!e.pasture.eggReady) continue;
-      if (G.villagers.some(v => v.task && v.task.kind === 'egg' && v.task.target === e)) continue;
-      const v = nearestIdle(e); if (v) command(v, 'egg', e);
-    }
-    for (const e of hunts) {
-      const deer = e.pasture.deer[0];
-      if (!deer) continue;
-      if (G.villagers.some(v => v.task && v.task.kind === 'hunt' && v.task.target === deer)) continue;
-      const v = nearestIdle(e); if (v) command(v, 'hunt', deer);
-    }
-  }
 }
-function nearestIdle(entry) {
-  let near = null, nd = 1e9;
-  for (const v of G.villagers) {
-    if (v.task) continue;
-    const d = v.obj.position.distanceTo(entry.inst.position);
-    if (d < nd) { nd = d; near = v; }
-  }
-  return near;
-}
+
+/* ---- 产蛋/狩猎 JobSource：jobs.js 每 1.5s 轮询（原 stepPasture 内部计时器逻辑平移） ---- */
+registerJobs({
+  id: 'pasture-egg-hunt',
+  scan() {
+    for (const e of G.placed) {
+      if (e.def.id === 'coop') {
+        if (!e.pasture.eggReady) continue;
+        if (G.villagers.some(v => v.task && v.task.kind === 'egg' && v.task.target === e)) continue;
+        if (nearestIdle(e)) return { kind: 'egg', target: e };
+      } else if (e.def.id === 'hunt') {
+        const deer = e.pasture.deer[0];
+        if (!deer) continue;
+        if (G.villagers.some(v => v.task && v.task.kind === 'hunt' && v.task.target === deer)) continue;
+        if (nearestIdle(e)) return { kind: 'hunt', target: deer, at: e };
+      }
+    }
+    return null;
+  },
+});
 
 /* ---- S25 存档补全：恢复畜牧状态（蛋/鹿计时、鹿数量），save.js 调用 ---- */
 export function pastureRestore(list) {

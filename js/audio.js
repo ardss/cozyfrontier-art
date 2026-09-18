@@ -6,6 +6,7 @@
 import { G } from './world.js';
 import { gameState } from './controls.js';
 import { seasonOf } from './config.js';
+import { Events } from './events.js';
 
 let ac = null, master = null, noiseBuf = null;
 let muted = false;
@@ -125,3 +126,6 @@ export const Sfx = {
     Sfx._ambient.tid = setTimeout(tick, 6000);
   },
 };
+
+/* ---- 夜幕音效（原 main.js nightTick 包装平移；晚于声望结算、早于故事/来信） ---- */
+Events.on('night', () => Sfx.night(), 20);

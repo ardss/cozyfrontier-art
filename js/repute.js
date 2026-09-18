@@ -7,6 +7,7 @@
 import { G } from './world.js';
 import { scene } from './scene.js';
 import { ctx } from './context.js';
+import { Events } from './events.js';
 
 const SKILL_NAMES = { chop: '砍伐', harvest: '收获', work: '做工' };
 export const skillLevel = exp => Math.min(3, Math.floor((exp || 0) / 10));
@@ -50,3 +51,6 @@ export const Repute = {
     }
   },
 };
+
+/* ---- 夜间声望结算（原 main.js nightTick 包装平移；先于音效/故事/来信） ---- */
+Events.on('night', () => Repute.nightly(!!G._nightFed), 10);
