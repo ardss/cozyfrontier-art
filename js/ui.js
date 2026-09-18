@@ -64,7 +64,7 @@ export const UI = {
       const row = document.getElementById('b-' + def.id);
       if (!row) return;                                   // 侧栏尚未初始化
       const locked = !unlocked(def);
-      row.style.display = (this.curCat === '全部' || def.cat === this.curCat) ? 'flex' : 'none';
+      row.style.display = (this.curCat === '全部' || def.cat === this.curCat) ? 'block' : 'none';
       row.classList.toggle('poor', locked || !canAfford(def));
       row.classList.toggle('locked', locked);
       const lockEl = row.querySelector('.lk');
@@ -138,7 +138,7 @@ export const UI = {
     const din = ((G.day - 1) % YEAR_DAYS) + 1;
     const season = seasonOf(G.day);
     const sp = Math.min(100, Math.floor(((din - 1) % SEASON_DAYS + G.time / DAY_SECONDS) / SEASON_DAYS * 100));
-    document.getElementById('daybox').textContent = `第 ${G.year || 1}年 第${din}天 · ${season} ${sp}%${season === '冬' ? ' ❄' : ''} · 🏆${(G.milestones && G.milestones.size) || 0}/${MILESTONES.length}`;
+    document.getElementById('daybox').innerHTML = `<b>第 ${G.year || 1} 年</b><span>第${din}天 ${season} ${sp}%${season === '冬' ? ' · 寒冬' : ''} · 🏆${(G.milestones && G.milestones.size) || 0}/${MILESTONES.length}</span>`;
     const vl = document.getElementById('vlist');
     vl.innerHTML = G.villagers.map(v => {
       const t = v.task;
