@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>暖境边陲 · UI 体系概念稿</title>
+<style>
+  :root{--ink:#1d1812;--paper:#f3ead8;--wood:#5a4430;--gold:#b8860b;--line:#c9b08a;}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--ink);color:#e8ddc8;font-family:"PingFang SC","Microsoft YaHei",sans-serif;padding:34px clamp(16px,5vw,80px) 80px}
+  h1{font-size:26px;letter-spacing:8px;color:#e8c882;font-weight:700}
+  .sub{color:#a3947a;font-size:13px;margin:10px 0 30px;line-height:1.8;max-width:860px}
+  .sub b{color:#e8c882;font-weight:600}
+  section{margin-bottom:44px}
+  h2{font-size:17px;color:#e8c882;letter-spacing:3px;margin-bottom:6px;border-left:3px solid var(--gold);padding-left:10px}
+  .desc{color:#a3947a;font-size:12.5px;margin-bottom:14px;line-height:1.9}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  figure{background:#241d15;border:1px solid #3a3020;border-radius:12px;overflow:hidden}
+  figure img{display:block;width:100%;height:auto;cursor:zoom-in}
+  figcaption{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;font-size:12.5px;color:#cbb98f}
+  figcaption .pick{background:#3f6b34;color:#fff;border:none;border-radius:7px;padding:4px 14px;font-size:12px;cursor:pointer;letter-spacing:1px}
+  figcaption .pick:hover{background:#4f8342}
+  figure.sel img{outline:3px solid var(--gold);outline-offset:-3px}
+  figure.sel figcaption .pick{background:#b8860b}
+  #viewer{position:fixed;inset:0;background:rgba(10,8,5,.92);display:none;z-index:50;align-items:center;justify-content:center;cursor:zoom-out}
+  #viewer img{max-width:96vw;max-height:94vh}
+  @media (max-width:900px){.pair{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<h1>暖境边陲 · UI 体系概念稿</h1>
+<p class="sub">同一套视觉语言（<b>木框吊牌 + 宣纸卡 + 炭色描边 + 赭金点缀</b>）覆盖全部界面状态。每组两张候选，点击大图可放大预览，点「选它」高亮标记你的选择。</p>
+
+<section>
+  <h2>A 组 · 游戏内 HUD 四状态</h2>
+  <p class="desc">主菜单（书法招牌+木牌按钮）→ 游戏常态（四角簇：日期吊牌/资源条/建造坞）→ 建造坞折叠态（一条细木签）→ 框选派工态（金色选中环+亮环+「已选 2 人」）</p>
+  <div class="pair">
+    <figure id="f-a1"><img src="shots/ui-kit-a_1.png" alt="A1"><figcaption><span>A1 · 建造坞更清爽</span><button class="pick" onclick="pick(this,'A1')">选它</button></figcaption></figure>
+    <figure id="f-a2"><img src="shots/ui-kit-a_2.png" alt="A2"><figcaption><span>A2 · 氛围更暖</span><button class="pick" onclick="pick(this,'A2')">选它</button></figcaption></figure>
+  </div>
+</section>
+
+<section>
+  <h2>B 组 · 面板体系（科技树 / 总览 / 村民 / 事件）</h2>
+  <p class="desc">科技为<b>三层树状依赖</b>：已研究金圈勾选 → 可研究绿色按钮 → 未解锁灰锁虚线；总览含产耗净趋势与告警条；村民卡带特质称号与村志；事件弹窗主次按钮。</p>
+  <div class="pair">
+    <figure id="f-b1"><img src="shots/ui-kit-b_1.png" alt="B1"><figcaption><span>B1 · 面板最精致（推荐）</span><button class="pick" onclick="pick(this,'B1')">选它</button></figcaption></figure>
+    <figure id="f-b2"><img src="shots/ui-kit-b_2.png" alt="B2"><figcaption><span>B2 · 色调更暖</span><button class="pick" onclick="pick(this,'B2')">选它</button></figcaption></figure>
+  </div>
+</section>
+
+<div id="viewer" onclick="this.style.display='none'"><img id="viewerimg" alt=""></div>
+<script>
+  document.querySelectorAll('figure img').forEach(img=>{
+    img.onclick=e=>{document.getElementById('viewerimg').src=img.src;document.getElementById('viewer').style.display='flex';e.stopPropagation();};
+  });
+  function pick(btn,name){
+    const fig=btn.closest('section');
+    fig.querySelectorAll('figure').forEach(f=>f.classList.remove('sel'));
+    btn.closest('figure').classList.add('sel');
+    localStorage.setItem('uikit-pick-'+name[0],name);
+  }
+  ['A','B'].forEach(k=>{const v=localStorage.getItem('uikit-pick-'+k);if(v){document.getElementById('f-'+v.toLowerCase()).classList.add('sel');}});
+</script>
+</body>
+</html>
