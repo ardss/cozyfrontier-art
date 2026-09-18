@@ -8,6 +8,7 @@ import { G, footprint, cellsOf, canPlace, canAfford } from './world.js';
 import { protos } from './assets.js';
 import { command } from './villagers.js';
 import { ctx } from './context.js';
+import { registerFarm } from './farm.js';
 
 const padMat = new THREE.MeshLambertMaterial({ color: 0x9db972 });
 const padGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
@@ -46,6 +47,7 @@ export function placeInstance(def, x, z, rot, animate) {
   G.placed.push(entry);
   if (animate) startDropAnim(inst);
   if (def.role === 'happy') G.happy += def.add;
+  if (def.role === 'farm') registerFarm(entry);
   if (def.role === 'granary') G.foodCap += 25;
   if (def.id === 'warehouse') G.foodCap += 50;
   return entry;

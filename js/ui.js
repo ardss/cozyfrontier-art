@@ -81,7 +81,8 @@ export const UI = {
     document.getElementById('hudres').innerHTML = ['wood', 'food', 'stone', 'plank', 'bread', 'know', 'silver']
       .map(r => `<span class="res">${ICONS[r] || ''}<b>${Math.floor(G.res[r] || 0)}</b></span>`).join('')
       + `<span class="res">${ICONS.happy || ''}<b>${Math.round(G.happy)}</b></span>`
-      + `<span class="res click" id="popchip" title="点击管理村民">${ICONS.pop || ''}<b>${G.villagers.length}</b><span style="color:var(--dim);font-size:10px">/${houseCapacity()}</span></span>`;
+      + `<span class="res click" id="popchip" title="点击管理村民">${ICONS.pop || ''}<b>${G.villagers.length}</b><span style="color:var(--dim);font-size:10px">/${houseCapacity()}</span></span>`
+      + `<span class="res click" id="statchip" title="点击查看村庄总览（产耗监控）">${ICONS.hammer || ''}<b style="font-size:12px">总览</b></span>`;
     // 年历名牌
     const din = ((G.day - 1) % YEAR_DAYS) + 1;
     const season = seasonOf(G.day);

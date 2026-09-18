@@ -26,6 +26,14 @@
   #plate .vname span{font-size:10px;color:var(--dim);letter-spacing:1px}
   #daybox{display:flex;flex-direction:column;justify-content:center;padding:4px 14px;font-size:12px;color:var(--ok);border-radius:var(--r)}
   #daybox b{color:var(--txt);font-size:12.5px}
+  /* 左上控制条：暂停/倍速/存档 */
+  #ctl{position:absolute;left:14px;top:58px;display:flex;align-items:center;gap:3px;padding:4px 7px;font-size:11px}
+  #ctl button{background:transparent;color:var(--txt);border:1px solid transparent;border-radius:6px;font-size:11px;padding:3px 8px;cursor:pointer;letter-spacing:1px}
+  #ctl button:hover{color:var(--gold);border-color:var(--hud-line);background:rgba(232,200,130,.06)}
+  #ctl .spdlbl{color:var(--gold);min-width:30px;text-align:center;font-size:11.5px}
+  #ctl .sep{width:1px;height:14px;background:var(--hud-line);margin:0 3px}
+  #intro button.ghost{background:transparent;color:var(--gold);border:1px solid rgba(232,200,130,.4);box-shadow:none;padding:12px 48px;font-size:15px}
+  #intro button.ghost:hover{background:rgba(232,200,130,.08)}
   /* 顶部中央：资源浮条 */
   #hudres{position:absolute;left:50%;transform:translateX(-50%);top:12px;display:flex;gap:4px;padding:4px 8px}
   .res{display:inline-flex;align-items:center;gap:5px;padding:3px 9px 3px 6px;border-radius:7px;transition:background .15s}
@@ -145,6 +153,7 @@ window.addEventListener('error',e=>{window.__errs.push(e.message+' @'+e.lineno)}
       <div class="rule"><i></i></div>
       <div class="sub">边陲之地的温暖村庄</div>
       <button id="btn-start">开 始 新 生 活</button>
+      <button id="btn-continue" class="ghost" hidden>继 续 游 戏</button>
     </div>
     <div class="tips">框选：框人=选中 · 再框资源=派工（亮环=目标）· 只框树=空闲者自动去 &nbsp;&nbsp;|&nbsp;&nbsp; 相机：中键拖动 · Q E 旋转 · WASD 平移 · 滚轮缩放</div>
   </div>
@@ -153,6 +162,14 @@ window.addEventListener('error',e=>{window.__errs.push(e.message+' @'+e.lineno)}
   <div id="plate">
     <div class="vname panel"><b>暖境边陲</b><span>你的村庄</span></div>
     <div id="daybox" class="panel"><b>第 1 年</b><span>第1天 · 春</span></div>
+  </div>
+  <div id="ctl" class="panel">
+    <button id="btn-pause">暂停</button>
+    <button id="btn-spd" class="spdlbl">1×</button>
+    <span class="sep"></span>
+    <button id="btn-save">保存</button>
+    <button id="btn-load">读取</button>
+    <button id="btn-new">新档</button>
   </div>
   <div id="hudres" class="panel"></div>
   <button id="btn-tech"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3.5 L13.4 6.2 L16.3 5.3 L16.6 8.3 L19.5 9 L18.2 11.7 L20.5 13.7 L18.2 15.7 L19.5 18.4 L16.6 19.1 L16.3 22.1 L13.4 21.2 L12 23 L10.6 21.2 L7.7 22.1 L7.4 19.1 L4.5 18.4 L5.8 15.7 L3.5 13.7 L5.8 11.7 L4.5 9 L7.4 8.3 L7.7 5.3 L10.6 6.2 Z" fill="#9ab08a"/><circle cx="12" cy="12" r="3.1" fill="#171310"/></svg> 科技</button>

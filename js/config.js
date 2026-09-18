@@ -42,6 +42,7 @@ export const DEFS = [
   { id:'cottage_b', name:'猎户村舍',w:2,d:1, cat:'住房', cost:{wood:5},  role:'house', cap:2, desc:'猎户的家。' },
   { id:'home_small',name:'小民居', w:2,d:2, cat:'住房', cost:{wood:7},  role:'house', cap:3, desc:'舒适民居。' },
   { id:'home_large',name:'大民居', w:2,d:2, cat:'住房', cost:{wood:8,plank:4}, role:'house', cap:4, desc:'宽敞民居（需要木板）。' },
+  { id:'farm',      name:'农田',   w:3,d:3, cat:'农牧', cost:{wood:4},  role:'farm',  desc:'开垦农田：建成自动播种，点击可切换播种/休耕。春夏秋生长，冬季冻死，来年春自动再播。成熟后空闲村民自动收割 +6 食。' },
   { id:'farmhouse', name:'农舍',   w:2,d:2, cat:'农牧', cost:{wood:9},  role:'food',  out:4, desc:'村民主产食物。' },
   { id:'sawmill',   name:'锯木厂', w:2,d:2, cat:'加工', cost:{wood:6},  role:'wood',  desc:'配方：2木 → 3板。派村民上工。', tech:"woodwork" },
   { id:'apiary',    name:'蜂箱架', w:1,d:1, cat:'农牧', cost:{wood:3},  role:'food',  out:2, desc:'产蜂蜜小屋。' },
@@ -86,7 +87,7 @@ if (coreDef) coreDef.glb = 'ai3d-mirror/wc-warehouse-paint.glb';   // 村中心�
  * 自然物按高度定标：树比人高得多，石块齐膝，草花贴地 */
 const HEIGHTS = {
   hut:1.0, cottage_a:1.1, cottage_b:1.1, home_small:1.25, home_large:1.45,
-  farmhouse:1.2, sawmill:1.2, apiary:0.7, bakery:1.1, greenhouse:1.1,
+  farm:0.16, farmhouse:1.2, sawmill:1.2, apiary:0.7, bakery:1.1, greenhouse:1.1,
   granary:1.35, wellhouse:0.7, fountain:0.8, marketstall:0.9, watchtower:1.9,
   bridge:0.5, tollgate:0.8, stable:1.0, lighthouse:1.8, bathhouse:1.0,
   school:1.1, clinic:1.1, dovecote:0.9, laundry:0.6, shipyard:1.2,

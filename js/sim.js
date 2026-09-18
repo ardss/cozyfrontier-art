@@ -11,6 +11,7 @@ import { chopDone, regrow } from './nature.js';
 import { spawnVillagers, animWalk, animWork, animIdle } from './villagers.js';
 import { spawnDrop, carryTotal, startDeliver, findDepot, deliverCarry, floatText, chopFX } from './drops.js';
 import { updateSiteVisuals, finishSite } from './buildings.js';
+import { FARM_WORK, harvestDone } from './farm.js';
 import { ctx } from './context.js';
 
 export function stepVillager(v, dt, t) {
@@ -58,6 +59,9 @@ export function stepVillager(v, dt, t) {
     } else if (v.task.kind === 'build') {
       if (!G.sites.includes(v.task.target)) { v.task = null; }
       else { dest = v.task.target.inst.position; arriveR = 1.5; }
+    } else if (v.task.kind === 'harvest') {
+      if (!G.placed.includes(v.task.target) || v.task.target.farm.state === 'fallow') { v.task = null; }
+      else { dest = v.task.target.inst.position; arriveR = 2.3; }
     } else if (v.task.kind === 'deliver') {
       dest = v.task.target.inst ? v.task.target.inst.position : v.task.target;
       arriveR = v.task.target.inst ? 1.6 : .4;
@@ -117,7 +121,7 @@ export function stepVillager(v, dt, t) {
   }
   v.task.workT += dt * (traitOf(v).workMul || 1);
   animWork(v, t);
-  if (v.task.workT >= v.task.target.def.work) {
+  if (v.task.workT >= (v.task.target.def.work || FARM_WORK)) {
     v.task.workT = 0;
     if (v.task.kind === 'chop') {
       const node = v.task.target;
@@ -126,6 +130,8 @@ export function stepVillager(v, dt, t) {
       spawnDrop(node.def.yield, amt, node.inst.position);
       chopFX(node.inst, node.def.yield);              // 木屑/碎石 + 目标晃动
       chopDone(node);
+    } else if (v.task.kind === 'harvest') {
+      harvestDone(v); v.task = null;
     }
     // 'work'：建筑产出走天结算，出勤即可
   }
