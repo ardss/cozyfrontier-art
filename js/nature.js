@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { GRID, NATURE_DEFS, NATURE_COUNTS } from './config.js';
 import { scene } from './scene.js';
 import { G, key } from './world.js';
-import { protos } from './assets.js';
+import { protos } from './assetsv2.js';
 
 /* ---- 资源目标高亮：被派工的资源脚下亮起金环 ---- */
 const ringGeo = new THREE.RingGeometry(.4, .5, 28).rotateX(-Math.PI / 2);
@@ -48,6 +48,21 @@ export function scatterNature() {
     }
   }
 }
+/* ---- 装饰树（S37 造景）：deco 标记 → 采集/派工/再生逻辑全部排除 ---- */
+export function plantDecoTree(x, z) {
+  const k = key(x, z);
+  if (G.occ.has(k)) return null;
+  const inst = protos['nat_tree'].clone();
+  inst.position.set(x + .5, 0, z + .5);
+  inst.rotation.y = Math.random() * Math.PI * 2;
+  inst.scale.setScalar(.55 + Math.random() * .15);
+  scene.add(inst);
+  const node = { type: 'tree', def: { name: '装饰树', deco: true, yield: 'wood', amt: 0, hp: 1 }, inst, x, z, hp: Infinity, alive: true, deco: true, respawnDay: 0 };
+  G.nature.push(node);
+  G.occ.set(k, node);
+  return node;
+}
+
 export function chopDone(node) {
   node.hp--;
   if (node.hp <= 0) {

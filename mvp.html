@@ -128,6 +128,12 @@
   #intro button:hover{background:linear-gradient(180deg,#6f9f5a,#54814a)}
   #intro button:active{transform:scale(.97)}
   #intro .tips{position:absolute;bottom:10.5vh;color:rgba(205,191,164,.6);font-size:11px;letter-spacing:1px}
+  /* 拍照模式（P）：隐藏 HUD + 暗角 + 保存截图按钮 */
+  body.photo #hud,body.photo #tip,body.photo #zoom,body.photo #selrect,body.photo #toast,body.photo #event{visibility:hidden}
+  body.photo #main::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:3;box-shadow:inset 0 0 22vmin rgba(10,8,6,.55)}
+  #photo-save{position:fixed;right:18px;bottom:18px;z-index:40;display:none;background:var(--hud);color:var(--gold);border:1px solid var(--hud-line);border-radius:999px;padding:10px 20px;font-size:13px;cursor:pointer;backdrop-filter:blur(6px)}
+  #photo-save:hover{border-color:var(--gold)}
+  body.photo #photo-save{display:block}
 </style>
 <script>
 window.__errs=[];
@@ -155,7 +161,7 @@ window.addEventListener('error',e=>{window.__errs.push(e.message+' @'+e.lineno)}
       <button id="btn-start">开 始 新 生 活</button>
       <button id="btn-continue" class="ghost" hidden>继 续 游 戏</button>
     </div>
-    <div class="tips">框选：框人=选中 · 再框资源=派工（亮环=目标）· 只框树=空闲者自动去 &nbsp;&nbsp;|&nbsp;&nbsp; 相机：中键拖动 · Q E 旋转 · WASD 平移 · 滚轮缩放</div>
+    <div class="tips">框选：框人=选中 · 再框资源=派工（亮环=目标）· 只框树=空闲者自动去 &nbsp;&nbsp;|&nbsp;&nbsp; 相机：中键拖动 · Q E 旋转 · WASD 平移 · 滚轮缩放 &nbsp;&nbsp;|&nbsp;&nbsp; V 跟随选中村民 · P 拍照模式 · 装饰类目可种树苗</div>
   </div>
 </div>
 <div id="hud">
@@ -182,6 +188,7 @@ window.addEventListener('error',e=>{window.__errs.push(e.message+' @'+e.lineno)}
   </div>
   <div id="people" class="panel"></div>
 </div>
+<button id="photo-save">💾 保存截图</button>
 <script type="module" src="./js/main.js"></script>
 </body>
 </html>

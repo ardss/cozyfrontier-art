@@ -12,6 +12,7 @@ import { G, footprint, cellsOf, canPlace, clampCell, canAfford, pay } from './wo
 import { makePad, showGhost, hideGhost, updateGhost, createSite, ghostOK, ghostBad } from './buildings.js';
 import { command } from './villagers.js';
 import { highlightNode } from './nature.js';
+import { Deco } from './deco.js';
 import { ctx } from './context.js';
 
 const S = {
@@ -104,7 +105,7 @@ addEventListener('pointerdown', e => {
   S.downAt = { x: e.clientX, y: e.clientY };
   try { dom.setPointerCapture(e.pointerId); } catch (_) {}
   if (e.button === 2) return;                       // 右键在 up 时发指令
-  if (e.button === 1) { S.mode = 'panning'; e.preventDefault(); return; }
+  if (e.button === 1) { S.mode = 'panning'; Deco.stopFollow(); e.preventDefault(); return; }
   if (e.button !== 0) return;
   if (S.mode === 'placing') return;
   // 按在建筑上 → 待定（拖拽=搬移，点击=信息面板）
@@ -181,7 +182,9 @@ addEventListener('pointerup', e => {
   } else if (S.mode === 'movingBuilding') {
     finishMoving(true);                              // 拖拽搬移：提交新位置
   } else if (S.mode === 'placing' && wasClick && e.button === 0 && S.placingDef) {
-    if (canPlace(S.placingDef, S.cell.x, S.cell.z, S.rot) && canAfford(S.placingDef)) {
+    if (S.placingDef.deco) {                           // 树苗：直接种下，不走工地
+      if (Deco.plant(S.placingDef, S.cell)) cancelPlacing();
+    } else if (canPlace(S.placingDef, S.cell.x, S.cell.z, S.rot) && canAfford(S.placingDef)) {
       pay(S.placingDef);
       createSite(S.placingDef, S.cell.x, S.cell.z, S.rot);
       ctx.toast('🏗 ' + S.placingDef.name + ' 工地开工（等待村民建造）');
@@ -208,6 +211,7 @@ addEventListener('keydown', e => {
     S.rot = (S.rot + 1) % 4;
     stepDragMove();                                  // 用上次指针位置重算
   }
+  if (k === 'v' && document.body.classList.contains('playing')) Deco.toggleFollow();
 });
 addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 dom.addEventListener('wheel', e => {
@@ -233,7 +237,7 @@ export function stepCameraKeys() {
 export const Input = {
   issueCommand(e) {
     const nat = pickAt(e, G.nature, true);
-    if (nat) {
+    if (nat && !nat.def.deco) {
       G.selected.forEach(v => command(v, 'chop', nat));
       ctx.toast(`${nat.def.name} ×${G.selected.size} 人前往（${RES_INFO[nat.def.yield].label}）`);
       return;
@@ -271,7 +275,7 @@ export const Input = {
       if (sx >= x1 && sx <= x2 && sy >= y1 && sy <= y2) vils.push(v);
     }
     for (const n of G.nature) {
-      if (!n.alive) continue;
+      if (!n.alive || n.deco) continue;
       p.copy(n.inst.position); p.y = .5; p.project(cam);
       const sx = r.left + (p.x + 1) / 2 * r.width, sy = r.top + (1 - p.y) / 2 * r.height;
       if (sx >= x1 && sx <= x2 && sy >= y1 && sy <= y2) nodes.push(n);

@@ -171,3 +171,11 @@ export const TRAITS = [
 export const traitOf = v => v.trait || {};
 /* ---- 四季节日：每季第一天，全村欢聚（R8） ---- */
 export const FESTIVALS = { '春': '春播节 🌱', '夏': '夏收节 ☀️', '秋': '秋酿节 🍶', '冬': '冬炉节 🔥' };
+
+/* ---- S15 狩猎 / S16 渔业 / S17 畜牧（追加）：三个食物生产建筑 ---- */
+RECIPES.fish = { in: {}, out: { food: 2 }, time: 20 };   // 渔档垂钓：无原料，复用工位配方管线
+DEFS.push(
+  { id:'coop', name:'鸡舍', w:2,d:1, cat:'农牧', cost:{wood:6},  role:'pasture', desc:'内置 3 只鸡：每天白天产蛋，空闲村民自动捡蛋 +3 食；冬季停产。' },
+  { id:'fish', name:'渔档', w:2,d:1, cat:'农牧', cost:{wood:5,stone:2}, role:'food', desc:'临水而建（地图边缘）。派村民上工垂钓：约 20 秒 +2 食，冬季减半。' },
+  { id:'hunt', name:'猎屋', w:2,d:1, cat:'农牧', cost:{wood:6},  role:'pasture', desc:'村缘出没 1-2 只野鹿。空闲村民自动狩猎：+5 食 +1 石，鹿 3 天后刷新。' },
+);

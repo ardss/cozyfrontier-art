@@ -8,9 +8,10 @@ import { ICONS } from './icons.js';
 const ics = r => `<span class="ics">${ICONS[r] || ''}</span>`;
 import { mainEl, camCtl, pickAt } from './scene.js';
 import { G, canAfford, unlocked, houseCapacity } from './world.js';
-import { protos } from './assets.js';
+import { protos } from './assetsv2.js';
 import { carryTotal } from './drops.js';
 import { removeEntry } from './buildings.js';
+import { Repute, skillTag } from './repute.js';   // S39 声望 / S35 技能
 import { ctx } from './context.js';
 
 export function toast(msg) {
@@ -46,8 +47,7 @@ export const UI = {
       row.className = 'b';
       row.id = 'b-' + def.id;
       row.innerHTML = `<img draggable="false"><div class="tx"><div class="nm">${def.name}</div><div class="cost">${Object.entries(def.cost).map(([r, v]) => ics(r) + v).join(' ')}</div></div>`;
-      row.onmouseenter = e => UI.showSideTip(def, row);
-      row.onmouseleave = () => UI.hideSideTip();
+      row.title = def.desc || def.name;
       row.onclick = () => {
         if (!unlocked(def)) {
           toast(def.tech ? '🔒 需在【科技】中研究 ' + ((TECHS.find(t => t.id === def.tech) || {}).name || def.tech) : '🔒 先建造村中心，才能解锁其他建筑');
@@ -172,9 +172,10 @@ export const UI = {
       if (!isMarketDay(G.day)) {
         trade = `<br><span style="color:#a89880">🧳 行商未到（每 3 天来一次，第 ${(Math.floor(G.day / 3) + 1) * 3} 天到访）</span>`;
       } else {
-        const sell = TRADE.sell.map((t, i) => `<button data-tr="s${i}" ${G.res[t.res] >= t.n ? '' : 'disabled'}>${ics(t.res)}${t.n} → ${t.silver}${ics('silver')}</button>`).join('');
-        const buy = TRADE.buy.map((t, i) => `<button class="alt" data-tr="b${i}" ${(G.res.silver || 0) >= t.silver ? '' : 'disabled'}>${t.silver}${ics('silver')} → ${ics(t.res)}${t.n}</button>`).join('');
-        trade = `<br>🧳 <b style="color:var(--ok)">行商到访！</b><br>卖出：${sell}<br>买入：${buy}`;
+        const ds = Repute.tradeDiscount();   // S39 声望≥60：贸易价格优化 10%
+        const sell = TRADE.sell.map((t, i) => `<button data-tr="s${i}" ${G.res[t.res] >= t.n ? '' : 'disabled'}>${ics(t.res)}${t.n} → ${Math.round(t.silver * (1 + ds))}${ics('silver')}</button>`).join('');
+        const buy = TRADE.buy.map((t, i) => { const c = Math.max(1, Math.round(t.silver * (1 - ds))); return `<button class="alt" data-tr="b${i}" ${(G.res.silver || 0) >= c ? '' : 'disabled'}>${c}${ics('silver')} → ${ics(t.res)}${t.n}</button>`; }).join('');
+        trade = `<br>🧳 <b style="color:var(--ok)">行商到访！${ds ? '（声望优惠 10%）' : ''}</b><br>卖出：${sell}<br>买入：${buy}`;
       }
     }
     const rc = RECIPES[d.id];
@@ -194,16 +195,19 @@ export const UI = {
       const isSell = b.dataset.tr[0] === 's';
       const list = isSell ? TRADE.sell : TRADE.buy;
       const t = list[+b.dataset.tr.slice(1)];
+      const ds = Repute.tradeDiscount();   // S39 声望贸易优惠
       if (isSell) {
         if ((G.res[t.res] || 0) < t.n) return;
-        G.res[t.res] -= t.n; G.res.silver = (G.res.silver || 0) + t.silver;
-        toast(`🧳 卖出 ${t.n}${RES_INFO[t.res].icon} +${t.silver}🪙`);
+        const gain = Math.round(t.silver * (1 + ds));
+        G.res[t.res] -= t.n; G.res.silver = (G.res.silver || 0) + gain;
+        toast(`🧳 卖出 ${t.n}${RES_INFO[t.res].icon} +${gain}🪙`);
       } else {
-        if ((G.res.silver || 0) < t.silver) return;
-        G.res.silver -= t.silver;
+        const cost = Math.max(1, Math.round(t.silver * (1 - ds)));
+        if ((G.res.silver || 0) < cost) return;
+        G.res.silver -= cost;
         if (t.res === 'food') G.res.food = Math.min(G.foodCap, G.res.food + t.n);
         else G.res[t.res] = (G.res[t.res] || 0) + t.n;
-        toast(`🧳 买入 ${t.n}${RES_INFO[t.res].icon} -${t.silver}🪙`);
+        toast(`🧳 买入 ${t.n}${RES_INFO[t.res].icon} -${cost}🪙`);
       }
       UI.refresh();
       UI.showBuildingInfo(entry);
@@ -245,7 +249,7 @@ export const UI = {
       return !t ? '待命' : t.kind === 'move' ? '移动' : t.kind === 'chop' ? '采集' + (t.target.def?.name || '') : t.kind === 'deliver' ? '运送' : t.kind === 'build' ? '建造' + (t.target.def?.name || '') : '岗位·' + (t.target.def?.name || '');
     };
     el.innerHTML = `<b>村民 ${G.villagers.length}/${houseCapacity()}</b>` + G.villagers.map((v, i) =>
-      `<div class="prow" data-i="${i}"><span class="av">${v.name[0]}</span><span class="pn">${v.name}${v.trait ? ' <i>' + v.trait.name + '</i>' : ''}<br><span style="color:var(--dim);font-size:10px">${st(v)}</span></span><span class="ps">定位 ›</span></div>`
+      `<div class="prow" data-i="${i}"><span class="av">${v.name[0]}</span><span class="pn">${v.name}${v.trait ? ' <i>' + v.trait.name + '</i>' : ''}<br><span style="color:var(--dim);font-size:10px">${st(v)}${skillTag(v) ? ' · ' + skillTag(v) : ''}</span></span><span class="ps">定位 ›</span></div>`
     ).join('');
     el.querySelectorAll('.prow').forEach(row => row.onclick = () => {
       const v = G.villagers[+row.dataset.i];

@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { seasonOf, YEAR_DAYS, SEASON_DAYS } from './config.js';
 import { scene } from './scene.js';
 import { G } from './world.js';
-import { protos } from './assets.js';
+import { protos } from './assetsv2.js';
 import { command } from './villagers.js';
 import { spawnDrop, floatText } from './drops.js';
 import { ctx } from './context.js';

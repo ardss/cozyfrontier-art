@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { GRID } from './config.js';
 
 export const mainEl = document.getElementById('main');
-export const renderer = new THREE.WebGLRenderer({ antialias: true });
+export const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.toneMappingExposure = 1.3;

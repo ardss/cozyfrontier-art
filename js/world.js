@@ -6,7 +6,7 @@ import { GRID } from './config.js';
 
 export const G = {
   res: { wood: 10, food: 10, stone: 2, plank: 0, bread: 0, know: 0, silver: 5 }, foodCap: 30, happy: 70,
-  day: 1, time: 0, over: false,
+  day: 1, time: 0, over: false, repute: 20,   // S39 声望
   placed: [], occ: new Map(), villagers: [], nature: [], drops: [], sites: [],
   selected: new Set(), tech: new Set(),     // tech: 已研究的科技 id
   year: 1, milestones: new Set(),           // R6 多年进程与里程碑

@@ -6,7 +6,7 @@
 import { G, key } from './world.js';
 import { scene } from './scene.js';
 import { NATURE_DEFS, DEFS, TRAITS } from './config.js';
-import { protos, assetsReady, onAssetsLoaded } from './assets.js';
+import { protos, assetsReady, onAssetsLoaded } from './assetsv2.js';
 import { spawnVillagers } from './villagers.js';
 import { placeInstance, createSite, updateSiteVisuals } from './buildings.js';
 import { ctx } from './context.js';

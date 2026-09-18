@@ -11,16 +11,19 @@ import { spawnVillagers } from './villagers.js';
 import { stepDrops, stepFX } from './drops.js';
 import { stepDropAnims, stepSites } from './buildings.js';
 import { stepFarm, initFarm } from './farm.js';
+import { stepPasture, initPasture } from './pasture.js';
 import { stepVillager, productionPerDay, nightSettlement, stepProduction } from './sim.js';
 import { stepCameraKeys, Input, startPlacing } from './input.js';
 import { UI, toast } from './ui.js';
 import { Stats } from './stats.js';
 import { ctx } from './context.js';
-import { onAssetsLoaded, assetsReady } from './assets.js';
+import { onAssetsLoaded, assetsReady } from './assetsv2.js';
 import { saveGame, loadGame, hasSave } from './save.js';
 import { gameState, setupControls } from './controls.js';
 import { stepWeather } from './weather.js';
 import { Sfx } from './audio.js';
+import { Deco } from './deco.js';
+import { Repute } from './repute.js';   // S39 声望
 
 // —— 主模块注入：ui/input/buildings/sim 通过 ctx 反向调用，避免循环依赖 ——
 ctx.UI = UI;
@@ -28,6 +31,7 @@ ctx.Input = Input;
 ctx.toast = toast;
 ctx.startPlacing = startPlacing;
 initFarm();                                         // 农田系统：信息面板钩子（S7）
+initPasture();                                      // 畜牧/渔业/狩猎：信息面板钩子（S15-17）
 setupControls();
 document.getElementById('btn-tech').onclick = () => UI.toggleTech();
 document.getElementById('hudres').addEventListener('click', e => {
@@ -49,7 +53,7 @@ document.getElementById('hudres').addEventListener('click', e => {
 let nightTick = () => { };           // 下方包装为"夜间结算 + 自动存档"（不改 sim.js）
 (function () {
   const raw = nightSettlement;
-  nightTick = (...a) => { raw(...a); Sfx.night(); if (!G.over) saveGame(); };
+  nightTick = (...a) => { raw(...a); Repute.nightly(!!G._nightFed); Sfx.night(); if (!G.over) saveGame(); };
 })();
 function startGame() {
   UI.initSidebar();
@@ -127,11 +131,13 @@ window.__camCtl = camCtl;
     if (Math.floor(t) !== G._statT) { G._statT = Math.floor(t); Stats.render(); }   // 总览面板每秒刷新（未打开时内部直返）
   }
   stepCameraKeys();
+  Deco.step(dt);
   stepDropAnims(dt);
   stepDrops(dt, t);
   stepFX(dt);
   if (!G.over) stepSites(dt);
   if (!G.over) stepFarm(gdt);
+  if (!G.over) stepPasture(gdt);
   if (!G.over) stepWeather(gdt);
   renderer.render(scene, cam);
 })();

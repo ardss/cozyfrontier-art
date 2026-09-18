@@ -5,10 +5,11 @@ import * as THREE from 'three';
 import { CELL_SINK } from './config.js';
 import { scene, cam } from './scene.js';
 import { G, footprint, cellsOf, canPlace, canAfford } from './world.js';
-import { protos } from './assets.js';
+import { protos } from './assetsv2.js';
 import { command } from './villagers.js';
 import { ctx } from './context.js';
 import { registerFarm } from './farm.js';
+import { registerPasture } from './pasture.js';
 
 const padMat = new THREE.MeshLambertMaterial({ color: 0x9db972 });
 const padGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
@@ -50,6 +51,7 @@ export function placeInstance(def, x, z, rot, animate) {
   if (def.role === 'farm') registerFarm(entry);
   if (def.role === 'granary') G.foodCap += 25;
   if (def.id === 'warehouse') G.foodCap += 50;
+  if (def.role === 'pasture' || def.id === 'fish') registerPasture(entry);   // 鸡舍/渔档/猎屋（S15-17）
   return entry;
 }
 export function removeEntry(entry) {

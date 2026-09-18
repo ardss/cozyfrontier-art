@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { GRID, VNAMES, TRAITS } from './config.js';
 import { scene } from './scene.js';
 import { G } from './world.js';
-import { protos, CHAR_FILES } from './assets.js';
+import { protos, CHAR_FILES } from './assetsv2.js';
 
 export function spawnVillagers(n) {
   for (let i = 0; i < n; i++) {
@@ -60,7 +60,7 @@ export function spawnVillagers(n) {
     ring.position.y = .02; ring.visible = false;
     wrap.add(ring);
     scene.add(wrap);
-    G.villagers.push({ name: VNAMES[G.villagers.length % VNAMES.length], trait: TRAITS[Math.floor(Math.random() * TRAITS.length)], obj: wrap, bones, ring, task: null, resume: null, carry: {}, slot: (G.villagers.length % 4) * 0.3 });
+    G.villagers.push({ name: VNAMES[G.villagers.length % VNAMES.length], trait: TRAITS[Math.floor(Math.random() * TRAITS.length)], obj: wrap, bones, ring, task: null, resume: null, carry: {}, skills: {}, slot: (G.villagers.length % 4) * 0.3 });
   }
 }
 export function command(v, kind, target) { v.task = { kind, target, workT: 0 }; }

@@ -12,7 +12,9 @@ import { spawnVillagers, animWalk, animWork, animIdle } from './villagers.js';
 import { spawnDrop, carryTotal, startDeliver, findDepot, deliverCarry, floatText, chopFX } from './drops.js';
 import { updateSiteVisuals, finishSite } from './buildings.js';
 import { FARM_WORK, harvestDone } from './farm.js';
+import { eggCollected, huntDone } from './pasture.js';
 import { depositEfficiency, productionBoost } from './storage.js';
+import { Repute, gainExp, skillMul } from './repute.js';
 import { ctx } from './context.js';
 
 export function stepVillager(v, dt, t) {
@@ -63,6 +65,12 @@ export function stepVillager(v, dt, t) {
     } else if (v.task.kind === 'harvest') {
       if (!G.placed.includes(v.task.target) || v.task.target.farm.state === 'fallow') { v.task = null; }
       else { dest = v.task.target.inst.position; arriveR = 2.3; }
+    } else if (v.task.kind === 'egg') {                 // S17 捡蛋：目标鸡舍
+      if (!G.placed.includes(v.task.target)) { v.task = null; }
+      else { dest = v.task.target.inst.position; arriveR = 1.4; }
+    } else if (v.task.kind === 'hunt') {                // S15 狩猎：目标活鹿
+      if (!v.task.target.parent) { v.task = null; }
+      else { dest = v.task.target.position; arriveR = 1.2; }
     } else if (v.task.kind === 'deliver') {
       dest = v.task.target.inst ? v.task.target.inst.position : v.task.target;
       arriveR = v.task.target.inst ? 1.6 : .4;
@@ -107,7 +115,7 @@ export function stepVillager(v, dt, t) {
   if (v.task.kind === 'move' || v.task.kind === 'fetch') { v.task = null; return; }
   if (v.task.kind === 'build') {
     const site = v.task.target;
-    v.task.workT += dt * (traitOf(v).workMul || 1);
+    v.task.workT += dt * (traitOf(v).workMul || 1) * skillMul(v, 'work');
     site.progress += dt;
     animWork(v, t);
     updateSiteVisuals(site);
@@ -120,10 +128,12 @@ export function stepVillager(v, dt, t) {
     v.resume = null;
     return;
   }
-  v.task.workT += dt * (traitOf(v).workMul || 1);
+  const sKey = v.task.kind === 'chop' ? 'chop' : v.task.kind === 'harvest' ? 'harvest' : 'work';
+  v.task.workT += dt * (traitOf(v).workMul || 1) * skillMul(v, sKey);
   animWork(v, t);
   if (v.task.workT >= (v.task.target.def.work || FARM_WORK)) {
     v.task.workT = 0;
+    if (sKey !== 'work') gainExp(v, sKey);   // S35 采集/收割完成 → 经验 +1（做工按天结算）
     if (v.task.kind === 'chop') {
       const node = v.task.target;
       // 冬季野外食物大减（浆果/蘑菇凋零），木石照常——冬天砍柴更重要
@@ -135,6 +145,10 @@ export function stepVillager(v, dt, t) {
       chopDone(node);
     } else if (v.task.kind === 'harvest') {
       harvestDone(v); v.task = null;
+    } else if (v.task.kind === 'egg') {                 // S17 捡蛋完成
+      eggCollected(v); v.task = null;
+    } else if (v.task.kind === 'hunt') {                // S15 狩猎完成：+食+石，鹿消失
+      huntDone(v); v.task = null;
     }
     // 'work'：建筑产出走天结算，出勤即可
   }
@@ -197,8 +211,10 @@ export function nightSettlement() {
   let need = pop * (winter ? 2 : 1) + glutton;       // 冬季饭量加倍；口馋村民多吃一份
   const eatBread = Math.min(G.res.bread || 0, need);   // 面包优先上桌，省下生食
   G.res.bread -= eatBread; need -= eatBread;
+  let fed = true;                                      // S39 声望：全村温饱判定
   if (G.res.food >= need) G.res.food -= need;
   else {
+    fed = false;
     G.res.food = 0; G.happy -= 15;
     // 诊所：一半概率把要走的村民劝住
     if (G.placed.some(p => p.def.id === 'clinic') && Math.random() < 0.5) {
@@ -215,6 +231,7 @@ export function nightSettlement() {
     const fuelNeed = Math.ceil(G.villagers.length * (fire ? 0.5 : 1));
     if (G.res.wood >= fuelNeed) G.res.wood -= fuelNeed;
     else {
+      fed = false;
       G.res.wood = 0; G.happy -= G.placed.some(p => p.def.id === 'bathhouse') ? 6 : 12;   // 澡堂：暖身更抗冻
       ctx.toast(`🥶 燃料不足，村民受冻${G.placed.some(p => p.def.id === 'bathhouse') ? '（澡堂帮大家缓了缓）' : '（快乐 -12，建篝火可省一半木柴）'}`);
     }
@@ -228,13 +245,21 @@ export function nightSettlement() {
       G.res.food -= loss;
       ctx.toast(`🐺 狼群偷粮！损失 ${loss} 食（建瞭望塔可防）`);
     } else ctx.toast('🐺 狼群被哨塔吓退了');
-  } else if (roll < 0.4 && houseCapacity() > G.villagers.length && G.res.food >= G.villagers.length) {
+  } else if (roll < (0.5 - 0.1 * Repute.immigrantMul()) && houseCapacity() > G.villagers.length && G.res.food >= G.villagers.length) {   // S39 声望≥40：移民间隔 ×0.7
     spawnVillagers(1);
     ctx.toast(`🎉 旅行者加入村庄（现 ${G.villagers.length} 人）`);
   } else if (roll < 0.5) { G.res.wood += 3; ctx.toast('🌊 河水送来浮木 +3 木'); }
   // 鸽房：每晚落 2 蛋换粮（冬天 1），受粮仓上限约束
   const dove = G.placed.filter(p => p.def.id === 'dovecote').length;
   if (dove) G.res.food = Math.min(G.foodCap, G.res.food + (winter ? 1 : 2) * dove);
+  // S35：在岗做工每天经验 +1；学堂（学校）在岗时每 2 天随机 1 名村民经验 +5
+  for (const v of G.villagers) if (v.task && v.task.kind === 'work') gainExp(v, 'work');
+  if (G.placed.some(p => p.def.id === 'school') && G.day % 2 === 0 && G.villagers.length) {
+    const sv = G.villagers[Math.floor(Math.random() * G.villagers.length)];
+    const keys = Object.keys(sv.skills || {});
+    gainExp(sv, keys.length ? keys[Math.floor(Math.random() * keys.length)] : 'work', 5);
+  }
+  G._nightFed = fed;   // S39：供 main.js 里 Repute.nightly 夜间声望结算
   G.happy = Math.max(0, G.happy);
   G.day++;
   regrow();
@@ -254,6 +279,7 @@ export function nightSettlement() {
     const bonus = G.placed.some(p => p.def.id === 'campfire') ? 14 : 10;
     G.happy = Math.min(100, G.happy + bonus);
     ctx.toast(`🎉 ${FESTIVALS[seasonOf(G.day)]}！全村欢聚一堂（快乐 +${bonus}` + (bonus > 10 ? '，篝火添了彩' : '') + '）');
+    Repute.add(3, '举办节日');   // S39 节日声望
   }
   const sunny = G.villagers.filter(x => traitOf(x).sunny).length;
   if (sunny) G.happy = Math.min(100, G.happy + sunny);
@@ -284,7 +310,7 @@ function checkMilestones() {
     else if (m.type === 'tech') ok = G.tech.size >= m.n;
     else if (m.type === 'pop') ok = G.villagers.length >= m.n;
     else if (m.type === 'year') ok = (G.year || 1) >= m.n;
-    if (ok) { G.milestones.add(m.id); G.happy = Math.min(100, G.happy + 8); ctx.toast('🏆 里程碑达成【' + m.name + '】：' + m.desc + '（快乐 +8）'); }
+    if (ok) { G.milestones.add(m.id); G.happy = Math.min(100, G.happy + 8); Repute.add(8, '达成里程碑【' + m.name + '】'); ctx.toast('🏆 里程碑达成【' + m.name + '】：' + m.desc + '（快乐 +8）'); }
   }
   if (G.milestones.size >= MILESTONES.length) endGame(true);
 }
